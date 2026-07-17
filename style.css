@@ -88,3 +88,65 @@ footer {
     .tagline { font-size: 14px; }
     footer { padding: 25px; }
 }
+/* --- About Me Button & Page Styles --- */
+
+.about-btn {
+    margin-top: 30px;
+    text-decoration: none;
+    color: #8e8e93;
+    font-size: 13px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+}
+
+.about-btn:hover {
+    color: #2c2c2e;
+    border-bottom: 1px solid #2c2c2e;
+}
+
+.about-main {
+    align-items: flex-start;
+    padding: 0 50px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.about-content {
+    margin-top: 40px;
+}
+
+.about-content h2 {
+    font-size: 28px;
+    font-weight: 500;
+    margin-bottom: 25px;
+    letter-spacing: -0.5px;
+}
+
+.about-content p {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #4a4a4c;
+    margin-bottom: 20px;
+    font-weight: 300;
+}
+
+.back-btn {
+    display: inline-block;
+    margin-top: 40px;
+    text-decoration: none;
+    color: #8e8e93;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.back-btn:hover {
+    color: #2c2c2e;
+}
+
+@media (max-width: 600px) {
+    .about-main { padding: 0 25px; }
+    .about-content h2 { font-size: 24px; }
+}
