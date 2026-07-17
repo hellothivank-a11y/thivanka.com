@@ -150,3 +150,29 @@ footer {
     .about-main { padding: 0 25px; }
     .about-content h2 { font-size: 24px; }
 }
+/* --- About Image & Animation --- */
+
+.about-image-wrapper {
+    width: 100%;
+    max-width: 320px; /* ෆොටෝ එකේ සයිස් එක කන්ට්‍රෝල් කරන්න */
+    margin-bottom: 40px;
+    border-radius: 16px; /* Apple UI එකේ වගේ ලස්සන curve එකක් */
+    overflow: hidden;
+}
+
+.about-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    /* මේ තියෙන්නේ smooth cinematic animation එක */
+    animation: smoothReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards; 
+}
+
+@keyframes smoothReveal {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
