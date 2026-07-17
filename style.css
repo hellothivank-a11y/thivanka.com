@@ -7,8 +7,8 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #ffffff;
-    color: #2c2c2e; /* Charcoal Black */
-    height: 100vh;
+    color: #2c2c2e;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
@@ -42,11 +42,12 @@ nav {
 }
 
 main {
-    flex: 1; /* මේකෙන් තමයි Email එක පල්ලෙහාටම තල්ලු කරන්නේ */
+    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding: 0 20px;
 }
 
 h1 {
@@ -54,6 +55,7 @@ h1 {
     font-weight: 500;
     letter-spacing: -1px;
     margin-bottom: 8px;
+    text-align: center;
 }
 
 .tagline {
@@ -61,6 +63,17 @@ h1 {
     color: #2c2c2e;
     letter-spacing: 2px;
     font-weight: 400;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.about-text {
+    font-size: 16px;
+    line-height: 1.8;
+    max-width: 600px; /* Text එක දිගටම යන්නේ නැතුව ලස්සන block එකකට හිර කරනවා */
+    text-align: center;
+    color: #4a4a4c;
+    font-weight: 300;
 }
 
 footer {
@@ -71,7 +84,7 @@ footer {
 
 .email {
     font-size: 15px;
-    color: #8e8e93; /* Ash Color */
+    color: #8e8e93;
     text-decoration: none;
     letter-spacing: 0.5px;
     transition: color 0.2s ease;
@@ -84,95 +97,8 @@ footer {
 /* Mobile Responsive */
 @media (max-width: 600px) {
     nav { padding: 25px 25px; }
-    h1 { font-size: 28px; text-align: center; padding: 0 20px; }
-    .tagline { font-size: 14px; }
+    h1 { font-size: 28px; }
+    .tagline { font-size: 14px; margin-bottom: 25px; }
+    .about-text { font-size: 15px; }
     footer { padding: 25px; }
-}
-/* --- About Me Button & Page Styles --- */
-
-.about-btn {
-    margin-top: 30px;
-    text-decoration: none;
-    color: #8e8e93;
-    font-size: 13px;
-    letter-spacing: 1px;
-    border-bottom: 1px solid transparent;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-}
-
-.about-btn:hover {
-    color: #2c2c2e;
-    border-bottom: 1px solid #2c2c2e;
-}
-
-.about-main {
-    align-items: flex-start;
-    padding: 0 50px;
-    max-width: 800px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.about-content {
-    margin-top: 40px;
-}
-
-.about-content h2 {
-    font-size: 28px;
-    font-weight: 500;
-    margin-bottom: 25px;
-    letter-spacing: -0.5px;
-}
-
-.about-content p {
-    font-size: 16px;
-    line-height: 1.8;
-    color: #4a4a4c;
-    margin-bottom: 20px;
-    font-weight: 300;
-}
-
-.back-btn {
-    display: inline-block;
-    margin-top: 40px;
-    text-decoration: none;
-    color: #8e8e93;
-    font-size: 14px;
-    transition: color 0.2s ease;
-}
-
-.back-btn:hover {
-    color: #2c2c2e;
-}
-
-@media (max-width: 600px) {
-    .about-main { padding: 0 25px; }
-    .about-content h2 { font-size: 24px; }
-}
-/* --- About Image & Animation --- */
-
-.about-image-wrapper {
-    width: 100%;
-    max-width: 320px; /* ෆොටෝ එකේ සයිස් එක කන්ට්‍රෝල් කරන්න */
-    margin-bottom: 40px;
-    border-radius: 16px; /* Apple UI එකේ වගේ ලස්සන curve එකක් */
-    overflow: hidden;
-}
-
-.about-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-    /* මේ තියෙන්නේ smooth cinematic animation එක */
-    animation: smoothReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards; 
-}
-
-@keyframes smoothReveal {
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
 }
