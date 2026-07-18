@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Sketch - Lavientra Studio</title>
+    <!-- පිටුව ලස්සනට පේන්න දාපු Apple-style CSS ටික -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f9f9fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .upload-container {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 450px;
+        }
+        h2 { text-align: center; font-weight: 500; margin-bottom: 30px; }
+        input, select {
+            width: 100%;
+            padding: 12px 0;
+            margin-bottom: 20px;
+            border: none;
+            border-bottom: 1px solid #d1d1d6;
+            outline: none;
+            background: transparent;
+            font-size: 16px;
+        }
+        .file-drop-zone {
+            border: 2px dashed #d1d1d6;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            cursor: pointer;
+        }
+        button {
+            width: 100%;
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #333333; }
+        #statusMessage { text-align: center; margin-top: 15px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="upload-container">
+        <h2>Submit Your Order</h2>
+        
+        <!-- මෙතනින් තමයි Form එක පටන් ගන්නේ -->
+        <form id="orderForm">
+            <input type="text" id="name" placeholder="Agency / Your Name" required>
+            <input type="email" id="email" placeholder="Email Address" required>
+            
+            <select id="country">
+                <option value="UK">United Kingdom</option>
+                <option value="AUS">Australia</option>
+            </select>
+
+            <select id="style">
+                <option value="B&W">Black & White 2D</option>
+                <option value="Color Zoned">Color Zoned 2D</option>
+            </select>
+
+            <select id="turnaround">
+                <option value="24h Standard">24h Standard (Included)</option>
+                <option value="6h Express">6h Express (+ $2)</option>
+            </select>
+
+            <div class="file-drop-zone">
+                <p style="margin:0 0 10px 0; color:#8e8e93;">Upload your sketch here</p>
+                <input type="file" id="fileInput" required style="margin:0; border:none; width:auto;">
+            </div>
+
+            <button type="submit" id="submitBtn">Send to Lavientra</button>
+        </form>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <!-- 
+    ========================================================
+    JAVASCRIPT LOGIC 
+    මේක අනිවාර්යයෙන්ම body tag එක ඉවර වෙන්න කලින් යටින්ම තියෙන්න ඕන.
+    එතකොට තමයි උඩ තියෙන form එක ලෝඩ් වුණාට පස්සේ කෝඩ් එක වැඩ කරන්නේ.
+    ========================================================
+    -->
+    <script>
+        // 🚨 පහළ තියෙන "YOUR_WEB_APP_URL_HERE" කියන එක මකලා, අර Google Script එකෙන් ආපු දිග ලින්ක් එක දාන්න 🚨
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxzPL4pWW4a86dHeYD3exXsk2z6kTdO-MG3zbghqxUwWw4zcCZDkt4FNbyWRB-88um/exec";
+
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Form එක submit වෙද්දී page එක reload වෙන එක නවත්තනවා
+            
+            const statusMsg = document.getElementById('statusMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            submitBtn.innerText = "Uploading... Please wait";
+            submitBtn.style.opacity = "0.7";
+            statusMsg.innerText = "";
+            
+            const fileInput = document.getElementById('fileInput').files[0];
+            const reader = new FileReader();
+            
+            // ෆයිල් එක කියවලා ඉවර වුණාම මේක වැඩ කරනවා
+            reader.onload = function(event) {
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    country: document.getElementById('country').value,
+                    style: document.getElementById('style').value,
+                    turnaround: document.getElementById('turnaround').value,
+                    fileName: fileInput.name,
+                    fileData: event.target.result // ෆයිල් එක text බවට හරවලා යවනවා
+                };
+                
+                // Google Script එකට ඩේටා ටික යවනවා
+                fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                })
+                .then(() => {
+                    statusMsg.style.color = "#34c759"; // Apple green
+                    statusMsg.innerText = "✓ Order Sent Successfully!";
+                    document.getElementById('orderForm').reset();
+                    submitBtn.innerText = "Send to Lavientra";
+                    submitBtn.style.opacity = "1";
+                })
+                .catch(err => {
+                    statusMsg.style.color = "#ff3b30"; // Apple red
+                    statusMsg.innerText = "Error uploading. Please try again.";
+                    submitBtn.innerText = "Send to Lavientra";
+                    submitBtn.style.opacity = "1";
+                    console.error(err);
+                });
+            };
+            
+            if(fileInput) {
+                reader.readAsDataURL(fileInput); 
+            }
+        });
+    </script>
+
+</body>
+</html>
