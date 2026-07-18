@@ -15,10 +15,10 @@
     <main class="bcard-main">
         <div class="bcard-wrapper">
             <!-- Profile Picture -->
-            <img src="/unnamed 1.jpg" alt="Thivanka Karunarathna" class="bcard-pic">
+            <img src="/profile 1.2.png" alt="Thivanka Karunarathna" class="bcard-pic">
             
             <h1 class="bcard-name">Thivanka Karunarathna</h1>
-            <p class="bcard-title">Brand Strategist & UI/UX Designer</p>
+            <p class="bcard-title">Brand Strategist</p>
 
             <div class="bcard-links">
                 <!-- ප්‍රධාන Button එක (Email) -->
