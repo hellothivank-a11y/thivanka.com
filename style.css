@@ -62,7 +62,7 @@ h1 {
     font-size: 16px;
     color: #2c2c2e;
     letter-spacing: 2px;
-    font-weight: 500;
+    font-weight: 400;
     margin-bottom: 30px;
     text-align: center;
 }
@@ -73,7 +73,7 @@ h1 {
     max-width: 600px; 
     text-align: center;
     color: #86868b; /* මේකෙන් තමයි Apple style ලා අළු පාට එන්නේ */
-    font-weight: 400;
+    font-weight: 350;
 }
 
 footer {
