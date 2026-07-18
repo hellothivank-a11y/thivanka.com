@@ -102,3 +102,96 @@ footer {
     .about-text { font-size: 15px; }
     footer { padding: 25px; }
 }
+/* --- Digital Business Card Styles (Contact Page) --- */
+
+.contact-page nav {
+    justify-content: flex-start;
+}
+
+.back-link {
+    text-decoration: none;
+    color: #86868b;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover {
+    color: #2c2c2e;
+}
+
+.bcard-main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px 50px 20px;
+}
+
+.bcard-wrapper {
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    animation: fadeIn 0.8s ease forwards;
+}
+
+.bcard-pic {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 1px solid #eaeaea; /* ඉතාම සියුම් බෝඩරයක් */
+}
+
+.bcard-name {
+    font-size: 24px;
+    font-weight: 500;
+    color: #1d1d1f;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.bcard-title {
+    font-size: 14px;
+    color: #86868b;
+    margin-bottom: 35px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+.bcard-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bcard-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px; /* Apple Style Rounded Corners */
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    background-color: #f5f5f7; /* iOS Grey Background */
+    color: #1d1d1f;
+    transition: all 0.2s ease;
+}
+
+.bcard-btn:hover {
+    background-color: #e8e8ed;
+    transform: scale(0.98); /* පොඩි Smooth Click Effect එකක් */
+}
+
+.primary-btn {
+    background-color: #2c2c2e;
+    color: #ffffff;
+}
+
+.primary-btn:hover {
+    background-color: #1d1d1f;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
