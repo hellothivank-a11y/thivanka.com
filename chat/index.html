@@ -14,7 +14,7 @@
     <style>
         :root {
             --bg-main: #080c14;
-            --panel-bg: rgba(15, 23, 42, 0.75);
+            --panel-bg: rgba(15, 23, 42, 0.85);
             --border-color: rgba(255, 255, 255, 0.1);
             --accent-cyan: #38bdf8;
             --accent-rose: #f43f5e;
@@ -44,8 +44,8 @@
             border: 1px solid var(--border-color);
             border-radius: 24px;
             width: 100%;
-            max-width: 460px;
-            height: 800px;
+            max-width: 480px;
+            height: 850px;
             display: flex;
             flex-direction: column;
             box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
@@ -53,65 +53,99 @@
             position: relative;
         }
 
-        .video-wrapper {
-            position: relative;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.5);
-            border-bottom: 1px solid var(--border-color);
+        /* --- VIDEO SECTION (NO BUTTONS ON TOP) --- */
+        .video-section {
             display: flex;
+            flex-direction: column; /* Mobile Default: Vertical (උඩ පහළ) */
             gap: 8px;
-            padding: 8px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .video-box {
+            position: relative;
+            width: 100%;
+            height: 130px; /* Mobile height */
+            background: #020617;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         video {
-            width: 50%;
+            width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 16px;
-            background: #020617;
-            border: 1px solid rgba(255,255,255,0.08);
-            transform: scaleX(-1);
+            transform: scaleX(-1); /* Un-mirror self camera */
         }
 
-        .call-actions {
+        .video-label {
             position: absolute;
-            bottom: 12px;
-            right: 12px;
-            display: flex;
-            gap: 6px;
+            bottom: 8px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            color: var(--text-primary);
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
         }
 
-        .btn-icon {
+        /* Desktop view: Horizontal (පැත්තෙන් පැත්තට) */
+        @media (min-width: 768px) {
+            .video-section {
+                flex-direction: row;
+                height: 180px;
+            }
+            .video-box {
+                height: 100%;
+                width: 50%;
+            }
+        }
+
+        /* --- EXTERNAL CALL ACTIONS BAR --- */
+        .call-actions-bar {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(2, 6, 23, 0.5);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .btn-action {
+            flex: 1;
             background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 7px 12px;
-            border-radius: 20px;
+            padding: 8px 12px;
+            border-radius: 12px;
             font-size: 0.75rem;
-            letter-spacing: 0.5px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            text-align: center;
         }
 
-        .btn-icon:hover {
+        .btn-action:hover {
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
         }
 
-        .btn-call {
+        .btn-call-active {
             border-color: rgba(56, 189, 248, 0.4);
             background: rgba(56, 189, 248, 0.15);
         }
 
+        /* --- HEADER & CONTROLS --- */
         .header {
-            padding: 16px 20px;
+            padding: 14px 20px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .brand-title {
@@ -121,7 +155,7 @@
         }
 
         .brand-title h2 {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -130,10 +164,68 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Status Dot Styling */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .dots-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        .dots-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 160px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.show {
+            display: flex;
+        }
+
+        .dropdown-item {
+            background: none;
+            border: none;
+            color: var(--accent-rose);
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(244, 63, 94, 0.1);
+        }
+
         .status-dot {
-            width: 9px;
-            height: 9px;
+            width: 8px;
+            height: 8px;
             background: #475569;
             border-radius: 50%;
             transition: all 0.5s ease;
@@ -158,9 +250,9 @@
             background: rgba(2, 6, 23, 0.6);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 11px 14px;
+            padding: 10px 14px;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             outline: none;
             transition: all 0.3s ease;
             width: 100%;
@@ -177,19 +269,20 @@
         }
 
         .peer-id-badge {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--accent-cyan);
             letter-spacing: 0.3px;
             font-family: monospace;
         }
 
+        /* --- CHAT MESSAGES --- */
         .messages-container {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }
 
         .messages-container::-webkit-scrollbar { width: 4px; }
@@ -197,10 +290,10 @@
 
         .msg-bubble {
             max-width: 80%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.4;
             position: relative;
             word-break: break-word;
             animation: fadeIn 0.3s ease-out;
@@ -226,14 +319,22 @@
         }
 
         .sender-tag {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-secondary);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: 600;
         }
 
+        .msg-time {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        /* --- FOOTER INPUT --- */
         .footer {
-            padding: 16px;
+            padding: 14px 16px;
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 10px;
@@ -244,9 +345,9 @@
             background: var(--text-primary);
             color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 18px;
             border-radius: 12px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -261,19 +362,37 @@
 <body>
 
 <div class="app-container">
-    <div class="video-wrapper">
-        <video id="localVideo" autoplay muted playsinline></video>
-        <video id="remoteVideo" autoplay playsinline></video>
-        <div class="call-actions">
-            <button class="btn-icon" onclick="copyMyId()">📋 COPY MY ID</button>
-            <button class="btn-icon btn-call" onclick="startCall()">📞 CALL</button>
+    <!-- VIDEO SECTION (Clean, no buttons on top) -->
+    <div class="video-section">
+        <div class="video-box">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="video-label">Partner</div>
+        </div>
+        <div class="video-box">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="video-label">You</div>
         </div>
     </div>
 
+    <!-- EXTERNAL CALL ACTIONS BAR (Buttons moved outside) -->
+    <div class="call-actions-bar">
+        <button class="btn-action" onclick="copyMyId()">📋 Copy My ID</button>
+        <button class="btn-action btn-call-active" onclick="startCall()">📞 Call Partner</button>
+    </div>
+
+    <!-- HEADER -->
     <div class="header">
         <div class="brand-title">
             <h2>OASIS SPACE</h2>
-            <div class="status-dot" id="statusDot" title="Partner Status"></div>
+            <div class="header-right">
+                <div class="status-dot" id="statusDot" title="Partner Status"></div>
+                <div class="menu-container">
+                    <button class="dots-btn" onclick="toggleMenu(event)">⋮</button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <button class="dropdown-item" onclick="clearAllMessages()">🗑️ Clear Messages</button>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="inputs-row">
@@ -286,8 +405,10 @@
         <div class="peer-id-badge" id="myPeerId">Initializing peer connection...</div>
     </div>
     
+    <!-- MESSAGES -->
     <div class="messages-container" id="messageList"></div>
 
+    <!-- FOOTER -->
     <div class="footer">
         <input type="text" id="messageInput" placeholder="Type an encrypted message..." onkeypress="if(event.key==='Enter') sendMessage(event)">
         <button class="send-btn" onmousedown="event.preventDefault(); sendMessage(event);" onclick="sendMessage(event)">SEND</button>
@@ -301,6 +422,19 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let peer, localStream, currentMyId = '';
     let heartbeatInterval;
+
+    function toggleMenu(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        menu.classList.toggle('show');
+    }
+
+    window.addEventListener('click', () => {
+        const menu = document.getElementById('dropdownMenu');
+        if (menu.classList.contains('show')) {
+            menu.classList.remove('show');
+        }
+    });
 
     function initPeer() {
         peer = new Peer();
@@ -399,6 +533,21 @@
         }
     }
 
+    async function clearAllMessages() {
+        if (confirm("සියලුම මැසේජ් මකා දැමීමට අවශ්‍යද?")) {
+            const { error } = await supabaseClient
+                .from('chat_messages')
+                .delete()
+                .neq('id', 0);
+
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                document.getElementById('messageList').innerHTML = '';
+            }
+        }
+    }
+
     function renderMessage(data) {
         const secretKey = document.getElementById('secretKey').value;
         const currentUsername = document.getElementById('username').value;
@@ -409,6 +558,12 @@
             decrypted = decryptText(data.encrypted_message, secretKey);
         }
 
+        let timeString = "";
+        if (data.created_at) {
+            const date = new Date(data.created_at);
+            timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
         const msgDiv = document.createElement('div');
         const isSelf = data.sender === currentUsername;
         msgDiv.className = `msg-bubble ${isSelf ? 'sent' : 'received'}`;
@@ -416,6 +571,7 @@
         msgDiv.innerHTML = `
             <div class="sender-tag">${data.sender}</div>
             <div>${decrypted}</div>
+            <div class="msg-time">${timeString}</div>
         `;
 
         messageList.appendChild(msgDiv);
@@ -424,7 +580,12 @@
 
     async function loadInitialMessages() {
         document.getElementById('messageList').innerHTML = '';
-        const { data } = await supabaseClient.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(60);
+        const { data } = await supabaseClient
+            .from('chat_messages')
+            .select('*')
+            .order('created_at', { ascending: true })
+            .limit(60);
+            
         if (data) data.forEach(renderMessage);
     }
 
