@@ -14,8 +14,8 @@
     <style>
         :root {
             --bg-main: #080c14;
-            --panel-bg: rgba(15, 23, 42, 0.65);
-            --border-color: rgba(255, 255, 255, 0.08);
+            --panel-bg: rgba(15, 23, 42, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
             --accent-cyan: #38bdf8;
             --accent-rose: #f43f5e;
             --text-primary: #f8fafc;
@@ -27,8 +27,8 @@
         body {
             background: var(--bg-main);
             background-image: 
-                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(244, 63, 94, 0.05) 0%, transparent 40%);
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(244, 63, 94, 0.06) 0%, transparent 40%);
             color: var(--text-primary);
             display: flex;
             justify-content: center;
@@ -45,7 +45,7 @@
             border-radius: 24px;
             width: 100%;
             max-width: 460px;
-            height: 780px;
+            height: 800px;
             display: flex;
             flex-direction: column;
             box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
@@ -56,7 +56,7 @@
         .video-wrapper {
             position: relative;
             height: 200px;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             gap: 8px;
@@ -69,25 +69,25 @@
             object-fit: cover;
             border-radius: 16px;
             background: #020617;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .call-actions {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            bottom: 12px;
+            right: 12px;
             display: flex;
             gap: 6px;
         }
 
         .btn-icon {
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 6px 12px;
+            padding: 7px 12px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             letter-spacing: 0.5px;
             font-weight: 600;
             cursor: pointer;
@@ -120,7 +120,7 @@
         }
 
         .brand-title h2 {
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -131,8 +131,8 @@
 
         /* Status Dot Styling */
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 9px;
+            height: 9px;
             background: #475569;
             border-radius: 50%;
             transition: all 0.5s ease;
@@ -140,12 +140,12 @@
 
         .status-dot.online-cyan {
             background: var(--accent-cyan);
-            box-shadow: 0 0 12px var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
         }
 
         .status-dot.online-rose {
             background: var(--accent-rose);
-            box-shadow: 0 0 12px var(--accent-rose);
+            box-shadow: 0 0 10px var(--accent-rose);
         }
 
         .inputs-row {
@@ -154,12 +154,12 @@
         }
 
         input, select {
-            background: rgba(2, 6, 23, 0.5);
+            background: rgba(2, 6, 23, 0.6);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 10px 14px;
+            padding: 11px 14px;
             border-radius: 12px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             outline: none;
             transition: all 0.3s ease;
             width: 100%;
@@ -171,12 +171,12 @@
         }
 
         input:focus, select:focus {
-            border-color: rgba(56, 189, 248, 0.4);
-            box-shadow: 0 0 12px rgba(56, 189, 248, 0.1);
+            border-color: rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
         }
 
         .peer-id-badge {
-            font-size: 0.68rem;
+            font-size: 0.75rem;
             color: var(--accent-cyan);
             letter-spacing: 0.3px;
             font-family: monospace;
@@ -188,17 +188,17 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
 
         .messages-container::-webkit-scrollbar { width: 4px; }
         .messages-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
         .msg-bubble {
-            max-width: 78%;
-            padding: 10px 16px;
+            max-width: 80%;
+            padding: 12px 16px;
             border-radius: 18px;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             line-height: 1.5;
             position: relative;
             word-break: break-word;
@@ -211,24 +211,24 @@
         }
 
         .msg-bubble.sent {
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%);
-            border: 1px solid rgba(56, 189, 248, 0.2);
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(14, 165, 233, 0.08) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
             align-self: flex-end;
             border-bottom-right-radius: 4px;
         }
 
         .msg-bubble.received {
-            background: rgba(30, 41, 59, 0.5);
+            background: rgba(30, 41, 59, 0.7);
             border: 1px solid var(--border-color);
             align-self: flex-start;
             border-bottom-left-radius: 4px;
         }
 
         .sender-tag {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
             margin-bottom: 4px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .footer {
@@ -236,7 +236,7 @@
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 10px;
-            background: rgba(8, 12, 20, 0.4);
+            background: rgba(8, 12, 20, 0.6);
         }
 
         .send-btn {
@@ -245,7 +245,7 @@
             border: none;
             padding: 10px 20px;
             border-radius: 12px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -265,7 +265,7 @@
         <video id="remoteVideo" autoplay playsinline></video>
         <div class="call-actions">
             <button class="btn-icon" onclick="copyMyId()">📋 COPY MY ID</button>
-            <button class="btn-icon btn-call" onclick="startCall()">📞 CALL PARTNER</button>
+            <button class="btn-icon btn-call" onclick="startCall()">📞 CALL</button>
         </div>
     </div>
 
@@ -413,7 +413,7 @@
         msgDiv.className = `msg-bubble ${isSelf ? 'sent' : 'received'}`;
         
         msgDiv.innerHTML = `
-            <div class="sender-tag">${data.sender}<div>
+            <div class="sender-tag">${data.sender}</div>
             <div>${decrypted}</div>
         `;
 
@@ -427,7 +427,7 @@
         if (data) data.forEach(renderMessage);
     }
 
-    // Realtime Presence Tracker with Specific Colors
+    // Precise Status Dot Logic
     function setupPresence() {
         if (presenceChannel) presenceChannel.unsubscribe();
 
@@ -443,16 +443,15 @@
                 const state = presenceChannel.presenceState();
                 const statusDot = document.getElementById('statusDot');
                 
-                // Reset classes
                 statusDot.className = 'status-dot';
 
                 if (state[partnerUsername]) {
-                    if (currentUsername === 'Bani' && partnerUsername === 'Hani') {
-                        // Hani online -> Bani sees CYAN (නිල් පාට)
-                        statusDot.classList.add('online-cyan');
-                    } else if (currentUsername === 'Hani' && partnerUsername === 'Bani') {
-                        // Bani online -> Hani sees ROSE (රෝස පාට)
+                    if (currentUsername === 'Hani') {
+                        // Hani sees Bani online -> ROSE (රෝස පාට)
                         statusDot.classList.add('online-rose');
+                    } else if (currentUsername === 'Bani') {
+                        // Bani sees Hani online -> CYAN (නිල් පාට)
+                        statusDot.classList.add('online-cyan');
                     }
                 }
             })
@@ -468,7 +467,6 @@
         setupPresence();
     }
 
-    // Chat listener
     supabaseClient.channel('public:chat_messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
             renderMessage(payload.new);
@@ -476,7 +474,6 @@
 
     document.getElementById('secretKey').addEventListener('input', loadInitialMessages);
 
-    // Initial setups
     loadInitialMessages();
     setupPresence();
     initPeer();
