@@ -74,22 +74,22 @@
 
         .call-actions {
             position: absolute;
-            bottom: 14px;
-            right: 14px;
+            bottom: 10px;
+            right: 10px;
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-icon {
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(10px);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 8px 14px;
-            border-radius: 30px;
-            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
             letter-spacing: 0.5px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -97,7 +97,12 @@
         .btn-icon:hover {
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .btn-call {
+            border-color: rgba(56, 189, 248, 0.4);
+            background: rgba(56, 189, 248, 0.15);
         }
 
         .header {
@@ -124,12 +129,23 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* Status Dot Styling */
         .status-dot {
-            width: 6px;
-            height: 6px;
-            background: #10b981;
+            width: 8px;
+            height: 8px;
+            background: #475569;
             border-radius: 50%;
-            box-shadow: 0 0 8px #10b981;
+            transition: all 0.5s ease;
+        }
+
+        .status-dot.online-cyan {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 12px var(--accent-cyan);
+        }
+
+        .status-dot.online-rose {
+            background: var(--accent-rose);
+            box-shadow: 0 0 12px var(--accent-rose);
         }
 
         .inputs-row {
@@ -161,8 +177,9 @@
 
         .peer-id-badge {
             font-size: 0.68rem;
-            color: var(--text-secondary);
+            color: var(--accent-cyan);
             letter-spacing: 0.3px;
+            font-family: monospace;
         }
 
         .messages-container {
@@ -247,32 +264,32 @@
         <video id="localVideo" autoplay muted playsinline></video>
         <video id="remoteVideo" autoplay playsinline></video>
         <div class="call-actions">
-            <button class="btn-icon" onclick="startCall()">CONNECT VIDEO</button>
+            <button class="btn-icon" onclick="copyMyId()">📋 COPY MY ID</button>
+            <button class="btn-icon btn-call" onclick="startCall()">📞 CALL PARTNER</button>
         </div>
     </div>
 
     <div class="header">
         <div class="brand-title">
             <h2>OASIS SPACE</h2>
-            <div class="status-dot"></div>
+            <div class="status-dot" id="statusDot" title="Partner Status"></div>
         </div>
         
         <div class="inputs-row">
-            <!-- Dropdown for Hani & Bani -->
-            <select id="username" onchange="loadInitialMessages()">
+            <select id="username" onchange="onUserChange()">
                 <option value="Hani">Hani</option>
                 <option value="Bani">Bani</option>
             </select>
             <input type="password" id="secretKey" placeholder="Encryption Key" value="1234">
         </div>
-        <div class="peer-id-badge" id="myPeerId">Initializing peer mesh...</div>
+        <div class="peer-id-badge" id="myPeerId">Initializing peer connection...</div>
     </div>
     
     <div class="messages-container" id="messageList"></div>
 
     <div class="footer">
-        <input type="text" id="messageInput" placeholder="Type an encrypted message..." onkeypress="if(event.key==='Enter') sendMessage()">
-        <button class="send-btn" onclick="sendMessage()">SEND</button>
+        <input type="text" id="messageInput" placeholder="Type an encrypted message..." onkeypress="if(event.key==='Enter') sendMessage(event)">
+        <button class="send-btn" onmousedown="event.preventDefault(); sendMessage(event);" onclick="sendMessage(event)">SEND</button>
     </div>
 </div>
 
@@ -281,38 +298,62 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_Jtj7u2jXgqQt1oIC3P-pTg_nsF_foAQ';
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    let peer, localStream;
+    let peer, localStream, currentMyId = '';
+    let presenceChannel;
 
     function initPeer() {
         peer = new Peer();
+        
         peer.on('open', id => {
-            document.getElementById('myPeerId').innerText = "PEER ID: " + id;
+            currentMyId = id;
+            document.getElementById('myPeerId').innerText = "YOUR ID: " + id;
         });
 
         peer.on('call', call => {
             navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
                 localStream = stream;
-                document.getElementById('localVideo').srcObject = stream;
+                const localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = stream;
+                localVideo.play();
+
                 call.answer(stream);
+
                 call.on('stream', remoteStream => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                    const remoteVideo = document.getElementById('remoteVideo');
+                    remoteVideo.srcObject = remoteStream;
+                    remoteVideo.play();
                 });
-            });
+            }).catch(err => alert("Camera permission issue: " + err));
         });
     }
 
+    function copyMyId() {
+        if (!currentMyId) {
+            alert("Connection still initializing. Please wait a second!");
+            return;
+        }
+        navigator.clipboard.writeText(currentMyId);
+        alert("Your ID copied to clipboard! Send this to your partner.");
+    }
+
     function startCall() {
-        const remotePeerId = prompt("Enter Partner's Peer ID:");
+        const remotePeerId = prompt("Paste Partner's ID here:");
         if (!remotePeerId) return;
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             localStream = stream;
-            document.getElementById('localVideo').srcObject = stream;
+            const localVideo = document.getElementById('localVideo');
+            localVideo.srcObject = stream;
+            localVideo.play();
+
             const call = peer.call(remotePeerId, stream);
+
             call.on('stream', remoteStream => {
-                document.getElementById('remoteVideo').srcObject = remoteStream;
+                const remoteVideo = document.getElementById('remoteVideo');
+                remoteVideo.srcObject = remoteStream;
+                remoteVideo.play();
             });
-        }).catch(() => alert("Camera / Microphone permission denied."));
+        }).catch(err => alert("Camera / Microphone permission denied."));
     }
 
     function encryptText(text, key) {
@@ -329,7 +370,9 @@
         }
     }
 
-    async function sendMessage() {
+    async function sendMessage(e) {
+        if (e) e.preventDefault();
+        
         const username = document.getElementById('username').value;
         const secretKey = document.getElementById('secretKey').value;
         const msgInput = document.getElementById('messageInput');
@@ -343,14 +386,15 @@
 
         const encryptedMsg = encryptText(text, secretKey);
         
+        msgInput.value = '';
+        msgInput.focus();
+
         const { error } = await supabaseClient
             .from('chat_messages')
             .insert([{ sender: username, encrypted_message: encryptedMsg }]);
 
         if (error) {
             alert("Error: " + error.message);
-        } else {
-            msgInput.value = '';
         }
     }
 
@@ -369,7 +413,7 @@
         msgDiv.className = `msg-bubble ${isSelf ? 'sent' : 'received'}`;
         
         msgDiv.innerHTML = `
-            <div class="sender-tag">${data.sender}</div>
+            <div class="sender-tag">${data.sender}<div>
             <div>${decrypted}</div>
         `;
 
@@ -383,6 +427,48 @@
         if (data) data.forEach(renderMessage);
     }
 
+    // Realtime Presence Tracker with Specific Colors
+    function setupPresence() {
+        if (presenceChannel) presenceChannel.unsubscribe();
+
+        const currentUsername = document.getElementById('username').value;
+        const partnerUsername = currentUsername === 'Hani' ? 'Bani' : 'Hani';
+
+        presenceChannel = supabaseClient.channel('online-users', {
+            config: { presence: { key: currentUsername } }
+        });
+
+        presenceChannel
+            .on('presence', { event: 'sync' }, () => {
+                const state = presenceChannel.presenceState();
+                const statusDot = document.getElementById('statusDot');
+                
+                // Reset classes
+                statusDot.className = 'status-dot';
+
+                if (state[partnerUsername]) {
+                    if (currentUsername === 'Bani' && partnerUsername === 'Hani') {
+                        // Hani online -> Bani sees CYAN (නිල් පාට)
+                        statusDot.classList.add('online-cyan');
+                    } else if (currentUsername === 'Hani' && partnerUsername === 'Bani') {
+                        // Bani online -> Hani sees ROSE (රෝස පාට)
+                        statusDot.classList.add('online-rose');
+                    }
+                }
+            })
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await presenceChannel.track({ online_at: new Date().toISOString() });
+                }
+            });
+    }
+
+    function onUserChange() {
+        loadInitialMessages();
+        setupPresence();
+    }
+
+    // Chat listener
     supabaseClient.channel('public:chat_messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
             renderMessage(payload.new);
@@ -390,7 +476,9 @@
 
     document.getElementById('secretKey').addEventListener('input', loadInitialMessages);
 
+    // Initial setups
     loadInitialMessages();
+    setupPresence();
     initPeer();
 </script>
 
