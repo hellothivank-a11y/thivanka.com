@@ -119,35 +119,14 @@
             font-weight: 600;
         }
 
-        .ratio-toggle-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            cursor: pointer;
-            z-index: 12;
-            transition: all 0.2s;
-        }
-
-        .ratio-toggle-btn:hover {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-        }
-
-        /* --- ACTION BAR & HEADER --- */
+        /* --- ACTION BAR WITH RATIO ICON BUTTON --- */
         .call-actions-bar {
             display: flex;
             gap: 8px;
             padding: 8px 12px;
             background: rgba(2, 6, 23, 0.7);
             border-bottom: 1px solid var(--border-color);
+            align-items: center;
         }
 
         .btn-action {
@@ -173,6 +152,26 @@
             background: rgba(56, 189, 248, 0.15);
         }
 
+        .ratio-icon-btn {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ratio-icon-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* --- HEADER & THREE DOTS MENU --- */
         .header {
             padding: 10px 16px;
             border-bottom: 1px solid var(--border-color);
@@ -204,6 +203,53 @@
             gap: 10px;
         }
 
+        .menu-container { position: relative; }
+
+        .dots-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        .dots-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 28px;
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            width: 150px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.show { display: flex; }
+
+        .dropdown-item {
+            background: none;
+            border: none;
+            color: var(--accent-rose);
+            padding: 9px 12px;
+            text-align: left;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover { background: rgba(244, 63, 94, 0.1); }
+
         .status-dot {
             width: 8px;
             height: 8px;
@@ -222,12 +268,7 @@
             box-shadow: 0 0 10px var(--accent-rose);
         }
 
-        /* Inputs row including delete icon button */
-        .inputs-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
+        .inputs-row { display: flex; gap: 8px; }
 
         input, select {
             background: rgba(2, 6, 23, 0.6);
@@ -238,25 +279,6 @@
             font-size: 0.8rem;
             outline: none;
             width: 100%;
-        }
-
-        .clear-icon-btn {
-            background: rgba(244, 63, 94, 0.15);
-            border: 1px solid rgba(244, 63, 94, 0.3);
-            color: var(--accent-rose);
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .clear-icon-btn:hover {
-            background: rgba(244, 63, 94, 0.3);
-            border-color: var(--accent-rose);
         }
 
         .peer-id-badge {
@@ -341,10 +363,8 @@
 <body>
 
 <div class="app-container">
-    <!-- VIDEO SECTION (Tall Mobile Ratio) -->
+    <!-- VIDEO SECTION -->
     <div class="video-section mode-mobile" id="videoSection">
-        <button class="ratio-toggle-btn" id="ratioBtn" onclick="toggleRatio()">📱 Mobile Ratio</button>
-        
         <div class="video-box-partner">
             <video id="remoteVideo" autoplay playsinline></video>
             <div class="video-label">Partner</div>
@@ -356,29 +376,34 @@
         </div>
     </div>
 
-    <!-- CALL ACTIONS BAR -->
+    <!-- CALL ACTIONS BAR WITH RATIO ICON BUTTON -->
     <div class="call-actions-bar">
         <button class="btn-action" onclick="copyMyId()">📋 Copy My ID</button>
         <button class="btn-action btn-call-active" onclick="startCall()">📞 Call Partner</button>
+        <button class="ratio-icon-btn" id="ratioBtn" onclick="toggleRatio()" title="Switch Ratio (Mobile / Desktop)">📱</button>
     </div>
 
-    <!-- HEADER & CONTROLS -->
+    <!-- HEADER & THREE DOTS MENU -->
     <div class="header">
         <div class="brand-title">
             <h2>OASIS SPACE</h2>
             <div class="header-right">
                 <div class="status-dot" id="statusDot" title="Partner Status"></div>
+                <div class="menu-container">
+                    <button class="dots-btn" onclick="toggleMenu(event)">⋮</button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <button class="dropdown-item" onclick="clearAllMessages()">🗑️ Clear Messages</button>
+                    </div>
+                </div>
             </div>
         </div>
         
-        <!-- Inputs Row with Direct Delete Icon Button -->
         <div class="inputs-row">
             <select id="username" onchange="onUserChange()">
                 <option value="Hani">Hani</option>
                 <option value="Bani">Bani</option>
             </select>
             <input type="password" id="secretKey" placeholder="Encryption Key" value="1234">
-            <button class="clear-icon-btn" onclick="clearAllMessages()" title="Clear All Messages">🗑️</button>
         </div>
         <div class="peer-id-badge" id="myPeerId">Initializing peer connection...</div>
     </div>
@@ -408,13 +433,28 @@
         if (videoSection.classList.contains('mode-mobile')) {
             videoSection.classList.remove('mode-mobile');
             videoSection.classList.add('mode-desktop');
-            ratioBtn.innerText = "💻 Desktop Ratio";
+            ratioBtn.innerText = "💻";
+            ratioBtn.title = "Switch to Mobile Ratio";
         } else {
             videoSection.classList.remove('mode-desktop');
             videoSection.classList.add('mode-mobile');
-            ratioBtn.innerText = "📱 Mobile Ratio";
+            ratioBtn.innerText = "📱";
+            ratioBtn.title = "Switch to Desktop Ratio";
         }
     }
+
+    function toggleMenu(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('dropdownMenu');
+        menu.classList.toggle('show');
+    }
+
+    window.addEventListener('click', () => {
+        const menu = document.getElementById('dropdownMenu');
+        if (menu.classList.contains('show')) {
+            menu.classList.remove('show');
+        }
+    });
 
     function initPeer() {
         peer = new Peer();
@@ -547,7 +587,7 @@
 
         let decrypted = "••••••••";
         if(secretKey) {
-            decrypted = decryptText(data.encrypted_message, secretKey);
+            decrypted = decryptTest(data.encrypted_message, secretKey);
         }
 
         const formattedText = linkify(decrypted);
