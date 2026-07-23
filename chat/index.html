@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oasis — Private Space</title>
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase CDN Latest -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
     <!-- CryptoJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <!-- PeerJS -->
@@ -53,7 +53,6 @@
             position: relative;
         }
 
-        /* Video Section */
         .video-wrapper {
             position: relative;
             height: 200px;
@@ -101,7 +100,6 @@
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
         }
 
-        /* Header */
         .header {
             padding: 16px 20px;
             border-bottom: 1px solid var(--border-color);
@@ -162,7 +160,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* Messages Stream */
         .messages-container {
             flex: 1;
             padding: 20px;
@@ -212,7 +209,6 @@
             font-weight: 500;
         }
 
-        /* Footer Input */
         .footer {
             padding: 16px;
             border-top: 1px solid var(--border-color);
@@ -242,7 +238,6 @@
 <body>
 
 <div class="app-container">
-    <!-- Video Stream Deck -->
     <div class="video-wrapper">
         <video id="localVideo" autoplay muted playsinline></video>
         <video id="remoteVideo" autoplay playsinline></video>
@@ -251,7 +246,6 @@
         </div>
     </div>
 
-    <!-- Interface Header -->
     <div class="header">
         <div class="brand-title">
             <h2>OASIS SPACE</h2>
@@ -265,10 +259,8 @@
         <div class="peer-id-badge" id="myPeerId">Initializing peer mesh...</div>
     </div>
     
-    <!-- Chat Stream -->
     <div class="messages-container" id="messageList"></div>
 
-    <!-- Input Deck -->
     <div class="footer">
         <input type="text" id="messageInput" placeholder="Type an encrypted message..." onkeypress="if(event.key==='Enter') sendMessage()">
         <button class="send-btn" onclick="sendMessage()">SEND</button>
@@ -276,14 +268,13 @@
 </div>
 
 <script>
-    // ⚠️ SUPABASE KEYS HERE
     const SUPABASE_URL = 'https://hfkwgumcdgpsqjjwtxik.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_Jtj7u2jXgqQt1oIC3P-pTg_nsF_foAQ';
     
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Updated Supabase Instance
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let peer, localStream;
 
-    // WebRTC Video Mesh
     function initPeer() {
         peer = new Peer();
         peer.on('open', id => {
@@ -316,7 +307,6 @@
         }).catch(() => alert("Camera / Microphone permission denied."));
     }
 
-    // Encryption & Decryption
     function encryptText(text, key) {
         return CryptoJS.AES.encrypt(text, key).toString();
     }
@@ -331,7 +321,6 @@
         }
     }
 
-    // Message Engine
     async function sendMessage() {
         const username = document.getElementById('username').value.trim() || 'Anonymous';
         const secretKey = document.getElementById('secretKey').value;
@@ -345,8 +334,16 @@
         if (!text) return;
 
         const encryptedMsg = encryptText(text, secretKey);
-        await supabase.from('chat_messages').insert([{ sender: username, encrypted_message: encryptedMsg }]);
-        msgInput.value = '';
+        
+        const { error } = await supabaseClient
+            .from('chat_messages')
+            .insert([{ sender: username, encrypted_message: encryptedMsg }]);
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            msgInput.value = '';
+        }
     }
 
     function renderMessage(data) {
@@ -374,19 +371,18 @@
 
     async function loadInitialMessages() {
         document.getElementById('messageList').innerHTML = '';
-        const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(60);
+        const { data } = await supabaseClient.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(60);
         if (data) data.forEach(renderMessage);
     }
 
-    // Realtime Sync
-    supabase.channel('public:chat_messages')
+    // Realtime listener setup
+    supabaseClient.channel('public:chat_messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
             renderMessage(payload.new);
         }).subscribe();
 
     document.getElementById('secretKey').addEventListener('input', loadInitialMessages);
 
-    // Bootstrap
     loadInitialMessages();
     initPeer();
 </script>
