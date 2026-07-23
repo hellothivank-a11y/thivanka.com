@@ -137,7 +137,7 @@
             gap: 10px;
         }
 
-        input {
+        input, select {
             background: rgba(2, 6, 23, 0.5);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
@@ -149,7 +149,12 @@
             width: 100%;
         }
 
-        input:focus {
+        select option {
+            background: #0f172a;
+            color: #fff;
+        }
+
+        input:focus, select:focus {
             border-color: rgba(56, 189, 248, 0.4);
             box-shadow: 0 0 12px rgba(56, 189, 248, 0.1);
         }
@@ -253,8 +258,12 @@
         </div>
         
         <div class="inputs-row">
-            <input type="text" id="username" placeholder="Name" value="Thivanka">
-            <input type="password" id="secretKey" placeholder="Encryption Key">
+            <!-- Dropdown for Hani & Bani -->
+            <select id="username" onchange="loadInitialMessages()">
+                <option value="Hani">Hani</option>
+                <option value="Bani">Bani</option>
+            </select>
+            <input type="password" id="secretKey" placeholder="Encryption Key" value="1234">
         </div>
         <div class="peer-id-badge" id="myPeerId">Initializing peer mesh...</div>
     </div>
@@ -271,7 +280,6 @@
     const SUPABASE_URL = 'https://hfkwgumcdgpsqjjwtxik.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_Jtj7u2jXgqQt1oIC3P-pTg_nsF_foAQ';
     
-    // Updated Supabase Instance
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let peer, localStream;
 
@@ -322,7 +330,7 @@
     }
 
     async function sendMessage() {
-        const username = document.getElementById('username').value.trim() || 'Anonymous';
+        const username = document.getElementById('username').value;
         const secretKey = document.getElementById('secretKey').value;
         const msgInput = document.getElementById('messageInput');
         const text = msgInput.value.trim();
@@ -348,7 +356,7 @@
 
     function renderMessage(data) {
         const secretKey = document.getElementById('secretKey').value;
-        const currentUsername = document.getElementById('username').value.trim();
+        const currentUsername = document.getElementById('username').value;
         const messageList = document.getElementById('messageList');
 
         let decrypted = "••••••••";
@@ -375,7 +383,6 @@
         if (data) data.forEach(renderMessage);
     }
 
-    // Realtime listener setup
     supabaseClient.channel('public:chat_messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
             renderMessage(payload.new);
