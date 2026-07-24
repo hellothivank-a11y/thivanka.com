@@ -921,6 +921,78 @@ input.glass-input:focus {
     pointer-events: all;
 }
 
+.call-input-content {
+    background: var(--ios-card);
+    border: 1px solid var(--ios-border);
+    padding: 24px;
+    border-radius: 20px;
+    width: 320px;
+    max-width: 90%;
+    text-align: center;
+}
+
+.call-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.call-input-group input {
+    flex: 1;
+    background: var(--ios-card-elevated);
+    border: 1px solid var(--ios-border);
+    padding: 12px;
+    border-radius: 12px;
+    color: var(--text-main);
+    font-size: 14px;
+    outline: none;
+}
+
+.paste-btn {
+    background: var(--ios-card-elevated);
+    border: 1px solid var(--ios-border);
+    color: var(--ios-blue);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-ios);
+}
+
+.paste-btn:hover {
+    background: var(--ios-border);
+}
+
+.call-modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.call-modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition-ios);
+}
+
+.call-modal-btn.cancel {
+    background: var(--ios-card-elevated);
+    color: var(--text-main);
+}
+
+.call-modal-btn.connect {
+    background: var(--ios-blue);
+    color: #fff;
+}
+
 .caller-avatar {
     width: 96px;
     height: 96px;
