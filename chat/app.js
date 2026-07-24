@@ -490,8 +490,60 @@ function initPeer() {
     });
 }
 
-function initiateCall() {
-    if (!partnerPeerId) {
+// --- DYNAMIC PEER ID MANUAL CALL UI ---
+
+function copyMyPeerId() {
+    if (currentMyId) {
+        navigator.clipboard.writeText(currentMyId).then(() => {
+            showToast("Peer ID copied!");
+        }).catch(err => {
+            console.error("Could not copy text: ", err);
+            showToast("Failed to copy Peer ID.");
+        });
+    } else {
+        showToast("Generating Peer ID...");
+    }
+}
+
+function openCallModal() {
+    document.getElementById('callInputModal').classList.add('active');
+    setTimeout(() => {
+        document.getElementById('partnerIdInputModal').focus();
+    }, 100);
+}
+
+function closeCallModal() {
+    document.getElementById('callInputModal').classList.remove('active');
+    document.getElementById('partnerIdInputModal').value = '';
+}
+
+async function pastePartnerId() {
+    try {
+        const text = await navigator.clipboard.readText();
+        const input = document.getElementById('partnerIdInputModal');
+        input.value = text.trim();
+        if (input.value) {
+            executeCall();
+        }
+    } catch (err) {
+        console.error('Failed to read clipboard contents: ', err);
+        showToast("Clipboard access denied. Paste manually.");
+    }
+}
+
+function executeCall() {
+    const inputId = document.getElementById('partnerIdInputModal').value.trim();
+    if (inputId) {
+        closeCallModal();
+        initiateCall(inputId);
+    } else {
+        showToast("Please enter a valid Peer ID.");
+    }
+}
+
+function initiateCall(overridePeerId = null) {
+    const targetPeerId = overridePeerId || partnerPeerId;
+    if (!targetPeerId) {
         showToast("Partner is offline or connecting...");
         return;
     }
@@ -507,7 +559,7 @@ function initiateCall() {
 
         document.getElementById('videoCanvas').classList.add('active');
         
-        const call = peer.call(partnerPeerId, stream);
+        const call = peer.call(targetPeerId, stream);
         currentCall = call;
 
         setupCallListeners(call);
