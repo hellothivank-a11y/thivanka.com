@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#070b13">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Oasis">
+    <title>Oasis — Private Couple Space</title>
+    <!-- PWA Manifest & App Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+    <!-- CryptoJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- PeerJS -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- PANIC SCREEN -->
+    <div class="panic-screen" id="panicScreen">System locked. Double-click to restore.</div>
+
+    <!-- ONBOARDING / SETUP OVERLAY -->
+    <div class="setup-overlay" id="setupOverlay">
+        <div class="setup-card">
+            <div class="setup-title">
+                <h1>OASIS</h1>
+                <p>A completely private, end-to-end encrypted space for the two of you.</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Who are you?</label>
+                <div class="user-toggle" id="userToggle">
+                    <div class="user-option active hani-active" onclick="selectUser('Hani')">Hani</div>
+                    <div class="user-option" onclick="selectUser('Bani')">Bani</div>
+                </div>
+            </div>
+
+            <div class="form-group password-wrapper">
+                <label>Secret Shared Key</label>
+                <input type="password" id="secretKeyInput" class="glass-input" placeholder="Type a key known only to you two..." value="1234">
+                <button class="pwd-toggle-btn" id="pwdToggle" onclick="togglePasswordVisibility()">
+                    <!-- eye icon -->
+                    <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <!-- eye off icon (hidden initially) -->
+                    <svg id="eyeClosedIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+            </div>
+
+            <!-- Emoji fingerprint verification box -->
+            <div class="fingerprint-box">
+                <div class="fingerprint-label">Encryption Safety Code</div>
+                <div class="fingerprint-emojis" id="fingerprintPreview">🔐✨🌸🤍💎</div>
+                <div class="fingerprint-label" style="font-size:0.55rem; color:var(--text-muted); margin-top:2px;">Both partners must see the same emojis</div>
+            </div>
+
+            <button class="enter-btn" onclick="enterOasis()">ENTER OASIS</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="app-container" id="appContainer">
+        
+        <!-- IMMERSIVE VIDEO CANVAS -->
+        <div class="video-canvas" id="videoCanvas">
+            <div class="partner-view">
+                <video id="remoteVideo" autoplay playsinline></video>
+            </div>
+
+            <!-- Self PIP View -->
+            <div class="self-view" id="selfView">
+                <video id="localVideo" autoplay muted playsinline></video>
+            </div>
+
+            <!-- Video Overlay Control Panel -->
+            <div class="video-overlay-controls">
+                <button class="control-circle-btn" id="toggleAudioBtn" onclick="toggleLocalAudio()" title="Mute Mic">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                </button>
+                <button class="control-circle-btn" id="toggleVideoBtn" onclick="toggleLocalVideo()" title="Toggle Camera">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+                <button class="control-circle-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                </button>
+                <button class="control-circle-btn off" onclick="endCall()" title="End Call">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- APP HEADER -->
+        <div class="app-header">
+            <div class="brand-bar">
+                <h2 id="spaceTitle">OASIS SPACE</h2>
+                <div class="header-actions">
+                    <!-- Status Badge -->
+                    <div class="status-badge">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="partnerStatusLabel">Offline</span>
+                    </div>
+
+                    <!-- Call Button -->
+                    <button class="icon-btn" onclick="initiateCall()" title="Call Partner">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
+
+                    <!-- Dropdown Trigger -->
+                    <div class="dropdown-wrapper">
+                        <button class="icon-btn" onclick="toggleMenu(event)" title="Settings">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        </button>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <button class="dropdown-item" onclick="copyMyId()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                Copy My Peer ID
+                            </button>
+                            <button class="dropdown-item" onclick="pairWithPartner()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                                Pair Partner ID
+                            </button>
+                            <button class="dropdown-item" onclick="showSettingsSetup()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                Setup Space
+                            </button>
+                            <button class="dropdown-item" id="notificationBtn" onclick="requestNotificationPermission()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                Enable Push Notifications
+                            </button>
+                            <button class="dropdown-item" id="installPwaBtn" onclick="triggerPwaInstall()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Install App on Mobile
+                            </button>
+                            <hr style="border:0; border-top:1.5px solid var(--glass-border); margin:4px 0;">
+                            <button class="dropdown-item danger" onclick="clearAllMessages()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                Clear Chat
+                            </button>
+                            <button class="dropdown-item danger" onclick="triggerPanic()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                Panic Lock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub header displaying safety emoji matching and Peer ID info -->
+            <div class="sub-header-bar">
+                <div>Code: <span class="fingerprint-preview" id="headerFingerprint">•••••</span></div>
+                <div id="peerInfoDisplay">Initializing space...</div>
+            </div>
+        </div>
+
+        <!-- SPATIAL CHAT CONTAINER -->
+        <div class="chat-container" id="messageList"></div>
+
+        <!-- TYPING INDICATOR -->
+        <div class="typing-bubble" id="typingIndicator" style="display: none;">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+
+        <!-- CHAT FOOTER & INPUTS -->
+        <div class="chat-footer">
+            <div class="input-container-wrapper">
+                
+                <!-- Left actions: Attachments / Audio -->
+                <div class="chat-actions-left">
+                    <!-- Image Input File Trigger -->
+                    <button class="attachment-btn" onclick="triggerImageUpload()" title="Send Image">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    </button>
+                    <!-- Audio Recorder Button -->
+                    <button class="attachment-btn" id="audioRecordBtn" title="Hold to record voice note">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    </button>
+                </div>
+                
+                <!-- Hidden inputs -->
+                <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFileSelect(event)">
+                
+                <!-- Text input -->
+                <input type="text" id="messageInput" class="chat-input" placeholder="Whisper something sweet..." onkeypress="handleInputKeyPress(event)" oninput="handleInputTyping()">
+                
+                <!-- Send button inside container -->
+                <button class="send-circle-btn" onclick="sendMessage()" title="Send Message">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INCOMING CALL RING OVERLAY -->
+    <div class="call-modal" id="incomingCallModal">
+        <div class="caller-avatar" id="callerAvatar"></div>
+        <div class="caller-name" id="callerNameLabel">Partner</div>
+        <div class="call-status-label" id="callStatusLabel">Calling securely...</div>
+        <div class="call-actions-row">
+            <button class="call-action-circle decline" onclick="declineCall()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
+            </button>
+            <button class="call-action-circle accept" onclick="acceptCall()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-msg" id="toastMessage">Toast content</div>
+
+    <!-- IMAGE LIGHTBOX MODAL -->
+    <div class="img-modal" id="imageModal" onclick="closeImageModal()">
+        <span class="img-modal-close" onclick="closeImageModal()">&times;</span>
+        <img class="img-modal-content" id="imageModalTarget" src="" alt="Zoomed view">
+    </div>
+
+    <!-- PWA INSTALLATION MODAL -->
+    <div class="pwa-modal" id="pwaInstallModal">
+        <div class="pwa-card">
+            <span class="pwa-close" onclick="closePwaModal()">&times;</span>
+            <img src="icon-192.png" alt="Oasis Icon" class="pwa-app-icon">
+            <h3>Install Oasis App</h3>
+            <p>Get a full-screen native mobile experience with fast access, smooth gestures, and instant background notifications.</p>
+            
+            <!-- Android / Desktop Install Action -->
+            <div id="pwaNativeInstallBox" style="display:none; margin-top:16px;">
+                <button class="enter-btn" onclick="executeNativePwaInstall()">INSTALL NOW</button>
+            </div>
+            
+            <!-- iOS Safari Instructions -->
+            <div id="pwaIosGuideBox" style="display:none; margin-top:16px; text-align:left;">
+                <div class="pwa-step">
+                    <span class="step-num">1</span>
+                    <span>Tap the <strong>Share</strong> button in Safari's bottom toolbar.</span>
+                </div>
+                <div class="pwa-step">
+                    <span class="step-num">2</span>
+                    <span>Scroll down and select <strong>Add to Home Screen</strong>.</span>
+                </div>
+                <div class="pwa-step">
+                    <span class="step-num">3</span>
+                    <span>Tap <strong>Add</strong> in the top-right corner to install!</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Application Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

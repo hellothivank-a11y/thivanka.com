@@ -1,0 +1,24 @@
+{
+  "name": "Oasis — Private Couple Space",
+  "short_name": "Oasis",
+  "description": "A private, end-to-end encrypted chat and calling space for couples.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070b13",
+  "theme_color": "#070b13",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
