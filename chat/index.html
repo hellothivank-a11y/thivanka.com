@@ -137,10 +137,7 @@
                     </div>
 
                     <!-- Call Button -->
-                    <button class="icon-btn" onclick="copyMyPeerId()" title="Copy My ID">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    </button>
-                    <button class="icon-btn" onclick="openCallModal()" title="Call Partner">
+                    <button class="icon-btn" onclick="initiateCall()" title="Call Partner">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     </button>
 
@@ -227,24 +224,6 @@
             <button class="call-action-circle accept" onclick="acceptCall()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             </button>
-        </div>
-    </div>
-
-    <!-- CALL INPUT MODAL -->
-    <div class="call-modal" id="callInputModal">
-        <div class="call-input-content">
-            <h3>Connect Securely</h3>
-            <p style="color: var(--ios-gray); font-size: 14px; margin-bottom: 20px;">Enter your partner's Peer ID to initiate an encrypted WebRTC call.</p>
-            <div class="call-input-group">
-                <input type="text" id="partnerIdInputModal" placeholder="Partner's Peer ID..." />
-                <button class="paste-btn" onclick="pastePartnerId()" title="Paste ID">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-                </button>
-            </div>
-            <div class="call-modal-actions">
-                <button class="call-modal-btn cancel" onclick="closeCallModal()">Cancel</button>
-                <button class="call-modal-btn connect" onclick="executeCall()">Connect</button>
-            </div>
         </div>
     </div>
 
