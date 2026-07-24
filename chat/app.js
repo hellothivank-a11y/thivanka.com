@@ -24,7 +24,9 @@ let audioChunks = [];
 const AUDIO_CONSTRAINTS = {
     echoCancellation: true,
     noiseSuppression: true,
-    autoGainControl: true
+    autoGainControl: true,
+    sampleRate: 48000,
+    channelCount: 1
 };
 
 // Initialize Dexie IndexedDB for local message caching
@@ -102,6 +104,33 @@ window.addEventListener('DOMContentLoaded', () => {
         audioBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             stopVoiceRecording();
+        });
+    }
+
+    // --- MOBILE KEYBOARD VIEWPORT FIX ---
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            const appContainer = document.getElementById('appContainer');
+            if (appContainer) {
+                appContainer.style.height = `${window.visualViewport.height}px`;
+            }
+            // Auto scroll chat list to latest message when keyboard pops up
+            const messageList = document.getElementById('messageList');
+            if (messageList) {
+                messageList.scrollTop = messageList.scrollHeight;
+            }
+        });
+    }
+
+    const msgInput = document.getElementById('messageInput');
+    if (msgInput) {
+        msgInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                const messageList = document.getElementById('messageList');
+                if (messageList) {
+                    messageList.scrollTop = messageList.scrollHeight;
+                }
+            }, 150); // slight delay to allow keyboard animation to finish
         });
     }
 
@@ -456,7 +485,15 @@ function fallbackDirectNotification(title, options) {
 function initPeer() {
     if (peer) return;
 
-    peer = new Peer();
+    peer = new Peer({
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        }
+    });
     
     peer.on('open', id => {
         currentMyId = id;
