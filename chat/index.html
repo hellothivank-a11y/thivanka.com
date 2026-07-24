@@ -76,7 +76,7 @@
             object-fit: cover;
         }
 
-        /* Draggable PIP Self View with Touch Safety */
+        /* Draggable PIP Self View */
         .self-view {
             position: absolute;
             top: 16px;
@@ -91,11 +91,10 @@
             box-shadow: 0 12px 30px rgba(0,0,0,0.6);
             z-index: 20;
             cursor: grab;
-            touch-action: none;
             transition: transform 0.2s ease;
         }
 
-        .self-view:active { cursor: grabbing; transform: scale(1.03); }
+        .self-view:active { cursor: grabbing; transform: scale(1.05); }
 
         .self-view video {
             width: 100%;
@@ -306,6 +305,7 @@
 
         .msg-bubble a { color: var(--accent-cyan); text-decoration: underline; word-break: break-all; }
 
+        /* --- FOOTER INPUT --- */
         .chat-footer {
             padding: 12px 16px;
             border-top: 1px solid var(--glass-border);
@@ -332,6 +332,7 @@
 <body>
 
 <div class="app-container" id="appContainer">
+    <!-- IMMERSIVE VIDEO CANVAS -->
     <div class="video-canvas" id="videoCanvas">
         <div class="partner-view">
             <video id="remoteVideo" autoplay playsinline></video>
@@ -348,9 +349,10 @@
         </div>
     </div>
 
+    <!-- CONTROL HEADER -->
     <div class="app-header">
         <div class="brand-bar">
-            <h2>OASIS SPACE</h2>
+            <h2>OASIS SPACE 2.0</h2>
             <div class="status-badge">
                 <div class="status-dot" id="statusDot" title="Partner Status"></div>
                 <button class="menu-dots" onclick="toggleMenu(event)">⋮</button>
@@ -370,8 +372,10 @@
         <div class="peer-info" id="myPeerId">Initializing secure space...</div>
     </div>
 
+    <!-- CHAT MESSAGES -->
     <div class="chat-container" id="messageList"></div>
 
+    <!-- CHAT FOOTER -->
     <div class="chat-footer">
         <input type="text" id="messageInput" placeholder="Whisper something sweet..." onkeypress="if(event.key==='Enter') sendMessage(event)">
         <button class="send-btn" onmousedown="event.preventDefault(); sendMessage(event);" onclick="sendMessage(event)">SEND</button>
@@ -385,17 +389,16 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let peer, localStream, currentMyId = '';
     let heartbeatInterval;
-    let activeChannel = null;
 
-    // Zero Footprint Clean-up
+    // --- ZERO FOOTPRINT & PRIVACY (Wipe out data on exit) ---
     window.addEventListener('beforeunload', () => {
+        // Clear sensitive volatile keys from local storage
         localStorage.removeItem('oasis_temp_session');
         sessionStorage.clear();
     });
 
-    // Safe Boundary Draggable PIP
+    // Draggable Self-View (PIP)
     const selfView = document.getElementById("selfView");
-    const videoCanvas = document.getElementById("videoCanvas");
     let isDragging = false, offsetStartX, offsetStartY, initialLeft, initialTop;
 
     selfView.addEventListener("mousedown", startDrag);
@@ -410,7 +413,7 @@
         offsetStartY = clientY;
         
         const rect = selfView.getBoundingClientRect();
-        const parentRect = videoCanvas.getBoundingClientRect();
+        const parentRect = document.getElementById("videoCanvas").getBoundingClientRect();
         
         initialLeft = rect.left - parentRect.left;
         initialTop = rect.top - parentRect.top;
@@ -431,18 +434,8 @@
         const deltaX = clientX - offsetStartX;
         const deltaY = clientY - offsetStartY;
 
-        const parentRect = videoCanvas.getBoundingClientRect();
-        const rect = selfView.getBoundingClientRect();
-
-        let newLeft = initialLeft + deltaX;
-        let newTop = initialTop + deltaY;
-
-        // Strict Boundary Clamp
-        newLeft = Math.max(8, Math.min(newLeft, parentRect.width - rect.width - 8));
-        newTop = Math.max(8, Math.min(newTop, parentRect.height - rect.height - 8));
-
-        selfView.style.left = `${newLeft}px`;
-        selfView.style.top = `${newTop}px`;
+        selfView.style.left = `${initialLeft + deltaX}px`;
+        selfView.style.top = `${initialTop + deltaY}px`;
         selfView.style.right = 'auto';
     }
 
@@ -594,9 +587,10 @@
         const formattedText = linkify(decrypted);
 
         let timeString = "";
-        const rawTime = data.created_at || new Date().toISOString();
-        const date = new Date(rawTime);
-        timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (data.created_at) {
+            const date = new Date(data.created_at);
+            timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
 
         const msgDiv = document.createElement('div');
         const isSelf = data.sender === currentUsername;
@@ -665,28 +659,24 @@
         checkPartnerStatus();
     }
 
-    function subscribeRealtime() {
-        if (activeChannel) supabaseClient.removeChannel(activeChannel);
-
-        activeChannel = supabaseClient.channel('public:chat_messages')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
-                renderMessage(payload.new);
-            }).subscribe();
-    }
-
     function onUserChange() {
         loadInitialMessages();
         setupStatusTracking();
-        subscribeRealtime();
     }
+
+    supabaseClient.channel('public:chat_messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, payload => {
+            renderMessage(payload.new);
+        }).subscribe();
 
     document.getElementById('secretKey').addEventListener('input', loadInitialMessages);
 
     loadInitialMessages();
     setupStatusTracking();
-    subscribeRealtime();
     initPeer();
 </script>
 
 </body>
 </html>
+
+
