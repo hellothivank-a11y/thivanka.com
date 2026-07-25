@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FaceTime Web - Direct ID</title>
+    <title>FaceTime Web - Auto-Connect</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,24 +23,22 @@
             <div style="margin: 0 auto 24px; width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); overflow: hidden;">
                 <img src="icon-192.png" alt="Logo" width="100%" height="100%" style="object-fit: cover; display: block;">
             </div>
-            <h2>Secure Connection</h2>
+            <h2>Secure Room</h2>
             
-            <div class="id-section">
-                <p class="section-label">Your Secure ID</p>
-                <div class="id-display-group">
-                    <span id="my-id-display">Generating...</span>
-                    <button id="btn-copy-id" class="icon-btn" title="Copy ID">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                    </button>
+            <!-- Role Selection (Shown if no role saved) -->
+            <div id="role-selection" class="id-section">
+                <p class="section-label" style="text-align: center;">Select Your Identity</p>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                    <button id="btn-role-a" class="primary-btn" style="background: rgba(255,255,255,0.15);">I am User A</button>
+                    <button id="btn-role-b" class="primary-btn" style="background: rgba(255,255,255,0.15);">I am User B</button>
                 </div>
             </div>
 
-            <div class="id-section" style="margin-top: 32px;">
-                <p class="section-label">Call a Partner</p>
-                <div class="input-group">
-                    <input type="text" id="partner-id-input" placeholder="Enter Partner's ID" autocomplete="off" spellcheck="false" />
-                </div>
-                <button id="btn-start-call" class="primary-btn">Start Video Call</button>
+            <!-- Join Room (Shown once role is selected) -->
+            <div id="join-section" class="id-section hidden" style="text-align: center;">
+                <p class="section-label" style="text-align: center; margin-bottom: 16px;">You are <span id="current-role-display" style="color: var(--ios-green);">User A</span></p>
+                <button id="btn-join-room" class="primary-btn">Join Secure Room</button>
+                <button id="btn-change-role" style="margin-top: 16px; font-size: 13px; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">Change Role</button>
             </div>
         </div>
     </div>
@@ -52,8 +50,8 @@
         
         <!-- Call Header -->
         <div class="call-header">
-            <span id="call-status">Connecting...</span>
-            <span id="call-duration">00:00</span>
+            <span id="call-status">Waiting for partner...</span>
+            <span id="call-duration" class="hidden">00:00</span>
         </div>
 
         <!-- Draggable PiP Self-View -->
@@ -75,32 +73,6 @@
             <button id="btn-end-call" class="dock-btn btn-danger" title="End Call">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
             </button>
-        </div>
-    </div>
-
-    <!-- Incoming Call Overlay -->
-    <div id="incoming-call-overlay" class="incoming-overlay hidden">
-        <div class="incoming-card glass-modal">
-            <div class="avatar-ring">
-                <div class="avatar-pulse"></div>
-                <div class="avatar-initial" id="incoming-caller-initial">?</div>
-            </div>
-            <h2>Incoming Call</h2>
-            <p id="incoming-caller-id">Unknown ID</p>
-            <div class="call-actions">
-                <div class="action-group">
-                    <button id="btn-decline-call" class="action-btn decline">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                    </button>
-                    <span>Decline</span>
-                </div>
-                <div class="action-group">
-                    <button id="btn-accept-call" class="action-btn accept">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    </button>
-                    <span>Accept</span>
-                </div>
-            </div>
         </div>
     </div>
 
