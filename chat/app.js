@@ -130,6 +130,16 @@ window.addEventListener('DOMContentLoaded', () => {
     // Mobile keyboard viewport fix
     setupVisualViewportFix();
 
+    // Setup Emoji Picker element event listener
+    const picker = document.getElementById('emojiPickerComponent');
+    if (picker) {
+        picker.addEventListener('emoji-click', event => {
+            if (event.detail && event.detail.unicode) {
+                insertEmoji(event.detail.unicode);
+            }
+        });
+    }
+
     // Global key / interaction listeners
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') triggerPanic();
@@ -884,18 +894,16 @@ function insertEmoji(emoji) {
     const input = document.getElementById(activeTargetInputId) || document.getElementById('messageInput');
     if (!input) return;
 
-    const start = input.selectionStart || input.value.length;
-    const end   = input.selectionEnd   || input.value.length;
+    const start = input.selectionStart ?? input.value.length;
+    const end   = input.selectionEnd   ?? input.value.length;
     const text  = input.value;
 
     input.value = text.substring(0, start) + emoji + text.substring(end);
-    input.selectionStart = input.selectionEnd = start + emoji.length;
+    const newPos = start + emoji.length;
+    input.selectionStart = input.selectionEnd = newPos;
     input.focus();
 
     autoResizeTextarea(input);
-
-    const popup = document.getElementById('emojiPickerPopup');
-    if (popup) popup.classList.remove('show');
 }
 
 window.addEventListener('click', (e) => {
