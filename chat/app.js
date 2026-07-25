@@ -103,15 +103,21 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── Persistent login ──────────────────────────────────────────
-    const savedUser = localStorage.getItem('oasis_user');
-    const savedKey  = localStorage.getItem('oasis_key');
+    // ── Persistent Profile Selection & Auto-Bypass ───────────
+    const savedActiveUser = localStorage.getItem('oasis_active_user') || localStorage.getItem('oasis_user');
+    const savedKey        = localStorage.getItem('oasis_key');
 
-    if (savedUser && savedKey) {
-        document.getElementById('secretKeyInput').value = savedKey;
-        selectUser(savedUser);
-        enterOasis();
+    if (savedActiveUser) {
+        selectUser(savedActiveUser);
+        if (savedKey) {
+            document.getElementById('secretKeyInput').value = savedKey;
+        } else {
+            localStorage.setItem('oasis_key', '1234');
+            document.getElementById('secretKeyInput').value = '1234';
+        }
+        enterOasis(); // Auto-bypass setup screen immediately!
     } else {
+        selectUser('Hani');
         updateSafetyFingerprint();
     }
 
@@ -185,13 +191,15 @@ function setupVisualViewportFix() {
    ═══════════════════════════════════════════════════════════════════ */
 function selectUser(user) {
     currentUsername = user;
-    const options = document.querySelectorAll('.user-option');
-    options.forEach(opt => {
-        opt.classList.remove('active', 'hani-active', 'bani-active');
-        if (opt.innerText.trim() === user) {
-            opt.classList.add('active', user === 'Hani' ? 'hani-active' : 'bani-active');
-        }
-    });
+    localStorage.setItem('oasis_active_user', user);
+    localStorage.setItem('oasis_user',        user);
+
+    const haniCard = document.getElementById('profileHani');
+    const baniCard = document.getElementById('profileBani');
+    if (haniCard && baniCard) {
+        haniCard.className = 'profile-card' + (user === 'Hani' ? ' active hani-active' : '');
+        baniCard.className = 'profile-card' + (user === 'Bani' ? ' active bani-active' : '');
+    }
 }
 
 function updateSafetyFingerprint() {
@@ -234,12 +242,20 @@ function enterOasis() {
     const secretKey = document.getElementById('secretKeyInput').value.trim();
     if (!secretKey) { showToast('Please enter an Encryption Key.'); return; }
 
-    localStorage.setItem('oasis_user', currentUsername);
-    localStorage.setItem('oasis_key',  secretKey);
+    localStorage.setItem('oasis_active_user', currentUsername);
+    localStorage.setItem('oasis_user',        currentUsername);
+    localStorage.setItem('oasis_key',         secretKey);
 
-    document.getElementById('spaceTitle').innerText     = `${currentUsername.toUpperCase()}'S OASIS`;
+    document.getElementById('spaceTitle').innerText        = `${currentUsername.toUpperCase()}'S OASIS`;
     document.getElementById('headerFingerprint').innerText = generateSafetyFingerprint(secretKey);
     document.getElementById('setupOverlay').classList.add('hidden');
+
+    // Destroy previous peer connection if user identity changed
+    const targetMyId = `oasis_${currentUsername.toLowerCase()}`;
+    if (peer && currentMyId !== targetMyId) {
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
+    }
 
     initPeer();
     loadInitialMessages();
@@ -837,6 +853,59 @@ function sendCallChatMessage() {
     sendMessage();
     mainInput.value = prev;
 }
+
+// ── Quick Emoji Picker Shortcut ────────────────────────────────────
+let activeTargetInputId = 'messageInput';
+
+function toggleEmojiPicker(e, isInCall = false) {
+    if (e) e.stopPropagation();
+    activeTargetInputId = isInCall ? 'callChatInput' : 'messageInput';
+    const popup = document.getElementById('emojiPickerPopup');
+    if (!popup) return;
+
+    const isShowing = popup.classList.contains('show');
+    if (isShowing) {
+        popup.classList.remove('show');
+    } else {
+        if (isInCall) {
+            popup.style.bottom = '80px';
+            popup.style.left = '16px';
+            popup.style.zIndex = '1200';
+        } else {
+            popup.style.bottom = '75px';
+            popup.style.left = '16px';
+            popup.style.zIndex = '900';
+        }
+        popup.classList.add('show');
+    }
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById(activeTargetInputId) || document.getElementById('messageInput');
+    if (!input) return;
+
+    const start = input.selectionStart || input.value.length;
+    const end   = input.selectionEnd   || input.value.length;
+    const text  = input.value;
+
+    input.value = text.substring(0, start) + emoji + text.substring(end);
+    input.selectionStart = input.selectionEnd = start + emoji.length;
+    input.focus();
+
+    autoResizeTextarea(input);
+
+    const popup = document.getElementById('emojiPickerPopup');
+    if (popup) popup.classList.remove('show');
+}
+
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('#emojiPickerPopup') && !e.target.closest('#emojiBtn') && !e.target.closest('#callEmojiBtn')) {
+        const popup = document.getElementById('emojiPickerPopup');
+        if (popup && popup.classList.contains('show')) {
+            popup.classList.remove('show');
+        }
+    }
+});
 
 function handleRemoteVideoClick() {
     const callScreen = document.getElementById('callScreen');
