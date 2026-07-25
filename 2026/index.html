@@ -8,18 +8,15 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: #121212; color: #e0e0e0; display: flex; flex-direction: column; min-height: 100vh; padding: 10px; }
-        
         .setup-box { background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 10px; }
         input { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white; margin: 5px; width: 80%; max-width: 250px; }
         button { padding: 10px 15px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; margin: 5px; }
         .btn-host { background: #28a745; color: white; }
         .btn-join { background: #007bff; color: white; }
-        
         .container { display: flex; flex: 1; gap: 10px; flex-wrap: wrap; }
         .video-section { flex: 2; min-width: 300px; display: flex; justify-content: center; align-items: center; background: #1e1e1e; border-radius: 10px; padding: 10px; }
         .video-grid { display: flex; width: 100%; gap: 10px; justify-content: center; flex-wrap: wrap; }
         video { width: 48%; max-width: 450px; border-radius: 8px; background: #000; object-fit: cover; aspect-ratio: 16/9; }
-        
         .chat-section { flex: 1; min-width: 280px; background: #1e1e1e; border-radius: 10px; display: flex; flex-direction: column; padding: 10px; height: 350px; }
         .chat-box { flex: 1; overflow-y: auto; background: #121212; border-radius: 5px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         .message { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-break: break-word; font-size: 14px; }
@@ -33,7 +30,7 @@
 
     <div class="setup-box">
         <h3>🔒 Private Call & Chat</h3>
-        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">දෙන්නම එකම Secret Room Name එක පාවිච්චි කරන්න.</p>
+        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">දෙන්නම එකම Room Name එක පාවිච්චි කරන්න.</p>
         <input type="text" id="room-id" placeholder="Secret Room Name (eg: love123)">
         <br>
         <button class="btn-host" onclick="startHost()">1. Start Room (Host)</button>
@@ -64,38 +61,47 @@
         let conn = null;
         let localStream = null;
 
-        // Get Camera/Mic Access
+        // PeerJS Config with Google Free STUN Servers (Fixes NAT/Firewall blocking)
+        const peerConfig = {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' }
+                ]
+            }
+        };
+
+        // Camera Access
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
             localStream = stream;
             document.getElementById('localVideo').srcObject = stream;
         }).catch(err => alert("Camera/Mic Permission ලබාදෙන්න!"));
 
-        // 1. First person creates room with the given Room Name
+        // 1. Host Starts Room
         function startHost() {
             const roomName = document.getElementById('room-id').value.trim();
             if (!roomName) return alert("Secret Room Name එකක් ගහන්න!");
 
-            peer = new Peer(roomName);
+            peer = new Peer(roomName, peerConfig);
 
             peer.on('open', id => {
-                appendMessage("System", "Room Created! Waiting for partner to join...", "them");
+                appendMessage("System", "Room Created! Waiting for partner to click Join...", "them");
             });
 
             peer.on('error', err => {
                 if(err.type === 'unavailable-id') {
-                    alert("මේ Room Name එක දැනටමත් Active. වෙනත් Name එකක් දාලා ට්‍රයි කරන්න නැත්නම් 'Join Room' ක්ලික් කරන්න.");
+                    alert("මේ Room Name එක දැනටමත් Active. වෙනත් Name එකක් දාලා ට්‍රයි කරන්න.");
                 } else {
                     alert("Error: " + err.type);
                 }
             });
 
-            // Listen for Incoming Connections (Chat)
             peer.on('connection', connection => {
                 conn = connection;
                 setupChat();
             });
 
-            // Listen for Incoming Video Call
             peer.on('call', call => {
                 call.answer(localStream);
                 call.on('stream', remoteStream => {
@@ -104,14 +110,16 @@
             });
         }
 
-        // 2. Second person joins the host
+        // 2. Joiner Joins Room
         function joinRoom() {
             const roomName = document.getElementById('room-id').value.trim();
             if (!roomName) return alert("Secret Room Name එකක් ගහන්න!");
 
-            peer = new Peer(); // Random ID for joiner
+            peer = new Peer(peerConfig);
 
             peer.on('open', id => {
+                appendMessage("System", "Connecting to Host...", "them");
+                
                 // Connect Chat
                 conn = peer.connect(roomName);
                 setupChat();
