@@ -79,7 +79,7 @@ button {
 
 .primary-btn:active {
     transform: scale(0.96);
-    background: #007aff;
+    filter: brightness(0.9);
 }
 
 /* ==========================================================================
