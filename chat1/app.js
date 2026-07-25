@@ -96,7 +96,7 @@ DOM.btnJoinRoom.addEventListener('click', async () => {
         await setupLocalMedia();
         showCallScreen();
         
-        // Setup PeerJS with STUN servers
+        // Setup PeerJS with robust STUN configuration
         State.peer = new Peer(State.myRole, {
             debug: 1,
             config: {
@@ -105,7 +105,8 @@ DOM.btnJoinRoom.addEventListener('click', async () => {
                     { urls: 'stun:stun1.l.google.com:19302' },
                     { urls: 'stun:stun2.l.google.com:19302' },
                     { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' }
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
                 ]
             }
         });
@@ -115,12 +116,15 @@ DOM.btnJoinRoom.addEventListener('click', async () => {
             startPollingPartner();
         });
         
-        // Listen for incoming calls (Both User A and User B listen)
+        // Listen for incoming calls
         State.peer.on('call', handleIncomingCall);
         
         State.peer.on('error', (err) => {
             if (err.type === 'peer-unavailable') {
-                // Ignore silent polling errors when partner is not yet online
+                // Peer unavailable happens when calling an offline user. Reset State.call so we can retry.
+                if (State.call && !State.remoteStream) {
+                    State.call = null;
+                }
                 return;
             }
             console.error('PeerJS Error:', err);
@@ -159,21 +163,28 @@ function startPollingPartner() {
         const outCall = State.peer.call(State.partnerId, State.localStream);
         
         if (outCall) {
+            // Lock State.call immediately to prevent spamming new calls during negotiation
+            State.call = outCall;
+            
             outCall.on('stream', (remoteStream) => {
                 console.log('User A connected to User B stream!');
-                State.call = outCall;
                 stopPollingPartner();
                 handleStreamConnected(remoteStream);
             });
             
             outCall.on('close', () => {
-                if (State.call === outCall) resetToWaitingRoom();
+                resetToWaitingRoom();
+            });
+
+            outCall.on('error', (err) => {
+                console.warn('Call error:', err);
+                State.call = null;
             });
         }
     };
 
     attemptCall();
-    State.pollingInterval = setInterval(attemptCall, 3000);
+    State.pollingInterval = setInterval(attemptCall, 4000);
 }
 
 function stopPollingPartner() {
@@ -206,16 +217,28 @@ function handleIncomingCall(inCall) {
     inCall.on('close', () => {
         resetToWaitingRoom();
     });
+
+    inCall.on('error', (err) => {
+        console.error('Incoming call error:', err);
+        resetToWaitingRoom();
+    });
 }
 
 function handleStreamConnected(remoteStream) {
-    if (State.remoteStream === remoteStream) return;
+    if (!remoteStream) return;
     
+    console.log('Binding remote stream to video element');
     State.remoteStream = remoteStream;
     DOM.remoteVideo.srcObject = remoteStream;
     
-    // Play video explicitly to bypass browser autoplay restrictions
-    DOM.remoteVideo.play().catch(e => console.log('Video play error:', e));
+    // Autoplay handling with fallback
+    DOM.remoteVideo.play().then(() => {
+        console.log('Remote video playing cleanly!');
+    }).catch(err => {
+        console.warn('Autoplay blocked unmuted video playback, retrying muted:', err);
+        DOM.remoteVideo.muted = true;
+        DOM.remoteVideo.play().catch(e => console.error('Video play error:', e));
+    });
     
     // Update UI
     DOM.callStatus.textContent = '';
@@ -241,15 +264,16 @@ function resetToWaitingRoom() {
 
 // --- 4. Video & Audio Setup ---
 async function setupLocalMedia() {
-    if (State.localStream) return;
+    if (State.localStream) return State.localStream;
     
     const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, 
-        audio: { noiseSuppression: false, echoCancellation: true } 
+        audio: true
     });
     
     State.localStream = stream;
     DOM.localVideo.srcObject = stream;
+    return stream;
 }
 
 function showCallScreen() {
