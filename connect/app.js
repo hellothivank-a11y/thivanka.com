@@ -20,7 +20,7 @@ const rtcConfig = {
 };
 
 // ── State ────────────────────────────────────────────────────────
-let supabase = null;
+let sb = null;  // Supabase client (renamed to avoid conflict with window.supabase CDN global)
 let currentUser = null;         // "Honey" | "Bunny"
 let partnerUser = null;
 let localStream = null;
@@ -45,11 +45,16 @@ let presenceChannel = null;
 //  INIT
 // ════════════════════════════════════════════════════════════════
 window.addEventListener("DOMContentLoaded", () => {
-    // Safely access the Supabase library (loaded via CDN as window.supabase)
-    const _supabase = window.supabase ?? window.supabaseJs;
-    supabase = _supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // The Supabase CDN exposes window.supabase as the namespace with createClient on it
+    const supabaseLib = window.supabase ?? window.supabaseJs;
+    if (!supabaseLib || !supabaseLib.createClient) {
+        alert("Supabase library failed to load. Check your internet connection.");
+        return;
+    }
+    sb = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     selectUser("Honey");
+    initPipDrag();  // Init AFTER DOM is ready
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -166,7 +171,7 @@ function updateIdleState() {
 function broadcastPresence() {
     if (presenceChannel) presenceChannel.unsubscribe();
 
-    presenceChannel = supabase.channel(`presence:${currentUser}`, {
+    presenceChannel = sb.channel(`presence:${currentUser}`, {
         config: { presence: { key: currentUser } }
     });
 
@@ -178,7 +183,7 @@ function broadcastPresence() {
 }
 
 function watchPartnerPresence() {
-    const watchCh = supabase.channel(`presence:${partnerUser}`, {
+    const watchCh = sb.channel(`presence:${partnerUser}`, {
         config: { presence: { key: partnerUser } }
     });
 
@@ -227,7 +232,7 @@ async function initChat() {
 
     // Realtime listener
     if (chatChannel) chatChannel.unsubscribe();
-    chatChannel = supabase.channel("public:messages")
+    chatChannel = sb.channel("public:messages")
         .on("postgres_changes", {
             event: "INSERT",
             schema: "public",
@@ -386,7 +391,7 @@ async function startCall(type) {
 
         // Wait for answer
         if (callChannel) callChannel.unsubscribe();
-        callChannel = supabase.channel(`call:${currentCallId}`)
+        callChannel = sb.channel(`call:${currentCallId}`)
             .on("postgres_changes", {
                 event: "UPDATE",
                 schema: "public",
@@ -428,7 +433,7 @@ async function startCall(type) {
 //  WEBRTC — LISTEN FOR INCOMING CALLS
 // ════════════════════════════════════════════════════════════════
 function listenForCalls() {
-    supabase.channel("public:calls:incoming")
+    sb.channel("public:calls:incoming")
         .on("postgres_changes", {
             event: "INSERT",
             schema: "public",
@@ -458,7 +463,7 @@ function showIncomingCallUI(call) {
 
 function declineCall() {
     if (pendingCall) {
-        supabase.from("calls").update({ status: "declined" }).eq("id", pendingCall.id);
+        sb.from("calls").update({ status: "declined" }).eq("id", pendingCall.id);
         pendingCall = null;
     }
     document.getElementById("incoming-call-overlay").classList.add("hidden");
@@ -512,7 +517,7 @@ async function acceptCall() {
 
         // Watch for status = "ended" from caller
         if (callChannel) callChannel.unsubscribe();
-        callChannel = supabase.channel(`call:answer:${currentCallId}`)
+        callChannel = sb.channel(`call:answer:${currentCallId}`)
             .on("postgres_changes", {
                 event: "UPDATE",
                 schema: "public",
@@ -536,7 +541,7 @@ async function acceptCall() {
             .subscribe();
 
         // Push answer back
-        await supabase.from("calls").update({
+        await sb.from("calls").update({
             answer: { type: answer.type, sdp: answer.sdp },
             status: "active"
         }).eq("id", currentCallId);
@@ -615,7 +620,7 @@ function toggleCamera() {
 async function endCall(remote = false) {
     // Signal other side if we are ending
     if (!remote && currentCallId) {
-        await supabase.from("calls").update({ status: "ended" }).eq("id", currentCallId);
+        await sb.from("calls").update({ status: "ended" }).eq("id", currentCallId);
     }
 
     // Cleanup
@@ -703,7 +708,7 @@ function showToast(msg, duration = 2600) {
 // ════════════════════════════════════════════════════════════════
 //  PiP DRAG (local video tile)
 // ════════════════════════════════════════════════════════════════
-(function initPipDrag() {
+function initPipDrag() {
     const pip = document.getElementById("local-pip");
     let dragging = false, ox = 0, oy = 0;
 
@@ -761,4 +766,4 @@ function showToast(msg, duration = 2600) {
         dragging = false;
         pip.style.transition = "";
     });
-})();
+}
