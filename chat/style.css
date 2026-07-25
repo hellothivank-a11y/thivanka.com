@@ -476,8 +476,17 @@ a { color: var(--ios-blue); text-decoration: none; }
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    margin: 0;
+    border: none;
+    outline: none;
     flex-shrink: 0;
     transition: transform var(--transition-fast);
+}
+
+.call-chat-send-btn svg {
+    transform: translate(-1px, 1px);
+    display: block;
 }
 
 .call-chat-send-btn:active { transform: scale(0.88); }
@@ -557,11 +566,13 @@ a { color: var(--ios-blue); text-decoration: none; }
     inset: 0;
     z-index: 100;
     background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(15px);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
     transition: opacity var(--transition-med);
+    padding: 20px;
 }
 
 .setup-overlay.hidden {
@@ -570,84 +581,102 @@ a { color: var(--ios-blue); text-decoration: none; }
 }
 
 .setup-card {
-    background: var(--bg-card);
-    border: var(--glass-border);
-    border-radius: 28px 28px 0 0;
-    padding: 12px 28px max(28px, var(--safe-bottom)) 28px;
+    background: rgba(28, 28, 30, 0.78);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    padding: 32px 24px;
     width: 100%;
-    max-width: 480px;
+    max-width: 380px;
     display: flex;
     flex-direction: column;
     gap: 18px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    align-items: center;
 }
 
-.ios-sheet-handle {
-    width: 36px;
-    height: 5px;
-    background: rgba(255,255,255,0.25);
-    border-radius: 3px;
-    margin: 0 auto 4px auto;
+.setup-app-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.35);
+    margin-bottom: 2px;
 }
 
-.setup-title h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 4px;
+.setup-app-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.setup-title p {
-    font-size: 0.82rem;
-    color: var(--text-sub);
-    line-height: 1.5;
+.setup-modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+    margin-top: -6px;
 }
 
-.form-group {
+.profile-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+}
+
+.profile-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--ios-border);
+    border-radius: 18px;
+    padding: 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-
-.form-group label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-sub);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-}
-
-.user-toggle {
-    display: flex;
-    background: var(--bg-elevated);
-    border-radius: 14px;
-    padding: 4px;
-    gap: 4px;
-}
-
-.user-option {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-sub);
+    align-items: center;
+    gap: 6px;
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    user-select: none;
 }
 
-.user-option.active.hani-active {
-    background: var(--ios-blue);
+.profile-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.profile-card:active {
+    transform: scale(0.96);
+}
+
+.profile-card.active.hani-active {
+    background: rgba(0, 122, 255, 0.2);
+    border-color: var(--ios-blue);
+    box-shadow: 0 0 16px rgba(0, 122, 255, 0.25);
+}
+
+.profile-card.active.bani-active {
+    background: rgba(191, 90, 242, 0.2);
+    border-color: #BF5AF2;
+    box-shadow: 0 0 16px rgba(191, 90, 242, 0.25);
+}
+
+.profile-card-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.profile-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
     color: #fff;
 }
 
-.user-option.active.bani-active {
-    background: #BF5AF2;
-    color: #fff;
+.profile-card-sub {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
 .password-wrapper {
@@ -1159,13 +1188,73 @@ a { color: var(--ios-blue); text-decoration: none; }
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    margin: 0;
+    border: none;
+    outline: none;
     flex-shrink: 0;
     transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.send-circle-btn svg {
+    transform: translate(-1px, 1px);
+    display: block;
 }
 
 .send-circle-btn:active {
     transform: scale(0.88);
     background: var(--ios-blue-active);
+}
+
+/* ── QUICK EMOJI PICKER POPUP ─────────────────────────────────────── */
+.emoji-picker-popup {
+    position: fixed;
+    bottom: 75px;
+    left: 16px;
+    z-index: 900;
+    background: rgba(28, 28, 30, 0.92);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 10px 12px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.emoji-picker-popup.show {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: all;
+}
+
+.emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    max-width: 320px;
+}
+
+.emoji-item {
+    font-size: 1.4rem;
+    cursor: pointer;
+    text-align: center;
+    padding: 4px;
+    border-radius: 8px;
+    transition: transform 0.15s ease, background 0.15s ease;
+    user-select: none;
+}
+
+.emoji-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(1.2);
+}
+
+.emoji-item:active {
+    transform: scale(0.95);
 }
 
 
