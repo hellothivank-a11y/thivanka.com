@@ -1,536 +1,469 @@
 /**
- * FaceTime Web App - Supabase Realtime Presence + PeerJS Auto-Connect
- * Includes OpenRelay TURN Servers & ICE State Verification
+ * Oasis FaceTime — Supabase DB Signaling + PeerJS WebRTC
+ *
+ * HOW IT WORKS (bulletproof):
+ *  1. User selects role (Husband / Wife) → stored in localStorage.
+ *  2. On "Enter FaceTime":
+ *      a. Camera/mic captured.
+ *      b. PeerJS connects to its cloud broker server → receives a random peer_id.
+ *      c. We UPSERT { username, peer_id, last_seen } into Supabase `online_status` table.
+ *      d. We subscribe to Supabase Realtime changes on `online_status`.
+ *  3. When the PARTNER'S row appears / updates in the DB:
+ *      → Husband (initiator) calls partner's real peer_id via PeerJS.
+ *      → Wife (answerer) auto-answers any incoming PeerJS call.
+ *  4. PeerJS negotiates WebRTC directly (STUN+TURN for NAT traversal).
+ *  5. On disconnect / end-call → row is deleted from `online_status`.
+ *
+ * Supabase setup required (run in SQL editor):
+ *   CREATE TABLE IF NOT EXISTS online_status (
+ *     username TEXT PRIMARY KEY,
+ *     peer_id  TEXT,
+ *     last_seen TIMESTAMPTZ DEFAULT NOW()
+ *   );
+ *   ALTER TABLE online_status ENABLE ROW LEVEL SECURITY;
+ *   CREATE POLICY "public_access" ON online_status FOR ALL USING (true) WITH CHECK (true);
+ *   -- Only add to realtime publication if not already done:
+ *   -- ALTER PUBLICATION supabase_realtime ADD TABLE online_status;
  */
 
-// --- Supabase Config ---
-const SUPABASE_URL = 'https://ufiwakxqrepwnngspjxv.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_Ft_wdmxDIjL9ngoihVFKPA_EnYoD3r8';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* ── Supabase ─────────────────────────────────────── */
+const SUPABASE_URL  = 'https://ufiwakxqrepwnngspjxv.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_Ft_wdmxDIjL9ngoihVFKPA_EnYoD3r8';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// --- Role IDs ---
-const ROLE_HUSBAND = 'oasis_husband';
-const ROLE_WIFE = 'oasis_wife';
+/* ── Roles ────────────────────────────────────────── */
+const HUSBAND = 'husband';
+const WIFE    = 'wife';
 
-// --- State ---
-const State = {
-    myRole: null,        // 'oasis_husband' or 'oasis_wife'
-    targetRole: null,    // opposite of myRole
-    peer: null,
-    call: null,
-    localStream: null,
-    remoteStream: null,
-    presenceChannel: null,
-    isPartnerOnline: false,
-    isMicMuted: false,
-    isCamOff: false,
-    isVoiceIsolationOn: false,
-    callDurationInterval: null,
-    callStartTime: null
-};
+/* ── ICE config (STUN + free TURN relay) ─────────── */
+const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302'  },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    /* Free TURN via Metered OpenRelay — handles all NAT/firewall scenarios */
+    { urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject', credential: 'openrelayproject' },
+];
 
-// --- DOM Elements ---
-const DOM = {
-    connectionScreen: document.getElementById('connection-screen'),
-    callScreen: document.getElementById('call-screen'),
-    roleSelection: document.getElementById('role-selection'),
-    joinSection: document.getElementById('join-section'),
-    currentRoleDisplay: document.getElementById('current-role-display'),
-    btnRoleHusband: document.getElementById('btn-role-husband'),
-    btnRoleWife: document.getElementById('btn-role-wife'),
-    btnChangeRole: document.getElementById('btn-change-role'),
-    btnJoinRoom: document.getElementById('btn-join-room'),
-    localVideo: document.getElementById('local-video'),
-    remoteVideo: document.getElementById('remote-video'),
-    pipContainer: document.getElementById('pip-container'),
-    callStatus: document.getElementById('call-status'),
-    callDuration: document.getElementById('call-duration'),
-    btnIsolation: document.getElementById('btn-voice-isolation'),
-    btnMic: document.getElementById('btn-toggle-mic'),
-    btnCam: document.getElementById('btn-toggle-cam'),
-    btnEndCall: document.getElementById('btn-end-call'),
-    toastNotification: document.getElementById('toast-notification')
-};
+/* ── App State ────────────────────────────────────── */
+let myRole       = null;
+let partnerRole  = null;
+let peer         = null;       // PeerJS instance
+let myPeerId     = null;       // PeerJS-assigned peer id
+let activeCall   = null;       // current MediaConnection
+let localStream  = null;
+let realtimeSub  = null;       // Supabase realtime subscription
+let timerInterval = null;
+let timerStart   = null;
 
-// --- 1. Role Setup ---
-function initApp() {
-    const savedRole = localStorage.getItem('oasis_facetime_role');
-    if (savedRole) {
-        setRole(savedRole);
-    } else {
-        showRoleSelection();
-    }
+let isMuted    = false;
+let isCamOff   = false;
+let isIsolation = false;
+
+/* ── DOM ──────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const setupScreen   = $('screen-setup');
+const callScreen    = $('screen-call');
+const rolePicker    = $('role-picker');
+const joinPanel     = $('join-panel');
+const roleLabel     = $('role-label');
+const btnHusband    = $('btn-husband');
+const btnWife       = $('btn-wife');
+const btnJoin       = $('btn-join');
+const btnSwitch     = $('btn-switch');
+const remoteVideo   = $('remote-video');
+const localVideo    = $('local-video');
+const pipWrap       = $('pip-wrap');
+const statusText    = $('call-status-text');
+const callTimer     = $('call-timer');
+const btnIsolation  = $('btn-isolation');
+const btnMic        = $('btn-mic');
+const btnCam        = $('btn-cam');
+const btnEnd        = $('btn-end');
+const toastEl       = $('toast');
+
+/* ══════════════════════════════════════════════════
+   1. ROLE SETUP
+══════════════════════════════════════════════════ */
+(function loadSavedRole() {
+    const saved = localStorage.getItem('oasis_role_v2');
+    if (saved) applyRole(saved, false);
+})();
+
+function applyRole(role, save = true) {
+    myRole      = role;
+    partnerRole = (role === HUSBAND) ? WIFE : HUSBAND;
+    if (save) localStorage.setItem('oasis_role_v2', role);
+    roleLabel.textContent = role === HUSBAND ? 'Husband 💙' : 'Wife 🌹';
+    rolePicker.classList.add('hidden');
+    joinPanel.classList.remove('hidden');
 }
 
-function setRole(role) {
-    State.myRole = role;
-    State.targetRole = (role === ROLE_HUSBAND) ? ROLE_WIFE : ROLE_HUSBAND;
-    
-    localStorage.setItem('oasis_facetime_role', role);
-    DOM.currentRoleDisplay.textContent = (role === ROLE_HUSBAND) ? 'Husband' : 'Wife';
-    
-    DOM.roleSelection.classList.add('hidden');
-    DOM.joinSection.classList.remove('hidden');
-}
+btnHusband.addEventListener('click', () => applyRole(HUSBAND));
+btnWife.addEventListener('click',    () => applyRole(WIFE));
+btnSwitch.addEventListener('click',  () => {
+    localStorage.removeItem('oasis_role_v2');
+    myRole = null;
+    joinPanel.classList.add('hidden');
+    rolePicker.classList.remove('hidden');
+});
 
-function showRoleSelection() {
-    State.myRole = null;
-    localStorage.removeItem('oasis_facetime_role');
-    DOM.joinSection.classList.add('hidden');
-    DOM.roleSelection.classList.remove('hidden');
-}
+/* ══════════════════════════════════════════════════
+   2. ENTER ROOM
+══════════════════════════════════════════════════ */
+btnJoin.addEventListener('click', async () => {
+    if (!myRole) { toast('Select a role first'); return; }
+    btnJoin.disabled = true;
+    btnJoin.textContent = 'Starting…';
 
-DOM.btnRoleHusband.addEventListener('click', () => setRole(ROLE_HUSBAND));
-DOM.btnRoleWife.addEventListener('click', () => setRole(ROLE_WIFE));
-DOM.btnChangeRole.addEventListener('click', showRoleSelection);
-
-// --- 2. Enter Room & Initialize Connections ---
-DOM.btnJoinRoom.addEventListener('click', async () => {
     try {
-        await setupLocalMedia();
-        showCallScreen();
-        
-        // Initialize PeerJS with reliable STUN + TURN servers
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: true,
+        });
+        localVideo.srcObject = localStream;
+
+        // Switch screens
+        setupScreen.classList.remove('active');
+        setupScreen.classList.add('hidden');
+        callScreen.classList.remove('hidden');
+        callScreen.classList.add('active');
+
+        setStatus('Connecting…');
         initPeer();
-        
-        // Track Presence on Supabase
-        initSupabasePresence();
-        
+
     } catch (err) {
-        console.error('Failed to enter room:', err);
-        showToast('Camera/Microphone access required.');
+        console.error(err);
+        toast('Camera / Microphone permission required');
+        btnJoin.disabled = false;
+        btnJoin.textContent = 'Enter FaceTime';
     }
 });
 
+/* ══════════════════════════════════════════════════
+   3. PEERJS INIT
+══════════════════════════════════════════════════ */
 function initPeer() {
-    State.peer = new Peer(State.myRole, {
-        debug: 1,
-        config: {
-            iceServers: [
-                // Public STUN servers
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun.services.mozilla.com' },
-                // Free OpenRelay TURN servers for NAT & firewall traversal
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
-            ]
-        }
+    // Let PeerJS auto-generate a unique peer id (avoids "id already taken" errors)
+    peer = new Peer(undefined, {
+        debug: 0,
+        config: { iceServers: ICE_SERVERS }
     });
 
-    State.peer.on('open', (id) => {
-        console.log('PeerJS server connected as:', id);
-        // If partner is already detected via Supabase presence, initiate call now
-        if (State.isPartnerOnline && State.myRole === ROLE_HUSBAND && !State.call) {
-            initiateCallToPartner();
-        }
+    peer.on('open', async (id) => {
+        myPeerId = id;
+        console.log('PeerJS open, my peer id:', id);
+
+        // Write our peer_id to Supabase
+        await publishPresence();
+
+        // Listen for the partner's peer_id via Supabase Realtime
+        listenForPartner();
+
+        setStatus('Waiting for partner…');
     });
 
-    // Auto-answer incoming calls
-    State.peer.on('call', handleIncomingCall);
-
-    State.peer.on('error', (err) => {
-        console.error('PeerJS Error:', err);
-        if (err.type === 'unavailable-id') {
-            showToast('Account active elsewhere. Reconnecting...');
-            setTimeout(() => {
-                if (State.peer) State.peer.destroy();
-                initPeer();
-            }, 1500);
+    // Auto-answer all incoming calls (Wife receives Husband's call)
+    peer.on('call', (incomingCall) => {
+        console.log('Incoming call from peer:', incomingCall.peer);
+        if (activeCall) {
+            console.warn('Ignoring duplicate call');
+            return;
         }
+        activeCall = incomingCall;
+        incomingCall.answer(localStream);
+        wireCallEvents(incomingCall);
+    });
+
+    peer.on('error', (err) => {
+        console.error('PeerJS error:', err);
+        toast(`Connection error: ${err.type}`);
     });
 }
 
-// --- 3. Supabase Realtime Presence Signaling ---
-function initSupabasePresence() {
-    State.presenceChannel = supabaseClient.channel('oasis_facetime_presence', {
-        config: { presence: { key: State.myRole } }
-    });
+/* ══════════════════════════════════════════════════
+   4. SUPABASE SIGNALING
+══════════════════════════════════════════════════ */
+async function publishPresence() {
+    const { error } = await db.from('online_status').upsert({
+        username:  myRole,
+        peer_id:   myPeerId,
+        last_seen: new Date().toISOString(),
+    }, { onConflict: 'username' });
 
-    State.presenceChannel
-        .on('presence', { event: 'sync' }, () => {
-            const presenceState = State.presenceChannel.presenceState();
-            console.log('Supabase presence sync:', presenceState);
-            
-            const isPartnerPresent = Boolean(presenceState[State.targetRole]);
-            State.isPartnerOnline = isPartnerPresent;
-            
-            if (isPartnerPresent) {
-                console.log('Partner detected online via Supabase Presence!');
-                if (!State.call) {
-                    DOM.callStatus.textContent = 'Partner detected! Connecting...';
-                }
-                
-                // Designated Initiator: Husband calls Wife when both are ready
-                if (State.myRole === ROLE_HUSBAND && !State.call) {
-                    if (State.peer && State.peer.open) {
-                        initiateCallToPartner();
-                    }
-                }
-            } else {
-                if (!State.call) {
-                    DOM.callStatus.textContent = 'Waiting for partner...';
-                }
+    if (error) console.error('Supabase upsert error:', error);
+    else       console.log('Published presence to Supabase:', myRole, myPeerId);
+}
+
+async function removePresence() {
+    await db.from('online_status').delete().eq('username', myRole);
+}
+
+function listenForPartner() {
+    // First, check if partner is already online
+    checkPartnerOnline();
+
+    // Then subscribe to realtime changes on online_status table
+    realtimeSub = db
+        .channel('oasis-signaling')
+        .on('postgres_changes', {
+            event:  '*',
+            schema: 'public',
+            table:  'online_status',
+            filter: `username=eq.${partnerRole}`,
+        }, (payload) => {
+            console.log('Realtime event:', payload.eventType, payload.new);
+
+            if (payload.eventType === 'DELETE') {
+                // Partner went offline
+                handlePartnerOffline();
+                return;
+            }
+
+            const partnerPeerId = payload.new?.peer_id;
+            if (partnerPeerId) {
+                handlePartnerOnline(partnerPeerId);
             }
         })
-        .on('presence', { event: 'leave' }, ({ key }) => {
-            if (key === State.targetRole) {
-                console.log('Partner left room');
-                State.isPartnerOnline = false;
-                if (State.call) {
-                    State.call.close();
-                }
-                resetToWaitingState();
-            }
-        })
-        .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                await State.presenceChannel.track({
-                    user_role: State.myRole,
-                    online_at: new Date().toISOString()
-                });
-            }
+        .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
         });
 }
 
-function initiateCallToPartner() {
-    if (State.call || !State.localStream || !State.peer || !State.peer.open) return;
-    
-    console.log('Initiating call to partner:', State.targetRole);
-    DOM.callStatus.textContent = 'Establishing media connection...';
-    
-    const outCall = State.peer.call(State.targetRole, State.localStream);
-    
-    if (outCall) {
-        State.call = outCall;
-        monitorPeerConnection(outCall);
-        
-        outCall.on('stream', (remoteStream) => {
-            console.log('Stream received on initiator side');
-            handleStreamConnected(remoteStream);
-        });
-        
-        outCall.on('close', () => {
-            resetToWaitingState();
-        });
-        
-        outCall.on('error', (err) => {
-            console.error('Outgoing call error:', err);
-            State.call = null;
-        });
+async function checkPartnerOnline() {
+    const { data, error } = await db
+        .from('online_status')
+        .select('peer_id')
+        .eq('username', partnerRole)
+        .maybeSingle();
+
+    if (error) { console.error(error); return; }
+    if (data?.peer_id) {
+        console.log('Partner already online:', data.peer_id);
+        handlePartnerOnline(data.peer_id);
     }
 }
 
-function handleIncomingCall(inCall) {
-    console.log('Incoming call received from:', inCall.peer);
-    
-    if (State.call && State.remoteStream) {
-        console.log('Already connected, ignoring duplicate call');
-        return;
+function handlePartnerOnline(partnerPeerId) {
+    if (activeCall) return; // already connected
+
+    setStatus('Partner online! Connecting…');
+
+    // Only HUSBAND initiates the call (prevents dual-call glare)
+    if (myRole === HUSBAND) {
+        console.log('Calling partner peer id:', partnerPeerId);
+        setTimeout(() => {
+            if (activeCall) return; // double-check before calling
+            const outCall = peer.call(partnerPeerId, localStream);
+            if (!outCall) return;
+            activeCall = outCall;
+            wireCallEvents(outCall);
+        }, 800); // small delay to let Wife's PeerJS listener settle
     }
-
-    State.call = inCall;
-    DOM.callStatus.textContent = 'Answering call...';
-    
-    console.log('Auto-answering with local stream...');
-    inCall.answer(State.localStream);
-    monitorPeerConnection(inCall);
-    
-    inCall.on('stream', (remoteStream) => {
-        console.log('Stream received on answerer side');
-        handleStreamConnected(remoteStream);
-    });
-    
-    inCall.on('close', () => {
-        resetToWaitingState();
-    });
-    
-    inCall.on('error', (err) => {
-        console.error('Incoming call error:', err);
-        resetToWaitingState();
-    });
 }
 
-// Monitor actual WebRTC ICE connection state
-function monitorPeerConnection(call) {
-    if (!call || !call.peerConnection) return;
-    
-    const pc = call.peerConnection;
-    
-    pc.oniceconnectionstatechange = () => {
-        console.log('WebRTC ICE Connection State:', pc.iceConnectionState);
-        if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-            console.log('WebRTC P2P media channel established successfully!');
-            DOM.callStatus.textContent = '';
-            DOM.callStatus.classList.add('hidden');
-            DOM.callDuration.classList.remove('hidden');
-            if (!State.callDurationInterval) startCallTimer();
-        } else if (pc.iceConnectionState === 'failed') {
-            console.warn('WebRTC ICE connection failed. Re-initiating call...');
-            State.call = null;
-            if (State.myRole === ROLE_HUSBAND) {
-                setTimeout(initiateCallToPartner, 2000);
+function handlePartnerOffline() {
+    console.log('Partner went offline');
+    if (activeCall) {
+        activeCall.close();
+        activeCall = null;
+    }
+    remoteVideo.srcObject = null;
+    stopTimer();
+    callTimer.classList.add('hidden');
+    setStatus('Partner disconnected. Waiting…');
+}
+
+/* ══════════════════════════════════════════════════
+   5. CALL EVENTS & STREAM HANDLER
+══════════════════════════════════════════════════ */
+function wireCallEvents(call) {
+    call.on('stream', (stream) => {
+        console.log('Remote stream received! Tracks:', stream.getTracks().map(t => t.kind));
+        remoteVideo.srcObject = stream;
+        remoteVideo.play().catch(() => {
+            // Autoplay blocked: unmuted fallback (user can unmute manually)
+            remoteVideo.muted = true;
+            remoteVideo.play().catch(console.error);
+        });
+        setStatus('');
+        callTimer.classList.remove('hidden');
+        startTimer();
+    });
+
+    call.on('close', () => {
+        console.log('Call closed');
+        activeCall = null;
+        remoteVideo.srcObject = null;
+        stopTimer();
+        callTimer.classList.add('hidden');
+        setStatus('Waiting for partner…');
+    });
+
+    call.on('error', (err) => {
+        console.error('Call error:', err);
+        activeCall = null;
+        setStatus('Connection error. Waiting…');
+    });
+
+    // Monitor WebRTC ICE state for diagnostics
+    if (call.peerConnection) {
+        call.peerConnection.oniceconnectionstatechange = () => {
+            const s = call.peerConnection.iceConnectionState;
+            console.log('ICE state:', s);
+            if (s === 'failed') {
+                toast('Media relay failed. Check network.');
             }
-        }
-    };
+        };
+    }
 }
 
-function handleStreamConnected(remoteStream) {
-    if (!remoteStream) return;
-    
-    console.log('Attaching stream to remoteVideo element');
-    State.remoteStream = remoteStream;
-    DOM.remoteVideo.srcObject = remoteStream;
-    
-    // Play remote video explicitly
-    DOM.remoteVideo.play().then(() => {
-        console.log('Remote video playing cleanly!');
-    }).catch(err => {
-        console.warn('Autoplay blocked unmuted playback, muting fallback:', err);
-        DOM.remoteVideo.muted = true;
-        DOM.remoteVideo.play().catch(e => console.error('Video play error:', e));
-    });
-    
-    // Fallback UI update if ICE state listener didn't trigger
-    setTimeout(() => {
-        if (State.remoteStream && DOM.callDuration.classList.contains('hidden')) {
-            DOM.callStatus.textContent = '';
-            DOM.callStatus.classList.add('hidden');
-            DOM.callDuration.classList.remove('hidden');
-            if (!State.callDurationInterval) startCallTimer();
-        }
+/* ══════════════════════════════════════════════════
+   6. CONTROLS
+══════════════════════════════════════════════════ */
+btnEnd.addEventListener('click', hangUp);
+
+function hangUp() {
+    if (activeCall) { activeCall.close(); activeCall = null; }
+    cleanup();
+
+    callScreen.classList.remove('active');
+    callScreen.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+    setupScreen.classList.add('active');
+
+    btnJoin.disabled = false;
+    btnJoin.textContent = 'Enter FaceTime';
+}
+
+async function cleanup() {
+    stopTimer();
+    if (realtimeSub) { await db.removeChannel(realtimeSub); realtimeSub = null; }
+    await removePresence();
+    if (peer) { peer.destroy(); peer = null; }
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    remoteVideo.srcObject = null;
+    localVideo.srcObject  = null;
+    isMuted = false; isCamOff = false; isIsolation = false;
+    updateButtons();
+}
+
+btnMic.addEventListener('click', () => {
+    if (!localStream) return;
+    isMuted = !isMuted;
+    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+    updateButtons();
+});
+
+btnCam.addEventListener('click', () => {
+    if (!localStream) return;
+    isCamOff = !isCamOff;
+    localStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
+    updateButtons();
+});
+
+btnIsolation.addEventListener('click', async () => {
+    if (!localStream) return;
+    isIsolation = !isIsolation;
+    const at = localStream.getAudioTracks()[0];
+    if (at) {
+        try {
+            await at.applyConstraints({ noiseSuppression: isIsolation, echoCancellation: true });
+            toast(isIsolation ? 'Voice Isolation ON' : 'Voice Isolation OFF');
+        } catch { toast('Voice Isolation not supported'); isIsolation = !isIsolation; }
+    }
+    updateButtons();
+});
+
+function updateButtons() {
+    btnMic.classList.toggle('active', isMuted);
+    btnCam.classList.toggle('active', isCamOff);
+    btnIsolation.classList.toggle('active', isIsolation);
+}
+
+/* ══════════════════════════════════════════════════
+   7. TIMER
+══════════════════════════════════════════════════ */
+function startTimer() {
+    stopTimer();
+    timerStart = Date.now();
+    timerInterval = setInterval(() => {
+        const s = Math.floor((Date.now() - timerStart) / 1000);
+        callTimer.textContent =
+            String(Math.floor(s / 60)).padStart(2,'0') + ':' +
+            String(s % 60).padStart(2,'0');
     }, 1000);
 }
-
-function resetToWaitingState() {
-    State.call = null;
-    State.remoteStream = null;
-    DOM.remoteVideo.srcObject = null;
-    
-    stopCallTimer();
-    DOM.callDuration.classList.add('hidden');
-    DOM.callStatus.textContent = State.isPartnerOnline ? 'Reconnecting media...' : 'Waiting for partner...';
-    DOM.callStatus.classList.remove('hidden');
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    callTimer.textContent = '00:00';
 }
 
-// --- 4. Local Media Setup ---
-async function setupLocalMedia() {
-    if (State.localStream) return State.localStream;
-    
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: true
-    });
-    
-    State.localStream = stream;
-    DOM.localVideo.srcObject = stream;
-    return stream;
-}
+/* ══════════════════════════════════════════════════
+   8. PiP DRAG
+══════════════════════════════════════════════════ */
+let dragging = false, px0, py0, mx0, my0;
 
-function showCallScreen() {
-    DOM.connectionScreen.classList.add('hidden');
-    DOM.callScreen.classList.remove('hidden');
-    DOM.callStatus.textContent = 'Waiting for partner...';
-    DOM.callStatus.classList.remove('hidden');
-    DOM.callDuration.classList.add('hidden');
-}
+pipWrap.addEventListener('mousedown',  dragStart);
+pipWrap.addEventListener('touchstart', dragStart, { passive: false });
+window.addEventListener('mousemove',  dragMove);
+window.addEventListener('touchmove',  dragMove,  { passive: false });
+window.addEventListener('mouseup',    dragEnd);
+window.addEventListener('touchend',   dragEnd);
 
-// --- 5. FaceTime Controls ---
-DOM.btnEndCall.addEventListener('click', () => {
-    endCallCleanup();
-});
-
-function endCallCleanup() {
-    if (State.presenceChannel) {
-        State.presenceChannel.untrack();
-        State.presenceChannel.unsubscribe();
-        State.presenceChannel = null;
-    }
-    
-    if (State.peer) {
-        State.peer.destroy();
-        State.peer = null;
-    }
-    
-    if (State.localStream) {
-        State.localStream.getTracks().forEach(t => t.stop());
-        State.localStream = null;
-    }
-    
-    DOM.remoteVideo.srcObject = null;
-    DOM.localVideo.srcObject = null;
-    
-    State.call = null;
-    State.remoteStream = null;
-    
-    stopCallTimer();
-    DOM.callDuration.classList.add('hidden');
-    DOM.callStatus.classList.remove('hidden');
-    
-    DOM.callScreen.classList.add('hidden');
-    DOM.connectionScreen.classList.remove('hidden');
-    
-    State.isMicMuted = false;
-    State.isCamOff = false;
-    State.isVoiceIsolationOn = false;
-    updateControlButtons();
-}
-
-DOM.btnMic.addEventListener('click', () => {
-    if (!State.localStream) return;
-    State.isMicMuted = !State.isMicMuted;
-    const audioTrack = State.localStream.getAudioTracks()[0];
-    if (audioTrack) audioTrack.enabled = !State.isMicMuted;
-    updateControlButtons();
-});
-
-DOM.btnCam.addEventListener('click', () => {
-    if (!State.localStream) return;
-    State.isCamOff = !State.isCamOff;
-    const videoTrack = State.localStream.getVideoTracks()[0];
-    if (videoTrack) videoTrack.enabled = !State.isCamOff;
-    updateControlButtons();
-});
-
-DOM.btnIsolation.addEventListener('click', async () => {
-    if (!State.localStream) return;
-    const audioTrack = State.localStream.getAudioTracks()[0];
-    if (!audioTrack) return;
-
-    State.isVoiceIsolationOn = !State.isVoiceIsolationOn;
-    
-    try {
-        await audioTrack.applyConstraints({
-            noiseSuppression: State.isVoiceIsolationOn,
-            echoCancellation: true
-        });
-        updateControlButtons();
-        showToast(State.isVoiceIsolationOn ? 'Voice Isolation: ON' : 'Voice Isolation: OFF');
-    } catch (error) {
-        console.error(error);
-        State.isVoiceIsolationOn = !State.isVoiceIsolationOn;
-        showToast('Voice isolation not supported on this device.');
-    }
-});
-
-function updateControlButtons() {
-    DOM.btnMic.classList.toggle('active', State.isMicMuted);
-    DOM.btnCam.classList.toggle('active', State.isCamOff);
-    DOM.btnIsolation.classList.toggle('active', State.isVoiceIsolationOn);
-}
-
-// --- 6. Draggable PiP ---
-let isDragging = false;
-let pipStartX, pipStartY, initialMouseX, initialMouseY;
-
-DOM.pipContainer.addEventListener('mousedown', dragStart);
-DOM.pipContainer.addEventListener('touchstart', dragStart, {passive: false});
-window.addEventListener('mousemove', dragMove);
-window.addEventListener('touchmove', dragMove, {passive: false});
-window.addEventListener('mouseup', dragEnd);
-window.addEventListener('touchend', dragEnd);
+function cx(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+function cy(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
 
 function dragStart(e) {
-    isDragging = true;
-    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    
-    initialMouseX = clientX;
-    initialMouseY = clientY;
-    
-    const rect = DOM.pipContainer.getBoundingClientRect();
-    pipStartX = rect.left;
-    pipStartY = rect.top;
-    
-    if (e.type.includes('touch')) e.preventDefault();
+    dragging = true;
+    mx0 = cx(e); my0 = cy(e);
+    const r = pipWrap.getBoundingClientRect();
+    px0 = r.left; py0 = r.top;
+    if (e.cancelable) e.preventDefault();
 }
-
 function dragMove(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-    
-    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    
-    const deltaX = clientX - initialMouseX;
-    const deltaY = clientY - initialMouseY;
-    
-    DOM.pipContainer.style.bottom = 'auto';
-    DOM.pipContainer.style.right = 'auto';
-    DOM.pipContainer.style.left = `${pipStartX + deltaX}px`;
-    DOM.pipContainer.style.top = `${pipStartY + deltaY}px`;
+    if (!dragging) return;
+    if (e.cancelable) e.preventDefault();
+    pipWrap.style.right  = 'auto';
+    pipWrap.style.bottom = 'auto';
+    pipWrap.style.left   = `${px0 + cx(e) - mx0}px`;
+    pipWrap.style.top    = `${py0 + cy(e) - my0}px`;
 }
-
 function dragEnd() {
-    if (!isDragging) return;
-    isDragging = false;
-    
-    const rect = DOM.pipContainer.getBoundingClientRect();
-    const snapMargin = 20;
-    
-    let newLeft = rect.left;
-    let newTop = rect.top;
-    
-    if (rect.left < window.innerWidth / 2) {
-        newLeft = snapMargin;
-    } else {
-        newLeft = window.innerWidth - rect.width - snapMargin;
-    }
-    
-    if (rect.top < snapMargin) newTop = snapMargin + 80;
-    if (rect.bottom > window.innerHeight - snapMargin) newTop = window.innerHeight - rect.height - snapMargin - 100;
-    
-    DOM.pipContainer.style.transition = 'left 0.3s, top 0.3s';
-    DOM.pipContainer.style.left = `${newLeft}px`;
-    DOM.pipContainer.style.top = `${newTop}px`;
-    
-    setTimeout(() => {
-        DOM.pipContainer.style.transition = 'transform var(--transition-fast), box-shadow var(--transition-fast)';
-    }, 300);
+    if (!dragging) return;
+    dragging = false;
+    const r = pipWrap.getBoundingClientRect();
+    const m = 18;
+    const nl = r.left < window.innerWidth / 2 ? m : window.innerWidth - r.width - m;
+    let   nt = r.top;
+    if (r.top    < m + 60) nt = m + 60;
+    if (r.bottom > window.innerHeight - m - 90) nt = window.innerHeight - r.height - m - 90;
+    pipWrap.style.transition = 'left .28s, top .28s';
+    pipWrap.style.left = `${nl}px`;
+    pipWrap.style.top  = `${nt}px`;
+    setTimeout(() => { pipWrap.style.transition = ''; }, 300);
 }
 
-// --- 7. Call Timer & Toast ---
-function startCallTimer() {
-    if (State.callDurationInterval) clearInterval(State.callDurationInterval);
-    State.callStartTime = Date.now();
-    updateTimerDisplay();
-    State.callDurationInterval = setInterval(updateTimerDisplay, 1000);
+/* ══════════════════════════════════════════════════
+   9. HELPERS
+══════════════════════════════════════════════════ */
+function setStatus(msg) { statusText.textContent = msg; }
+
+let toastTimer;
+function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 3200);
 }
 
-function stopCallTimer() {
-    if (State.callDurationInterval) clearInterval(State.callDurationInterval);
-    State.callDurationInterval = null;
-    DOM.callDuration.textContent = '00:00';
-}
-
-function updateTimerDisplay() {
-    const diff = Math.floor((Date.now() - State.callStartTime) / 1000);
-    const mins = String(Math.floor(diff / 60)).padStart(2, '0');
-    const secs = String(diff % 60).padStart(2, '0');
-    DOM.callDuration.textContent = `${mins}:${secs}`;
-}
-
-function showToast(message) {
-    DOM.toastNotification.textContent = message;
-    DOM.toastNotification.classList.remove('hidden');
-    setTimeout(() => {
-        DOM.toastNotification.classList.add('hidden');
-    }, 3000);
-}
-
-// Start app
-initApp();
+/* Cleanup on page close/refresh */
+window.addEventListener('beforeunload', () => {
+    removePresence();
+    if (peer) peer.destroy();
+});
