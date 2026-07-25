@@ -177,26 +177,26 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="app-container" id="appContainer">
 
-        <!-- APP HEADER -->
+        <!-- APP HEADER (Clean iMessage Style) -->
         <div class="app-header" id="appHeader">
-            <div class="brand-bar">
-                <h2 id="spaceTitle">OASIS</h2>
-                <div class="header-actions">
-                    <!-- Partner status badge -->
-                    <div class="status-badge">
-                        <div class="status-dot" id="statusDot"></div>
-                        <span id="partnerStatusLabel">Offline</span>
+            <div class="header-content">
+                <div class="header-contact-info">
+                    <div class="header-avatar" id="headerAvatar">🌸</div>
+                    <div class="header-name-box">
+                        <span class="header-partner-name" id="spaceTitle">Bani</span>
+                        <div class="header-status-sub">
+                            <div class="status-dot" id="statusDot"></div>
+                            <span id="partnerStatusLabel">Offline</span>
+                        </div>
                     </div>
-
-                    <!-- 1-click Call Button -->
-                    <button class="icon-btn" id="callBtn" onclick="initiateCall()" title="Call Partner">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="callBtn" onclick="initiateCall()" title="FaceTime Call">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="3" ry="3"/></svg>
                     </button>
-
-                    <!-- Menu trigger -->
                     <div class="dropdown-wrapper">
-                        <button class="icon-btn" onclick="toggleMenu(event)" title="More options">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        <button class="icon-btn" onclick="toggleMenu(event)" title="Options">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                         </button>
                         <div class="dropdown-menu" id="dropdownMenu">
                             <button class="dropdown-item" onclick="openSettingsModal()">
@@ -215,11 +215,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <!-- Sub-header: fingerprint + connection state -->
-            <div class="sub-header-bar">
-                <div>Code: <span class="fingerprint-preview" id="headerFingerprint">•••••</span></div>
-                <div id="peerInfoDisplay">Initializing...</div>
             </div>
         </div>
 
