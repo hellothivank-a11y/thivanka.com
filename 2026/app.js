@@ -256,10 +256,14 @@ function enterOasis() {
     localStorage.setItem('oasis_user', currentUsername);
     localStorage.setItem('oasis_key', secretKey);
 
+    const myAvatar = currentUsername === 'Hani' ? '👑' : '🌸';
     const partnerName = currentUsername === 'Hani' ? 'Bani' : 'Hani';
     const partnerAvatar = currentUsername === 'Hani' ? '🌸' : '👑';
+
     const titleEl = document.getElementById('spaceTitle');
     if (titleEl) titleEl.innerText = partnerName;
+    const badgeEl = document.getElementById('headerMyBadge');
+    if (badgeEl) badgeEl.innerText = `You: ${currentUsername} ${myAvatar}`;
     const avatarEl = document.getElementById('headerAvatar');
     if (avatarEl) avatarEl.innerText = partnerAvatar;
     const fpEl = document.getElementById('headerFingerprint');
@@ -501,10 +505,22 @@ function showBackgroundNotification(title, body) {
    PEERJS — DETERMINISTIC IDs & 1-CLICK CALLING
    ═══════════════════════════════════════════════════════════════════ */
 function initPeer() {
-    if (peer) return;
+    if (peer) {
+        if (!peer.destroyed) return;
+        peer = null;
+    }
 
-    // Deterministic static peer ID based on username
     currentMyId = `oasis_${currentUsername.toLowerCase()}`;
+    createPeerInstance(currentMyId);
+}
+
+function createPeerInstance(targetId) {
+    if (peer) {
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
+    }
+
+    currentMyId = targetId;
 
     peer = new Peer(currentMyId, {
         config: {
@@ -520,7 +536,8 @@ function initPeer() {
         currentMyId = id;
         const peerInfo = document.getElementById('peerInfoDisplay');
         if (peerInfo) peerInfo.innerText = 'Encrypted Line Active';
-        // Track in presence channel so partner sees us online
+        
+        // Broadcast active ID to partner via presence channel
         if (presenceChannel) {
             presenceChannel.track({
                 username: currentUsername,
@@ -532,7 +549,14 @@ function initPeer() {
 
     peer.on('error', err => {
         console.error('PeerJS error:', err);
-        showToast('Connection issue: ' + err.type);
+        if (err.type === 'unavailable-id') {
+            console.warn(`Peer ID "${currentMyId}" is taken. Generating fallback ID...`);
+            // Automatically handle taken ID by generating a unique session peer ID
+            const fallbackId = `oasis_${currentUsername.toLowerCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
+            createPeerInstance(fallbackId);
+            return;
+        }
+        showToast('Connection note: ' + (err.type || 'reconnecting'));
     });
 
     // Incoming P2P DataChannel connection handler (files, progress signals)
@@ -542,7 +566,6 @@ function initPeer() {
 
     // Incoming call handler
     peer.on('call', call => {
-        // Prevent self-call loop
         if (call.peer === currentMyId) {
             console.warn('Ignored self-call.');
             return;
@@ -555,7 +578,6 @@ function initPeer() {
         document.getElementById('callerNameLabel').innerText = partnerName;
         document.getElementById('callStatusLabel').innerText = 'Incoming secure call...';
 
-        // Set caller avatar emoji
         const avatarEl = document.getElementById('callerAvatar');
         if (avatarEl) avatarEl.innerText = partnerName === 'Hani' ? '💙' : '💜';
 
@@ -565,9 +587,10 @@ function initPeer() {
 
 // ── 1-Click Call ────────────────────────────────────────────────────
 function initiateCall() {
-    if (!peer) { showToast('Connecting to peer network...'); return; }
+    if (!peer || peer.destroyed) { showToast('Connecting to peer network...'); initPeer(); return; }
 
-    const targetPartner = currentUsername.toLowerCase() === 'hani' ? 'oasis_bani' : 'oasis_hani';
+    const defaultPartner = currentUsername.toLowerCase() === 'hani' ? 'oasis_bani' : 'oasis_hani';
+    const targetPartner = partnerPeerId || localStorage.getItem('oasis_partner_id') || defaultPartner;
     showToast('Calling...');
 
     navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS })
