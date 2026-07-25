@@ -173,7 +173,7 @@ a { color: var(--ios-blue); text-decoration: none; }
     height: 100%;
     object-fit: cover;    /* default — portrait/mobile match */
     background: #111;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Smart aspect ratio override: contain when screen is wider than video */
@@ -185,7 +185,7 @@ a { color: var(--ios-blue); text-decoration: none; }
 .video-dock,
 .pip-self-view,
 .restore-pip-btn {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Gradient overlays for legibility */
@@ -343,7 +343,7 @@ a { color: var(--ios-blue); text-decoration: none; }
     left: 0;
     right: 0;
     height: 65vh;
-    background: rgba(18, 18, 20, 0.88);
+    background: rgba(18, 18, 20, 0.92);
     backdrop-filter: blur(32px) saturate(180%);
     -webkit-backdrop-filter: blur(32px) saturate(180%);
     border-top: 1px solid rgba(255,255,255,0.10);
@@ -352,7 +352,7 @@ a { color: var(--ios-blue); text-decoration: none; }
     display: flex;
     flex-direction: column;
     transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     overflow: hidden;
 }
 
@@ -418,10 +418,32 @@ a { color: var(--ios-blue); text-decoration: none; }
 .call-chat-input-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     padding: 10px 12px max(12px, var(--safe-bottom)) 12px;
     border-top: 0.5px solid rgba(255,255,255,0.07);
+    background: rgba(15, 15, 18, 0.95);
     flex-shrink: 0;
+}
+
+.call-chat-input-row .attachment-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: var(--transition-fast);
+}
+
+.call-chat-input-row .attachment-btn:active {
+    opacity: 0.5;
+}
+
+.call-chat-input-row .attachment-btn.recording {
+    color: var(--ios-red);
+    animation: pulseRecord 0.9s ease-in-out infinite;
 }
 
 .call-chat-input {
@@ -1461,7 +1483,7 @@ a { color: var(--ios-blue); text-decoration: none; }
         border-top: none;
         border-left: 1px solid rgba(255, 255, 255, 0.12);
         transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
     .call-chat-drawer.open {
@@ -1486,6 +1508,48 @@ a { color: var(--ios-blue); text-decoration: none; }
     .call-screen.chat-open .pip-self-view,
     .call-screen.chat-open .restore-pip-btn {
         right: calc(360px + 16px);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE CALL & CHAT PIP OPTIMIZATIONS (max-width: 767px)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    /* WhatsApp-Style Mobile Video PiP Card when chat is open */
+    .call-screen.chat-open .remote-video-fill {
+        width: 110px;
+        height: 160px;
+        top: max(20px, var(--safe-top));
+        right: 16px;
+        left: auto;
+        bottom: auto;
+        border-radius: 16px;
+        z-index: 1000;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        object-fit: cover;
+    }
+
+    /* Mobile Chat Drawer expands to slide up below/behind PiP card */
+    .call-screen.chat-open .call-chat-drawer {
+        height: 100%;
+        border-radius: 0;
+        border-top: none;
+        padding-top: max(10px, var(--safe-top));
+    }
+
+    /* Hide self view and call status bar when mobile remote video shrinks into PiP */
+    .call-screen.chat-open .pip-self-view,
+    .call-screen.chat-open .restore-pip-btn,
+    .call-screen.chat-open .call-status-bar {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Video dock stays accessible at bottom on mobile when chat is open */
+    .call-screen.chat-open .video-dock {
+        z-index: 1000;
+        bottom: max(16px, calc(var(--safe-bottom) + 12px));
     }
 }
 
