@@ -588,8 +588,11 @@ function showCallScreen() {
 }
 
 function hideCallScreen() {
-    document.getElementById('callScreen').classList.remove('active');
+    const callScreen = document.getElementById('callScreen');
+    if (callScreen) callScreen.classList.remove('active', 'chat-open');
     stopCallTimer();
+    const timerEl = document.getElementById('callTimer');
+    if (timerEl) timerEl.innerText = '00:00';
 }
 
 function startCallTimer() {
@@ -654,6 +657,15 @@ function setupCallListeners(call) {
         console.error('Call error:', err);
         cleanUpCall();
     });
+    if (call.peerConnection) {
+        call.peerConnection.oniceconnectionstatechange = () => {
+            if (call.peerConnection.iceConnectionState === 'disconnected' ||
+                call.peerConnection.iceConnectionState === 'failed' ||
+                call.peerConnection.iceConnectionState === 'closed') {
+                cleanUpCall();
+            }
+        };
+    }
 }
 
 function cleanUpCall() {
@@ -663,28 +675,47 @@ function cleanUpCall() {
     const remoteVideo = document.getElementById('remoteVideo');
     const localVideo  = document.getElementById('localVideo');
 
-    if (remoteVideo.srcObject) {
-        remoteVideo.srcObject.getTracks().forEach(t => t.stop());
-        remoteVideo.srcObject = null;
+    if (remoteVideo) {
+        if (remoteVideo.srcObject) {
+            try { remoteVideo.srcObject.getTracks().forEach(t => t.stop()); } catch (e) {}
+            remoteVideo.srcObject = null;
+        }
+        remoteVideo.classList.remove('contain-mode');
     }
-    // Reset aspect ratio class
-    remoteVideo.classList.remove('contain-mode');
 
     if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
+        try { localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
         localStream = null;
     }
-    if (localVideo) localVideo.srcObject = null;
+
+    if (localVideo) {
+        if (localVideo.srcObject) {
+            try { localVideo.srcObject.getTracks().forEach(t => t.stop()); } catch (e) {}
+            localVideo.srcObject = null;
+        }
+    }
 
     isAudioMuted = false;
     isVideoMuted = false;
     isFrontCamera = true;
-    currentCall = null;
+
+    const toggleAudioBtn = document.getElementById('toggleAudioBtn');
+    const toggleVideoBtn = document.getElementById('toggleVideoBtn');
+    if (toggleAudioBtn) toggleAudioBtn.classList.remove('off');
+    if (toggleVideoBtn) toggleVideoBtn.classList.remove('off');
+
+    if (currentCall) {
+        try { currentCall.close(); } catch (e) {}
+        currentCall = null;
+    }
+
     showToast('Call ended.');
 }
 
 function endCall() {
-    if (currentCall) currentCall.close();
+    if (currentCall) {
+        try { currentCall.close(); } catch (e) {}
+    }
     cleanUpCall();
 }
 
@@ -798,6 +829,7 @@ function sendCallChatMessage() {
     const text  = input.value.trim();
     if (!text) return;
     input.value = '';
+    autoResizeTextarea(input);
     // Re-use the main sendMessage flow, setting input temporarily
     const mainInput = document.getElementById('messageInput');
     const prev = mainInput.value;
@@ -814,7 +846,7 @@ function handleRemoteVideoClick() {
 }
 
 function handleCallChatKeyPress(e) {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendCallChatMessage();
     }
@@ -938,6 +970,7 @@ async function sendMessage(mediaPayload = null) {
 
     if (!mediaPayload) {
         msgInput.value = '';
+        autoResizeTextarea(msgInput);
         msgInput.focus();
         broadcastTyping(false);
     }
@@ -955,16 +988,32 @@ async function sendMessage(mediaPayload = null) {
 }
 
 function handleInputKeyPress(e) {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
     }
 }
 
 function handleInputTyping() {
+    const msgInput = document.getElementById('messageInput');
+    if (msgInput) autoResizeTextarea(msgInput);
     broadcastTyping(true);
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => broadcastTyping(false), 2000);
+}
+
+// Auto-expanding textarea up to 4 lines (~100px max)
+function autoResizeTextarea(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    const newHeight = Math.min(el.scrollHeight, 100);
+    el.style.height = `${newHeight}px`;
+    if (el.scrollHeight > 100) {
+        el.style.overflowY = 'auto';
+        el.scrollTop = el.scrollHeight;
+    } else {
+        el.style.overflowY = 'hidden';
+    }
 }
 
 function broadcastTyping(isTyping) {
