@@ -311,29 +311,21 @@ a { color: var(--ios-blue); text-decoration: none; }
 
 .restore-pip-btn:active { opacity: 0.6; }
 
-/* Floating glass control dock */
+/* Floating video call controls (No background box) */
 .video-dock {
     position: absolute;
-    bottom: max(32px, calc(var(--safe-bottom) + 24px));
+    bottom: max(36px, calc(var(--safe-bottom) + 24px));
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 22px;
-    background: var(--bg-glass);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: var(--glass-border);
-    border-radius: 50px;
-    box-shadow: var(--glass-shadow);
+    justify-content: center;
+    gap: 16px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
     z-index: 5;
-}
-
-/* Chat button active glow */
-.dock-btn--chat.active {
-    background: var(--ios-blue);
-    color: #fff;
 }
 
 /* ── IN-CALL CHAT DRAWER / SIDEBAR ─────────────────────────────────── */
@@ -491,50 +483,75 @@ a { color: var(--ios-blue); text-decoration: none; }
 
 .call-chat-send-btn:active { transform: scale(0.88); }
 
-/* Dock buttons */
+/* Apple FaceTime Glass Dock Buttons */
 .dock-btn {
-    width: 56px;
-    height: 56px;
+    width: 54px;
+    height: 54px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--transition-fast), background var(--transition-fast);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
     flex-shrink: 0;
 }
 
+.dock-btn:hover {
+    background: rgba(255, 255, 255, 0.32);
+    transform: scale(1.05);
+}
+
 .dock-btn:active {
-    transform: scale(0.88);
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.40);
 }
 
+/* Off state (Muted mic / Disabled camera) */
 .dock-btn.off {
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.35);
+    background: #FFFFFF;
+    color: #000000;
+    border-color: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.35);
 }
 
+/* Active chat drawer button */
+.dock-btn--chat.active {
+    background: var(--ios-blue);
+    color: #FFFFFF;
+    border-color: var(--ios-blue);
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.5);
+}
+
+/* Cut / End Call Button (FaceTime Red) */
 .dock-btn--end {
-    background: var(--ios-red);
-    width: 60px;
-    height: 60px;
+    background: #FF3B30;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFFFFF;
+    box-shadow: 0 6px 20px rgba(255, 59, 48, 0.45);
+}
+
+.dock-btn--end:hover {
+    background: #FF453A;
+    transform: scale(1.05);
 }
 
 .dock-btn--end:active {
-    background: #cc2e24;
+    background: #D70015;
+    transform: scale(0.92);
 }
 
-.dock-btn--flip:active {
-    background: rgba(255,255,255,0.25);
-}
-
-/* Desktop-only dock controls */
-.desktop-only {
+/* Camera Flip Button: Hidden on Web view (>768px), Visible on Mobile view (<=768px) */
+.dock-btn--flip {
     display: none;
 }
 
-@media (min-width: 769px) {
-    .desktop-only {
+@media (max-width: 768px) {
+    .dock-btn--flip {
         display: flex;
     }
 }
@@ -1722,18 +1739,13 @@ emoji-picker {
     }
 
     .video-dock {
-        padding: 12px 20px;
+        padding: 0;
         gap: 12px;
     }
 
     .dock-btn {
         width: 50px;
         height: 50px;
-    }
-
-    .dock-btn--end {
-        width: 54px;
-        height: 54px;
     }
 }
 
