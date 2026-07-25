@@ -264,7 +264,16 @@ function enterOasis() {
     if (avatarEl) avatarEl.innerText = partnerAvatar;
     const fpEl = document.getElementById('headerFingerprint');
     if (fpEl) fpEl.innerText = generateSafetyFingerprint(secretKey);
+
+    // Close settings modal & dropdown menu and hide setup overlay to navigate to Home Screen
+    closeSettingsModal();
+    const dropdown = document.getElementById('dropdownMenu');
+    if (dropdown) dropdown.classList.remove('show');
     document.getElementById('setupOverlay').classList.add('hidden');
+
+    // Make sure main app container is displayed
+    const appContainer = document.getElementById('appContainer');
+    if (appContainer) appContainer.style.display = 'flex';
 
     // Destroy previous peer connection if user identity changed
     const targetMyId = `oasis_${currentUsername.toLowerCase()}`;
@@ -280,6 +289,12 @@ function enterOasis() {
     setupPresence();
     checkAndAutoRequestNotificationPermission();
     setupAutoReconnectAndSync();
+
+    // Scroll message list to bottom on Home Screen navigation
+    setTimeout(() => {
+        const msgList = document.getElementById('messageList');
+        if (msgList) msgList.scrollTop = msgList.scrollHeight;
+    }, 100);
 }
 
 function setupAutoReconnectAndSync() {
@@ -302,7 +317,9 @@ function showSettingsSetup() {
 
 function switchAccount() {
     if (confirm('Switch user account or change encryption key? You will need to re-authenticate.')) {
+        closeSettingsModal();
         localStorage.removeItem('oasis_user');
+        localStorage.removeItem('oasis_active_user');
         localStorage.removeItem('oasis_key');
         showSettingsSetup();
     }
@@ -983,15 +1000,46 @@ function openSettingsModal() {
 
     const modal = document.getElementById('settingsModal');
     if (!modal) return;
-    modal.classList.add('show');
-    updateNotificationButtonState();
 
-    const bioStatus = document.getElementById('settingsBioStatus');
-    if (bioStatus) bioStatus.innerText = localStorage.getItem('oasis_bio_cred_id') ? 'Active' : 'Setup';
+    // Dynamic Apple ID profile card info
+    const activeUser = localStorage.getItem('oasis_active_user') || currentUsername || 'Hani';
+    const userAvatar = activeUser === 'Hani' ? '👑' : '🌸';
+    const userRole = activeUser === 'Hani' ? 'Dev Lead • Encrypted Space' : 'Partner • Encrypted Space';
+    
+    const profileAvatar = document.getElementById('settingsProfileAvatar');
+    if (profileAvatar) profileAvatar.innerText = userAvatar;
+
+    const profileName = document.getElementById('settingsProfileName');
+    if (profileName) profileName.innerText = activeUser;
+
+    const profileSub = document.getElementById('settingsProfileSub');
+    if (profileSub) profileSub.innerText = userRole;
 
     const key = localStorage.getItem('oasis_key');
     const fpEl = document.getElementById('settingsModalFingerprint');
     if (fpEl && key) fpEl.innerText = generateSafetyFingerprint(key);
+
+    // Update Push Notification status
+    updateNotificationButtonState();
+
+    // Update Biometrics status
+    const bioStatus = document.getElementById('settingsBioStatus');
+    if (bioStatus) bioStatus.innerText = localStorage.getItem('oasis_bio_cred_id') ? 'Active' : 'Setup';
+
+    // Update Sound toggle state
+    const soundToggle = document.getElementById('settingsSoundToggle');
+    if (soundToggle) {
+        const soundVal = localStorage.getItem('oasis_sound_enabled');
+        soundToggle.checked = soundVal === null ? true : soundVal === 'true';
+    }
+
+    // Update P2P connection badge
+    const peerBadge = document.getElementById('settingsPeerStatus');
+    if (peerBadge) {
+        peerBadge.innerText = (peer && !peer.destroyed) ? 'Ready' : 'Connecting';
+    }
+
+    modal.classList.add('show');
 }
 
 function closeSettingsModal() {
@@ -1001,6 +1049,11 @@ function closeSettingsModal() {
 
 function closeSettingsModalOnOverlay(e) {
     if (e.target.id === 'settingsModal') closeSettingsModal();
+}
+
+function toggleSoundSetting(enabled) {
+    localStorage.setItem('oasis_sound_enabled', enabled ? 'true' : 'false');
+    showToast(enabled ? 'Sound effects enabled 🔔' : 'Sound effects muted 🔕');
 }
 
 
