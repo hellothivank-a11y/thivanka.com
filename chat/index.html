@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -49,8 +49,8 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="call-screen" id="callScreen">
 
-        <!-- Remote Full-Screen Video -->
-        <video id="remoteVideo" autoplay playsinline class="remote-video-fill"></video>
+        <!-- Remote Full-Screen Video (Tapping floating card restores full screen call) -->
+        <video id="remoteVideo" autoplay playsinline class="remote-video-fill" onclick="handleRemoteVideoClick()"></video>
 
         <!-- Ambient gradient overlay (top and bottom) -->
         <div class="call-gradient-top"></div>
@@ -114,7 +114,7 @@
                 <button class="attachment-btn" id="callAudioRecordBtn" title="Hold to record voice note">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
                 </button>
-                <input type="text" id="callChatInput" class="call-chat-input" placeholder="Send a message..." onkeypress="handleCallChatKeyPress(event)">
+                <input type="text" id="callChatInput" class="call-chat-input" placeholder="Send a message..." enterkeyhint="send" autocapitalize="sentences" autocorrect="on" inputmode="text" onkeypress="handleCallChatKeyPress(event)">
                 <button class="call-chat-send-btn" onclick="sendCallChatMessage()" title="Send">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
@@ -238,7 +238,7 @@
                     </button>
                 </div>
                 <input type="file" id="imageFileInput" accept="image/*" style="display:none;" onchange="handleImageFileSelect(event)">
-                <input type="text" id="messageInput" class="chat-input" placeholder="Whisper something sweet..." onkeypress="handleInputKeyPress(event)" oninput="handleInputTyping()">
+                <input type="text" id="messageInput" class="chat-input" placeholder="Whisper something sweet..." enterkeyhint="send" autocapitalize="sentences" autocorrect="on" inputmode="text" onkeypress="handleInputKeyPress(event)" oninput="handleInputTyping()">
                 <button class="send-circle-btn" onclick="sendMessage()" title="Send Message">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
