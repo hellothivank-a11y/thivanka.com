@@ -2,164 +2,362 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Call & Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="DevUtils">
+    <meta name="description" content="A system logging and remote developer console utility.">
+    <title>DevUtils Console — Dev System Tool</title>
+    <!-- PWA Manifest & App Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <!-- Dexie IndexedDB CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+    <!-- CryptoJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #121212; color: #e0e0e0; display: flex; flex-direction: column; min-height: 100vh; padding: 10px; }
-        .setup-box { background: #1e1e1e; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 10px; }
-        input { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white; margin: 5px; width: 80%; max-width: 250px; }
-        button { padding: 10px 15px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; margin: 5px; }
-        .btn-host { background: #28a745; color: white; }
-        .btn-join { background: #007bff; color: white; }
-        .container { display: flex; flex: 1; gap: 10px; flex-wrap: wrap; }
-        .video-section { flex: 2; min-width: 300px; display: flex; justify-content: center; align-items: center; background: #1e1e1e; border-radius: 10px; padding: 10px; }
-        .video-grid { display: flex; width: 100%; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        video { width: 48%; max-width: 450px; border-radius: 8px; background: #000; object-fit: cover; aspect-ratio: 16/9; }
-        .chat-section { flex: 1; min-width: 280px; background: #1e1e1e; border-radius: 10px; display: flex; flex-direction: column; padding: 10px; height: 350px; }
-        .chat-box { flex: 1; overflow-y: auto; background: #121212; border-radius: 5px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .message { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-break: break-word; font-size: 14px; }
-        .me { background: #007bff; align-self: flex-end; color: white; }
-        .them { background: #333; align-self: flex-start; color: white; }
-        .chat-input { display: flex; margin-top: 10px; gap: 5px; }
-        .chat-input input { flex: 1; width: auto; }
-    </style>
+    <!-- Emoji Picker Element -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="setup-box">
-        <h3>🔒 Private Call & Chat</h3>
-        <p style="font-size: 12px; color: #aaa; margin: 5px 0;">දෙන්නම එකම Room Name එක පාවිච්චි කරන්න.</p>
-        <input type="text" id="room-id" placeholder="Secret Room Name (eg: love123)">
-        <br>
-        <button class="btn-host" onclick="startHost()">1. Start Room (Host)</button>
-        <button class="btn-join" onclick="joinRoom()">2. Join Room</button>
-    </div>
-
-    <div class="container">
-        <div class="video-section">
-            <div class="video-grid">
-                <video id="localVideo" autoplay muted playsinline></video>
-                <video id="remoteVideo" autoplay playsinline></video>
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 0: PANIC LOCK SCREEN (highest priority overlay)       -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="panic-screen" id="panicScreen">
+        <div class="panic-content">
+            <div class="panic-lock-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-        </div>
-
-        <div class="chat-section">
-            <div class="chat-box" id="chatBox">
-                <div class="message them">System: Room එක හදන කෙනා 'Start Room' එකත්, අනෙක් කෙනා 'Join Room' එකත් ක්ලික් කරන්න.</div>
-            </div>
-            <div class="chat-input">
-                <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button style="background:#28a745; color:white;" onclick="sendMessage()">Send</button>
-            </div>
+            <p>System locked</p>
+            <p class="panic-sub">Double-tap to restore access</p>
+            <button class="panic-bio-btn" id="panicBioBtn" onclick="unlockWithBiometrics()" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
+                Use Biometrics (Face ID / Touch ID)
+            </button>
         </div>
     </div>
 
-    <script>
-        let peer = null;
-        let conn = null;
-        let localStream = null;
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 1: FULL-BLEED FACETIME CALL SCREEN                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="call-screen" id="callScreen">
 
-        // PeerJS Config with Google Free STUN Servers (Fixes NAT/Firewall blocking)
-        const peerConfig = {
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
-                ]
-            }
-        };
+        <!-- Remote Full-Screen Video (Tapping floating card restores full screen call) -->
+        <video id="remoteVideo" autoplay playsinline class="remote-video-fill" onclick="handleRemoteVideoClick()"></video>
 
-        // Camera Access
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
-            localStream = stream;
-            document.getElementById('localVideo').srcObject = stream;
-        }).catch(err => alert("Camera/Mic Permission ලබාදෙන්න!"));
+        <!-- Ambient gradient overlay (top and bottom) -->
+        <div class="call-gradient-top"></div>
+        <div class="call-gradient-bottom"></div>
 
-        // 1. Host Starts Room
-        function startHost() {
-            const roomName = document.getElementById('room-id').value.trim();
-            if (!roomName) return alert("Secret Room Name එකක් ගහන්න!");
+        <!-- Call Status Bar (top) -->
+        <div class="call-status-bar">
+            <div class="call-timer" id="callTimer">00:00</div>
+            <div class="call-partner-name" id="callPartnerName">Connecting...</div>
+        </div>
 
-            peer = new Peer(roomName, peerConfig);
+        <!-- Draggable PiP Self-View -->
+        <div class="pip-self-view" id="selfView">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <button class="pip-eye-btn" id="pipToggleBtn" onclick="toggleSelfViewVisibility(event)" title="Hide self view">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+        </div>
 
-            peer.on('open', id => {
-                appendMessage("System", "Room Created! Waiting for partner to click Join...", "them");
-            });
+        <!-- Restore PiP when hidden -->
+        <button class="restore-pip-btn" id="restorePipBtn" onclick="toggleSelfViewVisibility(event)" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Show Me</span>
+        </button>
 
-            peer.on('error', err => {
-                if(err.type === 'unavailable-id') {
-                    alert("මේ Room Name එක දැනටමත් Active. වෙනත් Name එකක් දාලා ට්‍රයි කරන්න.");
-                } else {
-                    alert("Error: " + err.type);
-                }
-            });
+        <!-- Floating Glass Control Dock -->
+        <div class="video-dock" id="videoDock">
+            <button class="dock-btn" id="toggleAudioBtn" onclick="toggleLocalAudio()" title="Mute Mic">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            </button>
+            <button class="dock-btn" id="toggleVideoBtn" onclick="toggleLocalVideo()" title="Toggle Camera">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
+            <button class="dock-btn dock-btn--flip" onclick="flipCamera()" title="Flip Camera">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            </button>
+            <!-- Chat toggle button -->
+            <button class="dock-btn dock-btn--chat" id="callChatBtn" onclick="toggleCallChat()" title="Chat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <button class="dock-btn desktop-only" onclick="toggleSideBySideMode()" title="Side-by-Side View" id="toggleSideBySideBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+            </button>
+            <button class="dock-btn dock-btn--end" onclick="endCall()" title="End Call">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
+            </button>
+        </div>
 
-            peer.on('connection', connection => {
-                conn = connection;
-                setupChat();
-            });
+        <!-- In-Call Chat Drawer (slides up over video) -->
+        <div class="call-chat-drawer" id="callChatDrawer">
+            <div class="call-chat-drawer-handle"></div>
+            <div class="call-chat-drawer-header">
+                <span class="call-chat-drawer-title">MESSAGES</span>
+                <button class="call-chat-close-btn" onclick="toggleCallChat()">&times;</button>
+            </div>
+            <div class="call-chat-messages" id="callChatMessages"></div>
+            <div class="call-chat-input-row" id="callChatInputRow">
+                <div class="call-chat-actions-left" id="callChatActionsLeft">
+                    <button class="attachment-btn" id="callEmojiBtn" onclick="toggleEmojiPicker(event, true)" title="Emojis">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    </button>
+                    <button class="attachment-btn" onclick="triggerP2PFileUpload()" title="Send File / Photo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
+                    <button class="attachment-btn" id="callAudioRecordBtn" title="Hold to record voice note">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    </button>
+                </div>
+                <textarea id="callChatInput" name="call_message_content" class="call-chat-input" rows="1" placeholder="Send a message..." enterkeyhint="send" autocapitalize="sentences" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-form-type="other" inputmode="text" onkeypress="handleCallChatKeyPress(event)" oninput="handleCallChatTyping()"></textarea>
+                <button class="call-chat-send-btn" onclick="sendCallChatMessage()" title="Send">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
 
-            peer.on('call', call => {
-                call.answer(localStream);
-                call.on('stream', remoteStream => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                });
-            });
-        }
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 2: ONBOARDING / SETUP SCREEN                          -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="setup-overlay" id="setupOverlay">
+        <div class="setup-card">
+            <!-- 64x64px iOS Glowing App Icon -->
+            <div class="setup-app-icon">
+                <img src="icon-192.png" alt="Oasis Logo" width="64" height="64">
+            </div>
+            <h3 class="setup-modal-title">Select Profile</h3>
 
-        // 2. Joiner Joins Room
-        function joinRoom() {
-            const roomName = document.getElementById('room-id').value.trim();
-            if (!roomName) return alert("Secret Room Name එකක් ගහන්න!");
+            <!-- Emoji Profile Cards Grid -->
+            <div class="profile-cards-grid">
+                <div class="profile-card active hani-active" id="profileHani" onclick="selectUser('Hani')">
+                    <div class="profile-card-icon">👑</div>
+                    <div class="profile-card-name">Hani</div>
+                    <div class="profile-card-sub">Dev Lead</div>
+                </div>
+                <div class="profile-card" id="profileBani" onclick="selectUser('Bani')">
+                    <div class="profile-card-icon">🌸</div>
+                    <div class="profile-card-name">Bani</div>
+                    <div class="profile-card-sub">Partner</div>
+                </div>
+            </div>
 
-            peer = new Peer(peerConfig);
+            <div class="form-group password-wrapper" style="width:100%;">
+                <label>Secret Shared Key</label>
+                <input type="password" id="secretKeyInput" class="glass-input" placeholder="Type a key known only to you two..." value="1234">
+                <button class="pwd-toggle-btn" id="pwdToggle" onclick="togglePasswordVisibility()">
+                    <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg id="eyeClosedIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+            </div>
 
-            peer.on('open', id => {
-                appendMessage("System", "Connecting to Host...", "them");
-                
-                // Connect Chat
-                conn = peer.connect(roomName);
-                setupChat();
+            <!-- Safety fingerprint -->
+            <div class="fingerprint-box" style="width:100%;">
+                <div class="fingerprint-label">Encryption Safety Code</div>
+                <div class="fingerprint-emojis" id="fingerprintPreview">🔐✨🌸🤍💎</div>
+                <div class="fingerprint-label" style="font-size:0.55rem; color:var(--text-muted); margin-top:2px;">Both partners must see the same emojis</div>
+            </div>
 
-                // Connect Call
-                const call = peer.call(roomName, localStream);
-                call.on('stream', remoteStream => {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
-                });
-            });
-        }
+            <button class="enter-btn" id="enterBtn" onclick="enterOasis()">ENTER OASIS</button>
+            <button class="bio-setup-btn" id="bioSetupBtn" onclick="registerBiometrics()" style="display:none; margin-top:10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
+                Enable Biometric Lock
+            </button>
+        </div>
+    </div>
 
-        function setupChat() {
-            if (!conn) return;
-            conn.on('open', () => {
-                appendMessage("System", "Connected! දැන් කතා කරන්න පුළුවන්.", "them");
-            });
-            conn.on('data', data => {
-                appendMessage("Partner", data, "them");
-            });
-        }
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 3: MAIN CHAT APPLICATION                              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="app-container" id="appContainer">
 
-        function sendMessage() {
-            const input = document.getElementById('msgInput');
-            const msg = input.value.trim();
-            if (!msg || !conn) return;
+        <!-- APP HEADER -->
+        <div class="app-header" id="appHeader">
+            <div class="brand-bar">
+                <h2 id="spaceTitle">OASIS</h2>
+                <div class="header-actions">
+                    <!-- Partner status badge -->
+                    <div class="status-badge">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="partnerStatusLabel">Offline</span>
+                    </div>
 
-            conn.send(msg);
-            appendMessage("Me", msg, "me");
-            input.value = "";
-        }
+                    <!-- 1-click Call Button -->
+                    <button class="icon-btn" id="callBtn" onclick="initiateCall()" title="Call Partner">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
 
-        function appendMessage(sender, text, type) {
-            const box = document.getElementById('chatBox');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${type}`;
-            msgDiv.innerText = text;
-            box.appendChild(msgDiv);
-            box.scrollTop = box.scrollHeight;
-        }
-    </script>
+                    <!-- Menu trigger -->
+                    <div class="dropdown-wrapper">
+                        <button class="icon-btn" onclick="toggleMenu(event)" title="More options">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        </button>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <button class="dropdown-item" onclick="openSettingsModal()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                Settings
+                            </button>
+                            <hr style="border:0; border-top:0.5px solid var(--ios-border); margin:4px 0;">
+                            <button class="dropdown-item danger" onclick="clearAllMessages()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Clear Chat
+                            </button>
+                            <button class="dropdown-item danger" onclick="triggerPanic()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                Panic Lock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sub-header: fingerprint + connection state -->
+            <div class="sub-header-bar">
+                <div>Code: <span class="fingerprint-preview" id="headerFingerprint">•••••</span></div>
+                <div id="peerInfoDisplay">Initializing...</div>
+            </div>
+        </div>
+
+        <!-- CHAT MESSAGES -->
+        <div class="chat-container" id="messageList"></div>
+
+        <!-- TYPING INDICATOR -->
+        <div class="typing-bubble" id="typingIndicator" style="display:none;">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+
+        <!-- CHAT FOOTER & INPUT BAR -->
+        <div class="chat-footer">
+            <div class="input-container-wrapper" id="inputContainerWrapper">
+                <div class="chat-actions-left">
+                    <button class="attachment-btn" id="emojiBtn" onclick="toggleEmojiPicker(event, false)" title="Emojis">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    </button>
+                    <button class="attachment-btn" onclick="triggerP2PFileUpload()" title="Send File / Photo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </button>
+                    <button class="attachment-btn" id="audioRecordBtn" title="Hold to record voice note">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept="*/*" style="display:none;" onchange="handleP2PFileSelect(event)">
+                <textarea id="messageInput" name="message_content" class="chat-input" rows="1" placeholder="Whisper something sweet..." enterkeyhint="send" autocapitalize="sentences" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-form-type="other" inputmode="text" onkeypress="handleInputKeyPress(event)" oninput="handleInputTyping()"></textarea>
+                <button class="send-circle-btn" onclick="sendMessage()" title="Send Message">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- GLOBAL MODALS (outside app-container for proper z-index)     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- INCOMING CALL RING OVERLAY -->
+    <div class="incoming-call-overlay" id="incomingCallModal">
+        <div class="incoming-call-card">
+            <div class="caller-avatar-ring">
+                <div class="caller-avatar-pulse"></div>
+                <div class="caller-avatar" id="callerAvatar"></div>
+            </div>
+            <div class="caller-name" id="callerNameLabel">Partner</div>
+            <div class="caller-status" id="callStatusLabel">Incoming secure call...</div>
+            <div class="call-actions-row">
+                <div class="call-action-group">
+                    <button class="call-action-circle decline" onclick="declineCall()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
+                    </button>
+                    <span class="call-action-label">Decline</span>
+                </div>
+                <div class="call-action-group">
+                    <button class="call-action-circle accept" onclick="acceptCall()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
+                    <span class="call-action-label">Accept</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULL EMOJI PICKER POPUP -->
+    <div class="emoji-picker-popup" id="emojiPickerPopup">
+        <emoji-picker class="dark" id="emojiPickerComponent"></emoji-picker>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-msg" id="toastMessage"></div>
+
+    <!-- IMAGE LIGHTBOX MODAL -->
+    <div class="img-modal" id="imageModal" onclick="closeImageModal()">
+        <span class="img-modal-close" onclick="closeImageModal()">&times;</span>
+        <img class="img-modal-content" id="imageModalTarget" src="" alt="Zoomed view">
+    </div>
+
+    <!-- IOS SETTINGS MODAL (BOTTOM SHEET) -->
+    <div class="settings-modal" id="settingsModal" onclick="closeSettingsModalOnOverlay(event)">
+        <div class="settings-card" onclick="event.stopPropagation()">
+            <div class="ios-sheet-handle"></div>
+            <div class="settings-header">
+                <h3>Settings</h3>
+                <button class="settings-close-btn" onclick="closeSettingsModal()">&times;</button>
+            </div>
+
+            <div class="ios-settings-group">
+                <div class="ios-settings-group-title">NOTIFICATIONS</div>
+                <div class="ios-settings-item" onclick="requestNotificationPermission()">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box blue">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        </div>
+                        <span id="settingsPushLabel">Push Notifications</span>
+                    </div>
+                    <span class="settings-item-badge" id="settingsPushStatus">Disabled</span>
+                </div>
+            </div>
+
+            <div class="ios-settings-group">
+                <div class="ios-settings-group-title">SECURITY & PRIVACY</div>
+                <div class="ios-settings-item" id="settingsBioRow" onclick="registerBiometrics()">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box green">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
+                        </div>
+                        <span>Biometric Lock (Face ID / Touch ID)</span>
+                    </div>
+                    <span class="settings-item-badge" id="settingsBioStatus">Setup</span>
+                </div>
+                <div class="ios-settings-item" onclick="switchAccount()">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box red">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+                        </div>
+                        <span>Switch Account / Key</span>
+                    </div>
+                    <span class="settings-chevron">›</span>
+                </div>
+            </div>
+
+            <div class="settings-footer-info">
+                <div>Code: <span id="settingsModalFingerprint">•••••</span></div>
+                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:3px;">End-to-End Encrypted Space</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Application Scripts -->
+    <script src="app.js"></script>
 </body>
 </html>
