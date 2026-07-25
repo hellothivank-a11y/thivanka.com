@@ -1,469 +1,376 @@
 /**
- * Oasis FaceTime — Supabase DB Signaling + PeerJS WebRTC
+ * Oasis FaceTime
  *
- * HOW IT WORKS (bulletproof):
- *  1. User selects role (Husband / Wife) → stored in localStorage.
- *  2. On "Enter FaceTime":
- *      a. Camera/mic captured.
- *      b. PeerJS connects to its cloud broker server → receives a random peer_id.
- *      c. We UPSERT { username, peer_id, last_seen } into Supabase `online_status` table.
- *      d. We subscribe to Supabase Realtime changes on `online_status`.
- *  3. When the PARTNER'S row appears / updates in the DB:
- *      → Husband (initiator) calls partner's real peer_id via PeerJS.
- *      → Wife (answerer) auto-answers any incoming PeerJS call.
- *  4. PeerJS negotiates WebRTC directly (STUN+TURN for NAT traversal).
- *  5. On disconnect / end-call → row is deleted from `online_status`.
+ * ARCHITECTURE (Simple & Reliable):
+ * ────────────────────────────────────
+ * 1. PeerJS connects → gets a RANDOM peer_id from the broker server.
+ * 2. We track { role, peer_id } in Supabase Realtime PRESENCE.
+ *    (No SQL tables, no RLS, no publications needed — presence is in-memory.)
+ * 3. When partner's presence appears, we read their peer_id.
+ * 4. Husband calls partner's peer_id. Wife auto-answers.
+ * 5. TURN servers relay media if direct P2P is blocked by firewall/NAT.
  *
- * Supabase setup required (run in SQL editor):
- *   CREATE TABLE IF NOT EXISTS online_status (
- *     username TEXT PRIMARY KEY,
- *     peer_id  TEXT,
- *     last_seen TIMESTAMPTZ DEFAULT NOW()
- *   );
- *   ALTER TABLE online_status ENABLE ROW LEVEL SECURITY;
- *   CREATE POLICY "public_access" ON online_status FOR ALL USING (true) WITH CHECK (true);
- *   -- Only add to realtime publication if not already done:
- *   -- ALTER PUBLICATION supabase_realtime ADD TABLE online_status;
+ * NO database tables required. Works with just the Supabase anon key.
  */
 
-/* ── Supabase ─────────────────────────────────────── */
+// ── Supabase ──────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://ufiwakxqrepwnngspjxv.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_Ft_wdmxDIjL9ngoihVFKPA_EnYoD3r8';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ── Roles ────────────────────────────────────────── */
+// ── Roles ────────────────────────────────────────────────────────
 const HUSBAND = 'husband';
 const WIFE    = 'wife';
 
-/* ── ICE config (STUN + free TURN relay) ─────────── */
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302'  },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    /* Free TURN via Metered OpenRelay — handles all NAT/firewall scenarios */
-    { urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject', credential: 'openrelayproject' },
-];
+// ── ICE Servers (STUN + TURN via OpenRelay) ──────────────────────
+const ICE = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302'  },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject', credential: 'openrelayproject' },
+    ]
+};
 
-/* ── App State ────────────────────────────────────── */
-let myRole       = null;
-let partnerRole  = null;
-let peer         = null;       // PeerJS instance
-let myPeerId     = null;       // PeerJS-assigned peer id
-let activeCall   = null;       // current MediaConnection
-let localStream  = null;
-let realtimeSub  = null;       // Supabase realtime subscription
-let timerInterval = null;
-let timerStart   = null;
+// ── State ────────────────────────────────────────────────────────
+const S = {
+    role: null,        // 'husband' | 'wife'
+    partner: null,     // opposite role string
+    peerId: null,      // my PeerJS id (random, assigned by broker)
+    peer: null,        // Peer instance
+    call: null,        // active MediaConnection
+    stream: null,      // local MediaStream
+    presence: null,    // Supabase channel
+    muted: false,
+    camOff: false,
+    isolation: false,
+    timerInterval: null,
+    timerStart: null,
+};
 
-let isMuted    = false;
-let isCamOff   = false;
-let isIsolation = false;
+// ── DOM helpers ──────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const setupScreen = $('screen-setup');
+const callScreen  = $('screen-call');
+const rolePicker  = $('role-picker');
+const joinPanel   = $('join-panel');
+const roleLabel   = $('role-label');
+const remoteVid   = $('remote-video');
+const localVid    = $('local-video');
+const pipWrap     = $('pip-wrap');
+const statusEl    = $('call-status');
+const timerEl     = $('call-timer');
+const toastEl     = $('toast');
 
-/* ── DOM ──────────────────────────────────────────── */
-const $ = id => document.getElementById(id);
-const setupScreen   = $('screen-setup');
-const callScreen    = $('screen-call');
-const rolePicker    = $('role-picker');
-const joinPanel     = $('join-panel');
-const roleLabel     = $('role-label');
-const btnHusband    = $('btn-husband');
-const btnWife       = $('btn-wife');
-const btnJoin       = $('btn-join');
-const btnSwitch     = $('btn-switch');
-const remoteVideo   = $('remote-video');
-const localVideo    = $('local-video');
-const pipWrap       = $('pip-wrap');
-const statusText    = $('call-status-text');
-const callTimer     = $('call-timer');
-const btnIsolation  = $('btn-isolation');
-const btnMic        = $('btn-mic');
-const btnCam        = $('btn-cam');
-const btnEnd        = $('btn-end');
-const toastEl       = $('toast');
-
-/* ══════════════════════════════════════════════════
-   1. ROLE SETUP
-══════════════════════════════════════════════════ */
-(function loadSavedRole() {
-    const saved = localStorage.getItem('oasis_role_v2');
+// ── Boot ─────────────────────────────────────────────────────────
+(function boot() {
+    const saved = localStorage.getItem('oasis_role_v3');
     if (saved) applyRole(saved, false);
 })();
 
+// ── Role Selection ───────────────────────────────────────────────
 function applyRole(role, save = true) {
-    myRole      = role;
-    partnerRole = (role === HUSBAND) ? WIFE : HUSBAND;
-    if (save) localStorage.setItem('oasis_role_v2', role);
+    S.role    = role;
+    S.partner = role === HUSBAND ? WIFE : HUSBAND;
+    if (save) localStorage.setItem('oasis_role_v3', role);
     roleLabel.textContent = role === HUSBAND ? 'Husband 💙' : 'Wife 🌹';
     rolePicker.classList.add('hidden');
     joinPanel.classList.remove('hidden');
 }
 
-btnHusband.addEventListener('click', () => applyRole(HUSBAND));
-btnWife.addEventListener('click',    () => applyRole(WIFE));
-btnSwitch.addEventListener('click',  () => {
-    localStorage.removeItem('oasis_role_v2');
-    myRole = null;
+$('btn-husband').addEventListener('click', () => applyRole(HUSBAND));
+$('btn-wife').addEventListener('click',    () => applyRole(WIFE));
+$('btn-switch').addEventListener('click',  () => {
+    localStorage.removeItem('oasis_role_v3');
+    S.role = null;
     joinPanel.classList.add('hidden');
     rolePicker.classList.remove('hidden');
 });
 
-/* ══════════════════════════════════════════════════
-   2. ENTER ROOM
-══════════════════════════════════════════════════ */
-btnJoin.addEventListener('click', async () => {
-    if (!myRole) { toast('Select a role first'); return; }
-    btnJoin.disabled = true;
-    btnJoin.textContent = 'Starting…';
+// ── Enter Room ───────────────────────────────────────────────────
+$('btn-join').addEventListener('click', async () => {
+    if (!S.role) { toast('Please select a role first.'); return; }
+
+    const btn = $('btn-join');
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
 
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({
+        // 1. Get camera + mic
+        S.stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
             audio: true,
         });
-        localVideo.srcObject = localStream;
+        localVid.srcObject = S.stream;
 
-        // Switch screens
+        // 2. Show call screen
         setupScreen.classList.remove('active');
         setupScreen.classList.add('hidden');
         callScreen.classList.remove('hidden');
         callScreen.classList.add('active');
+        setStatus('Connecting to server…');
 
-        setStatus('Connecting…');
-        initPeer();
+        // 3. Connect PeerJS (random id)
+        S.peer = new Peer({ debug: 0, config: ICE });
+
+        S.peer.on('open', async id => {
+            S.peerId = id;
+            console.log('[PeerJS] My peer id:', id);
+
+            // 4. Start presence & publish my peer_id so partner can find me
+            await startPresence();
+            setStatus('Waiting for partner…');
+        });
+
+        // 5. Auto-answer ALL incoming calls (handles Wife side)
+        S.peer.on('call', incoming => {
+            if (S.call) { console.warn('[PeerJS] Ignoring duplicate incoming call'); return; }
+            console.log('[PeerJS] Incoming call from', incoming.peer);
+            S.call = incoming;
+            incoming.answer(S.stream);
+            bindCallEvents(incoming);
+        });
+
+        S.peer.on('error', err => {
+            console.error('[PeerJS] Error:', err.type, err);
+            toast('PeerJS error: ' + err.type);
+        });
 
     } catch (err) {
-        console.error(err);
-        toast('Camera / Microphone permission required');
-        btnJoin.disabled = false;
-        btnJoin.textContent = 'Enter FaceTime';
+        console.error('[Boot] Failed:', err);
+        toast('Camera/mic permission required.');
+        btn.disabled = false;
+        btn.textContent = 'Enter FaceTime';
     }
 });
 
-/* ══════════════════════════════════════════════════
-   3. PEERJS INIT
-══════════════════════════════════════════════════ */
-function initPeer() {
-    // Let PeerJS auto-generate a unique peer id (avoids "id already taken" errors)
-    peer = new Peer(undefined, {
-        debug: 0,
-        config: { iceServers: ICE_SERVERS }
+// ── Supabase Presence ────────────────────────────────────────────
+async function startPresence() {
+    S.presence = supa.channel('oasis-room', {
+        config: { presence: { key: S.role } }
     });
 
-    peer.on('open', async (id) => {
-        myPeerId = id;
-        console.log('PeerJS open, my peer id:', id);
-
-        // Write our peer_id to Supabase
-        await publishPresence();
-
-        // Listen for the partner's peer_id via Supabase Realtime
-        listenForPartner();
-
-        setStatus('Waiting for partner…');
-    });
-
-    // Auto-answer all incoming calls (Wife receives Husband's call)
-    peer.on('call', (incomingCall) => {
-        console.log('Incoming call from peer:', incomingCall.peer);
-        if (activeCall) {
-            console.warn('Ignoring duplicate call');
-            return;
-        }
-        activeCall = incomingCall;
-        incomingCall.answer(localStream);
-        wireCallEvents(incomingCall);
-    });
-
-    peer.on('error', (err) => {
-        console.error('PeerJS error:', err);
-        toast(`Connection error: ${err.type}`);
-    });
-}
-
-/* ══════════════════════════════════════════════════
-   4. SUPABASE SIGNALING
-══════════════════════════════════════════════════ */
-async function publishPresence() {
-    const { error } = await db.from('online_status').upsert({
-        username:  myRole,
-        peer_id:   myPeerId,
-        last_seen: new Date().toISOString(),
-    }, { onConflict: 'username' });
-
-    if (error) console.error('Supabase upsert error:', error);
-    else       console.log('Published presence to Supabase:', myRole, myPeerId);
-}
-
-async function removePresence() {
-    await db.from('online_status').delete().eq('username', myRole);
-}
-
-function listenForPartner() {
-    // First, check if partner is already online
-    checkPartnerOnline();
-
-    // Then subscribe to realtime changes on online_status table
-    realtimeSub = db
-        .channel('oasis-signaling')
-        .on('postgres_changes', {
-            event:  '*',
-            schema: 'public',
-            table:  'online_status',
-            filter: `username=eq.${partnerRole}`,
-        }, (payload) => {
-            console.log('Realtime event:', payload.eventType, payload.new);
-
-            if (payload.eventType === 'DELETE') {
-                // Partner went offline
-                handlePartnerOffline();
-                return;
-            }
-
-            const partnerPeerId = payload.new?.peer_id;
-            if (partnerPeerId) {
-                handlePartnerOnline(partnerPeerId);
-            }
+    S.presence
+        .on('presence', { event: 'sync' }, () => {
+            const state = S.presence.presenceState();
+            console.log('[Presence] sync', JSON.stringify(state));
+            handlePresenceSync(state);
         })
-        .subscribe((status) => {
-            console.log('Realtime subscription status:', status);
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            console.log('[Presence] join', key, newPresences);
+        })
+        .on('presence', { event: 'leave' }, ({ key }) => {
+            console.log('[Presence] leave', key);
+            if (key === S.partner) partnerLeft();
+        })
+        .subscribe(async status => {
+            console.log('[Presence] subscribe status:', status);
+            if (status === 'SUBSCRIBED') {
+                // Track myself with my peer_id included
+                const res = await S.presence.track({
+                    role:    S.role,
+                    peer_id: S.peerId,
+                });
+                console.log('[Presence] track result:', res);
+            }
         });
 }
 
-async function checkPartnerOnline() {
-    const { data, error } = await db
-        .from('online_status')
-        .select('peer_id')
-        .eq('username', partnerRole)
-        .maybeSingle();
-
-    if (error) { console.error(error); return; }
-    if (data?.peer_id) {
-        console.log('Partner already online:', data.peer_id);
-        handlePartnerOnline(data.peer_id);
+function handlePresenceSync(state) {
+    const partnerEntries = state[S.partner];
+    if (!partnerEntries || partnerEntries.length === 0) {
+        if (!S.call) setStatus('Waiting for partner…');
+        return;
     }
-}
 
-function handlePartnerOnline(partnerPeerId) {
-    if (activeCall) return; // already connected
+    const partnerPeerId = partnerEntries[0]?.peer_id;
+    console.log('[Presence] Partner peer_id detected:', partnerPeerId);
+
+    if (!partnerPeerId) return;
+    if (S.call)         return; // already in a call
 
     setStatus('Partner online! Connecting…');
 
-    // Only HUSBAND initiates the call (prevents dual-call glare)
-    if (myRole === HUSBAND) {
-        console.log('Calling partner peer id:', partnerPeerId);
+    // Only Husband initiates (prevents both sides calling each other simultaneously)
+    if (S.role === HUSBAND) {
+        // Small delay so both peers are fully registered before calling
         setTimeout(() => {
-            if (activeCall) return; // double-check before calling
-            const outCall = peer.call(partnerPeerId, localStream);
-            if (!outCall) return;
-            activeCall = outCall;
-            wireCallEvents(outCall);
-        }, 800); // small delay to let Wife's PeerJS listener settle
+            if (S.call) return;
+            console.log('[PeerJS] Calling partner:', partnerPeerId);
+            const out = S.peer.call(partnerPeerId, S.stream);
+            if (!out) { console.error('[PeerJS] peer.call() returned null'); return; }
+            S.call = out;
+            bindCallEvents(out);
+        }, 1500);
     }
 }
 
-function handlePartnerOffline() {
-    console.log('Partner went offline');
-    if (activeCall) {
-        activeCall.close();
-        activeCall = null;
-    }
-    remoteVideo.srcObject = null;
+function partnerLeft() {
+    if (S.call) { S.call.close(); S.call = null; }
+    remoteVid.srcObject = null;
     stopTimer();
-    callTimer.classList.add('hidden');
+    timerEl.classList.add('hidden');
     setStatus('Partner disconnected. Waiting…');
 }
 
-/* ══════════════════════════════════════════════════
-   5. CALL EVENTS & STREAM HANDLER
-══════════════════════════════════════════════════ */
-function wireCallEvents(call) {
-    call.on('stream', (stream) => {
-        console.log('Remote stream received! Tracks:', stream.getTracks().map(t => t.kind));
-        remoteVideo.srcObject = stream;
-        remoteVideo.play().catch(() => {
-            // Autoplay blocked: unmuted fallback (user can unmute manually)
-            remoteVideo.muted = true;
-            remoteVideo.play().catch(console.error);
+// ── Call Event Binding ───────────────────────────────────────────
+function bindCallEvents(call) {
+    call.on('stream', remoteStream => {
+        console.log('[Call] Remote stream received. Tracks:', remoteStream.getTracks().map(t => `${t.kind}:${t.readyState}`).join(', '));
+        remoteVid.srcObject = remoteStream;
+        remoteVid.play().catch(() => {
+            remoteVid.muted = true;
+            remoteVid.play().catch(console.error);
         });
         setStatus('');
-        callTimer.classList.remove('hidden');
+        timerEl.classList.remove('hidden');
         startTimer();
     });
 
     call.on('close', () => {
-        console.log('Call closed');
-        activeCall = null;
-        remoteVideo.srcObject = null;
+        console.log('[Call] Closed');
+        S.call = null;
+        remoteVid.srcObject = null;
         stopTimer();
-        callTimer.classList.add('hidden');
+        timerEl.classList.add('hidden');
         setStatus('Waiting for partner…');
     });
 
-    call.on('error', (err) => {
-        console.error('Call error:', err);
-        activeCall = null;
-        setStatus('Connection error. Waiting…');
+    call.on('error', err => {
+        console.error('[Call] Error:', err);
+        S.call = null;
+        setStatus('Call error. Waiting…');
     });
 
-    // Monitor WebRTC ICE state for diagnostics
-    if (call.peerConnection) {
-        call.peerConnection.oniceconnectionstatechange = () => {
-            const s = call.peerConnection.iceConnectionState;
-            console.log('ICE state:', s);
-            if (s === 'failed') {
-                toast('Media relay failed. Check network.');
+    // Log ICE state for diagnostics
+    const pc = call.peerConnection;
+    if (pc) {
+        pc.oniceconnectionstatechange = () => {
+            console.log('[ICE] State:', pc.iceConnectionState);
+            if (pc.iceConnectionState === 'failed') {
+                toast('Network relay failed. Check your connection.');
             }
+        };
+        pc.onconnectionstatechange = () => {
+            console.log('[PC] Connection state:', pc.connectionState);
         };
     }
 }
 
-/* ══════════════════════════════════════════════════
-   6. CONTROLS
-══════════════════════════════════════════════════ */
-btnEnd.addEventListener('click', hangUp);
+// ── End Call ─────────────────────────────────────────────────────
+$('btn-end').addEventListener('click', hangUp);
 
-function hangUp() {
-    if (activeCall) { activeCall.close(); activeCall = null; }
-    cleanup();
+async function hangUp() {
+    if (S.call)     { S.call.close(); S.call = null; }
+    if (S.presence) { await S.presence.untrack(); await supa.removeChannel(S.presence); S.presence = null; }
+    if (S.peer)     { S.peer.destroy(); S.peer = null; }
+    if (S.stream)   { S.stream.getTracks().forEach(t => t.stop()); S.stream = null; }
+    remoteVid.srcObject = null;
+    localVid.srcObject  = null;
+    stopTimer();
+    timerEl.classList.add('hidden');
 
     callScreen.classList.remove('active');
     callScreen.classList.add('hidden');
     setupScreen.classList.remove('hidden');
     setupScreen.classList.add('active');
 
-    btnJoin.disabled = false;
-    btnJoin.textContent = 'Enter FaceTime';
+    $('btn-join').disabled = false;
+    $('btn-join').textContent = 'Enter FaceTime';
+
+    S.muted = false; S.camOff = false; S.isolation = false;
+    updateBtns();
 }
 
-async function cleanup() {
-    stopTimer();
-    if (realtimeSub) { await db.removeChannel(realtimeSub); realtimeSub = null; }
-    await removePresence();
-    if (peer) { peer.destroy(); peer = null; }
-    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    remoteVideo.srcObject = null;
-    localVideo.srcObject  = null;
-    isMuted = false; isCamOff = false; isIsolation = false;
-    updateButtons();
-}
-
-btnMic.addEventListener('click', () => {
-    if (!localStream) return;
-    isMuted = !isMuted;
-    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
-    updateButtons();
+// ── Media Controls ────────────────────────────────────────────────
+$('btn-mic').addEventListener('click', () => {
+    if (!S.stream) return;
+    S.muted = !S.muted;
+    S.stream.getAudioTracks().forEach(t => (t.enabled = !S.muted));
+    updateBtns();
 });
 
-btnCam.addEventListener('click', () => {
-    if (!localStream) return;
-    isCamOff = !isCamOff;
-    localStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
-    updateButtons();
+$('btn-cam').addEventListener('click', () => {
+    if (!S.stream) return;
+    S.camOff = !S.camOff;
+    S.stream.getVideoTracks().forEach(t => (t.enabled = !S.camOff));
+    updateBtns();
 });
 
-btnIsolation.addEventListener('click', async () => {
-    if (!localStream) return;
-    isIsolation = !isIsolation;
-    const at = localStream.getAudioTracks()[0];
+$('btn-isolation').addEventListener('click', async () => {
+    if (!S.stream) return;
+    S.isolation = !S.isolation;
+    const at = S.stream.getAudioTracks()[0];
     if (at) {
         try {
-            await at.applyConstraints({ noiseSuppression: isIsolation, echoCancellation: true });
-            toast(isIsolation ? 'Voice Isolation ON' : 'Voice Isolation OFF');
-        } catch { toast('Voice Isolation not supported'); isIsolation = !isIsolation; }
+            await at.applyConstraints({ noiseSuppression: S.isolation, echoCancellation: true });
+            toast(S.isolation ? 'Voice Isolation ON' : 'Voice Isolation OFF');
+        } catch { toast('Voice Isolation not supported'); S.isolation = !S.isolation; }
     }
-    updateButtons();
+    updateBtns();
 });
 
-function updateButtons() {
-    btnMic.classList.toggle('active', isMuted);
-    btnCam.classList.toggle('active', isCamOff);
-    btnIsolation.classList.toggle('active', isIsolation);
+function updateBtns() {
+    $('btn-mic').classList.toggle('active', S.muted);
+    $('btn-cam').classList.toggle('active', S.camOff);
+    $('btn-isolation').classList.toggle('active', S.isolation);
 }
 
-/* ══════════════════════════════════════════════════
-   7. TIMER
-══════════════════════════════════════════════════ */
+// ── Timer ─────────────────────────────────────────────────────────
 function startTimer() {
     stopTimer();
-    timerStart = Date.now();
-    timerInterval = setInterval(() => {
-        const s = Math.floor((Date.now() - timerStart) / 1000);
-        callTimer.textContent =
-            String(Math.floor(s / 60)).padStart(2,'0') + ':' +
-            String(s % 60).padStart(2,'0');
+    S.timerStart = Date.now();
+    S.timerInterval = setInterval(() => {
+        const s = Math.floor((Date.now() - S.timerStart) / 1000);
+        timerEl.textContent = `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
     }, 1000);
 }
 function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    callTimer.textContent = '00:00';
+    clearInterval(S.timerInterval);
+    S.timerInterval = null;
+    timerEl.textContent = '00:00';
 }
 
-/* ══════════════════════════════════════════════════
-   8. PiP DRAG
-══════════════════════════════════════════════════ */
-let dragging = false, px0, py0, mx0, my0;
+// ── PiP Drag ─────────────────────────────────────────────────────
+let drag = false, px0, py0, mx0, my0;
+const cx = e => e.touches ? e.touches[0].clientX : e.clientX;
+const cy = e => e.touches ? e.touches[0].clientY : e.clientY;
 
-pipWrap.addEventListener('mousedown',  dragStart);
-pipWrap.addEventListener('touchstart', dragStart, { passive: false });
-window.addEventListener('mousemove',  dragMove);
-window.addEventListener('touchmove',  dragMove,  { passive: false });
-window.addEventListener('mouseup',    dragEnd);
-window.addEventListener('touchend',   dragEnd);
+pipWrap.addEventListener('mousedown',  e => { drag=true; const r=pipWrap.getBoundingClientRect(); px0=r.left; py0=r.top; mx0=cx(e); my0=cy(e); });
+pipWrap.addEventListener('touchstart', e => { drag=true; const r=pipWrap.getBoundingClientRect(); px0=r.left; py0=r.top; mx0=cx(e); my0=cy(e); e.preventDefault(); }, {passive:false});
+window.addEventListener('mousemove',  e => { if(!drag) return; pipWrap.style.cssText+=`;right:auto;bottom:auto;left:${px0+cx(e)-mx0}px;top:${py0+cy(e)-my0}px`; });
+window.addEventListener('touchmove',  e => { if(!drag) return; e.preventDefault(); pipWrap.style.cssText+=`;right:auto;bottom:auto;left:${px0+cx(e)-mx0}px;top:${py0+cy(e)-my0}px`; }, {passive:false});
+window.addEventListener('mouseup',    () => { if(!drag) return; drag=false; snapPip(); });
+window.addEventListener('touchend',   () => { if(!drag) return; drag=false; snapPip(); });
 
-function cx(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
-function cy(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
-
-function dragStart(e) {
-    dragging = true;
-    mx0 = cx(e); my0 = cy(e);
-    const r = pipWrap.getBoundingClientRect();
-    px0 = r.left; py0 = r.top;
-    if (e.cancelable) e.preventDefault();
-}
-function dragMove(e) {
-    if (!dragging) return;
-    if (e.cancelable) e.preventDefault();
-    pipWrap.style.right  = 'auto';
-    pipWrap.style.bottom = 'auto';
-    pipWrap.style.left   = `${px0 + cx(e) - mx0}px`;
-    pipWrap.style.top    = `${py0 + cy(e) - my0}px`;
-}
-function dragEnd() {
-    if (!dragging) return;
-    dragging = false;
-    const r = pipWrap.getBoundingClientRect();
-    const m = 18;
-    const nl = r.left < window.innerWidth / 2 ? m : window.innerWidth - r.width - m;
-    let   nt = r.top;
-    if (r.top    < m + 60) nt = m + 60;
-    if (r.bottom > window.innerHeight - m - 90) nt = window.innerHeight - r.height - m - 90;
-    pipWrap.style.transition = 'left .28s, top .28s';
-    pipWrap.style.left = `${nl}px`;
-    pipWrap.style.top  = `${nt}px`;
-    setTimeout(() => { pipWrap.style.transition = ''; }, 300);
+function snapPip() {
+    const r=pipWrap.getBoundingClientRect(), m=18;
+    const nl = r.left < window.innerWidth/2 ? m : window.innerWidth - r.width - m;
+    let nt = r.top;
+    if (nt < m+60) nt = m+60;
+    if (r.bottom > window.innerHeight-m-90) nt = window.innerHeight-r.height-m-90;
+    pipWrap.style.transition='left .28s,top .28s';
+    pipWrap.style.left=`${nl}px`; pipWrap.style.top=`${nt}px`;
+    setTimeout(() => pipWrap.style.transition='', 300);
 }
 
-/* ══════════════════════════════════════════════════
-   9. HELPERS
-══════════════════════════════════════════════════ */
-function setStatus(msg) { statusText.textContent = msg; }
+// ── Toast & Status ────────────────────────────────────────────────
+function setStatus(msg) { statusEl.textContent = msg; }
 
-let toastTimer;
+let toastT;
 function toast(msg) {
     toastEl.textContent = msg;
     toastEl.classList.remove('hidden');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 3200);
+    clearTimeout(toastT);
+    toastT = setTimeout(() => toastEl.classList.add('hidden'), 3500);
 }
 
-/* Cleanup on page close/refresh */
+// ── Cleanup on page close ────────────────────────────────────────
 window.addEventListener('beforeunload', () => {
-    removePresence();
-    if (peer) peer.destroy();
+    if (S.presence) S.presence.untrack();
+    if (S.peer)     S.peer.destroy();
 });
