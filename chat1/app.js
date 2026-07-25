@@ -1,65 +1,59 @@
 /**
- * FaceTime Web App Logic - Auto-Connect Waiting Room
- * Pure WebRTC using PeerJS (No Database)
+ * FaceTime Web App - Supabase Realtime Presence + PeerJS Auto-Connect
  */
 
-// --- Constants ---
-const ROLE_A_ID = 'oasis_user_a';
-const ROLE_B_ID = 'oasis_user_b';
+// --- Supabase Config ---
+const SUPABASE_URL = 'https://ufiwakxqrepwnngspjxv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Ft_wdmxDIjL9ngoihVFKPA_EnYoD3r8';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- Application State ---
+// --- Role IDs ---
+const ROLE_HUSBAND = 'oasis_husband';
+const ROLE_WIFE = 'oasis_wife';
+
+// --- State ---
 const State = {
+    myRole: null,        // 'oasis_husband' or 'oasis_wife'
+    targetRole: null,    // opposite of myRole
     peer: null,
-    myRole: null,
-    partnerId: null,
     call: null,
     localStream: null,
     remoteStream: null,
+    presenceChannel: null,
+    isPartnerOnline: false,
     isMicMuted: false,
     isCamOff: false,
     isVoiceIsolationOn: false,
     callDurationInterval: null,
-    callStartTime: null,
-    pollingInterval: null
+    callStartTime: null
 };
 
-// --- DOM Elements ---
+// --- DOM ---
 const DOM = {
-    // Screens
     connectionScreen: document.getElementById('connection-screen'),
     callScreen: document.getElementById('call-screen'),
-    
-    // UI Sections
     roleSelection: document.getElementById('role-selection'),
     joinSection: document.getElementById('join-section'),
     currentRoleDisplay: document.getElementById('current-role-display'),
-    
-    // Buttons
-    btnRoleA: document.getElementById('btn-role-a'),
-    btnRoleB: document.getElementById('btn-role-b'),
+    btnRoleHusband: document.getElementById('btn-role-husband'),
+    btnRoleWife: document.getElementById('btn-role-wife'),
     btnChangeRole: document.getElementById('btn-change-role'),
     btnJoinRoom: document.getElementById('btn-join-room'),
-    
-    // Video Call
     localVideo: document.getElementById('local-video'),
     remoteVideo: document.getElementById('remote-video'),
     pipContainer: document.getElementById('pip-container'),
     callStatus: document.getElementById('call-status'),
     callDuration: document.getElementById('call-duration'),
-    
-    // Controls
     btnIsolation: document.getElementById('btn-voice-isolation'),
     btnMic: document.getElementById('btn-toggle-mic'),
     btnCam: document.getElementById('btn-toggle-cam'),
     btnEndCall: document.getElementById('btn-end-call'),
-    
-    // Toast
     toastNotification: document.getElementById('toast-notification')
 };
 
-// --- 1. Initialization & Role Management ---
+// --- 1. Role Setup ---
 function initApp() {
-    const savedRole = localStorage.getItem('oasis_role');
+    const savedRole = localStorage.getItem('oasis_facetime_role');
     if (savedRole) {
         setRole(savedRole);
     } else {
@@ -69,10 +63,10 @@ function initApp() {
 
 function setRole(role) {
     State.myRole = role;
-    State.partnerId = role === ROLE_A_ID ? ROLE_B_ID : ROLE_A_ID;
+    State.targetRole = (role === ROLE_HUSBAND) ? ROLE_WIFE : ROLE_HUSBAND;
     
-    localStorage.setItem('oasis_role', role);
-    DOM.currentRoleDisplay.textContent = role === ROLE_A_ID ? 'User A' : 'User B';
+    localStorage.setItem('oasis_facetime_role', role);
+    DOM.currentRoleDisplay.textContent = (role === ROLE_HUSBAND) ? 'Husband' : 'Wife';
     
     DOM.roleSelection.classList.add('hidden');
     DOM.joinSection.classList.remove('hidden');
@@ -80,167 +74,180 @@ function setRole(role) {
 
 function showRoleSelection() {
     State.myRole = null;
-    localStorage.removeItem('oasis_role');
-    
+    localStorage.removeItem('oasis_facetime_role');
     DOM.joinSection.classList.add('hidden');
     DOM.roleSelection.classList.remove('hidden');
 }
 
-DOM.btnRoleA.addEventListener('click', () => setRole(ROLE_A_ID));
-DOM.btnRoleB.addEventListener('click', () => setRole(ROLE_B_ID));
+DOM.btnRoleHusband.addEventListener('click', () => setRole(ROLE_HUSBAND));
+DOM.btnRoleWife.addEventListener('click', () => setRole(ROLE_WIFE));
 DOM.btnChangeRole.addEventListener('click', showRoleSelection);
 
-// --- 2. Joining the Waiting Room ---
+// --- 2. Enter Room & Initialize Connections ---
 DOM.btnJoinRoom.addEventListener('click', async () => {
     try {
         await setupLocalMedia();
         showCallScreen();
         
-        // Setup PeerJS with robust STUN configuration
-        State.peer = new Peer(State.myRole, {
-            debug: 1,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun3.l.google.com:19302' },
-                    { urls: 'stun:stun4.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
-            }
-        });
+        // Step A: Initialize PeerJS with my static PeerID
+        initPeer();
         
-        State.peer.on('open', (id) => {
-            console.log('PeerJS connected as:', id);
-            startPollingPartner();
-        });
-        
-        // Listen for incoming calls
-        State.peer.on('call', handleIncomingCall);
-        
-        State.peer.on('error', (err) => {
-            if (err.type === 'peer-unavailable') {
-                // Peer unavailable happens when calling an offline user. Reset State.call so we can retry.
-                if (State.call && !State.remoteStream) {
-                    State.call = null;
-                }
-                return;
-            }
-            console.error('PeerJS Error:', err);
-            if (err.type === 'unavailable-id') {
-                showToast('ID in use. Reconnecting...');
-                setTimeout(() => {
-                    if (State.peer) State.peer.destroy();
-                    DOM.btnJoinRoom.click();
-                }, 1500);
-            }
-        });
+        // Step B: Track Presence on Supabase
+        initSupabasePresence();
         
     } catch (err) {
-        console.error('Failed to join room', err);
-        showToast('Could not access camera/microphone.');
+        console.error('Failed to enter room:', err);
+        showToast('Camera/Microphone access required.');
     }
 });
 
-// --- 3. Asymmetric Auto-Connect Logic ---
-function startPollingPartner() {
-    if (State.pollingInterval) clearInterval(State.pollingInterval);
-    
-    // Designated Initiator: User A polls User B.
-    // User B listens passively to prevent SDP glare collision.
-    if (State.myRole !== ROLE_A_ID) {
-        console.log('User B active: Listening for incoming call from User A...');
-        return;
-    }
-
-    console.log('User A active: Polling User B (', State.partnerId, ')');
-    
-    const attemptCall = () => {
-        if (State.call || State.remoteStream) return;
-        
-        console.log('User A calling:', State.partnerId);
-        const outCall = State.peer.call(State.partnerId, State.localStream);
-        
-        if (outCall) {
-            // Lock State.call immediately to prevent spamming new calls during negotiation
-            State.call = outCall;
-            
-            outCall.on('stream', (remoteStream) => {
-                console.log('User A connected to User B stream!');
-                stopPollingPartner();
-                handleStreamConnected(remoteStream);
-            });
-            
-            outCall.on('close', () => {
-                resetToWaitingRoom();
-            });
-
-            outCall.on('error', (err) => {
-                console.warn('Call error:', err);
-                State.call = null;
-            });
+function initPeer() {
+    State.peer = new Peer(State.myRole, {
+        debug: 1,
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
         }
-    };
+    });
 
-    attemptCall();
-    State.pollingInterval = setInterval(attemptCall, 4000);
+    State.peer.on('open', (id) => {
+        console.log('PeerJS ready with ID:', id);
+    });
+
+    // Auto-answer incoming calls from partner
+    State.peer.on('call', handleIncomingCall);
+
+    State.peer.on('error', (err) => {
+        console.error('PeerJS Error:', err);
+        if (err.type === 'unavailable-id') {
+            showToast('Account active elsewhere. Reconnecting...');
+            setTimeout(() => {
+                if (State.peer) State.peer.destroy();
+                initPeer();
+            }, 1000);
+        }
+    });
 }
 
-function stopPollingPartner() {
-    if (State.pollingInterval) {
-        clearInterval(State.pollingInterval);
-        State.pollingInterval = null;
+// --- 3. Supabase Realtime Presence Signaling ---
+function initSupabasePresence() {
+    State.presenceChannel = supabaseClient.channel('oasis_facetime_presence', {
+        config: { presence: { key: State.myRole } }
+    });
+
+    State.presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            const presenceState = State.presenceChannel.presenceState();
+            console.log('Presence state updated:', presenceState);
+            
+            // Check if partner is online
+            const isPartnerPresent = Boolean(presenceState[State.targetRole]);
+            State.isPartnerOnline = isPartnerPresent;
+            
+            if (isPartnerPresent) {
+                console.log('Partner detected online via Supabase Presence!');
+                DOM.callStatus.textContent = 'Partner detected! Connecting...';
+                
+                // Designated Initiator (Husband calls Wife) to avoid dual-call glare
+                if (State.myRole === ROLE_HUSBAND && !State.call) {
+                    initiateCallToPartner();
+                }
+            } else {
+                if (!State.call) {
+                    DOM.callStatus.textContent = 'Waiting for partner...';
+                }
+            }
+        })
+        .on('presence', { event: 'leave' }, ({ key }) => {
+            if (key === State.targetRole) {
+                console.log('Partner left the room');
+                State.isPartnerOnline = false;
+                if (State.call) {
+                    State.call.close();
+                }
+                resetToWaitingState();
+            }
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await State.presenceChannel.track({
+                    user_role: State.myRole,
+                    online_at: new Date().toISOString()
+                });
+            }
+        });
+}
+
+function initiateCallToPartner() {
+    if (State.call || !State.localStream) return;
+    
+    console.log('Initiating PeerJS call to:', State.targetRole);
+    const outCall = State.peer.call(State.targetRole, State.localStream);
+    
+    if (outCall) {
+        State.call = outCall;
+        
+        outCall.on('stream', (remoteStream) => {
+            console.log('Call stream connected on initiator side!');
+            handleStreamConnected(remoteStream);
+        });
+        
+        outCall.on('close', () => {
+            resetToWaitingState();
+        });
+        
+        outCall.on('error', (err) => {
+            console.error('Outgoing call error:', err);
+            State.call = null;
+        });
     }
 }
 
-// Auto-Answer Incoming Calls
 function handleIncomingCall(inCall) {
-    console.log('Incoming call received from:', inCall.peer);
-    
-    stopPollingPartner();
+    console.log('Incoming PeerJS call received from:', inCall.peer);
     
     if (State.call && State.remoteStream) {
-        console.log('Already connected, ignoring duplicate call.');
+        console.log('Already connected, ignoring duplicate call');
         return;
     }
 
     State.call = inCall;
-    console.log('Auto-answering call with local stream...');
+    console.log('Auto-answering call...');
     inCall.answer(State.localStream);
     
     inCall.on('stream', (remoteStream) => {
-        console.log('Incoming stream received successfully!');
+        console.log('Call stream connected on answerer side!');
         handleStreamConnected(remoteStream);
     });
     
     inCall.on('close', () => {
-        resetToWaitingRoom();
+        resetToWaitingState();
     });
-
+    
     inCall.on('error', (err) => {
         console.error('Incoming call error:', err);
-        resetToWaitingRoom();
+        resetToWaitingState();
     });
 }
 
 function handleStreamConnected(remoteStream) {
     if (!remoteStream) return;
     
-    console.log('Binding remote stream to video element');
     State.remoteStream = remoteStream;
     DOM.remoteVideo.srcObject = remoteStream;
     
-    // Autoplay handling with fallback
     DOM.remoteVideo.play().then(() => {
-        console.log('Remote video playing cleanly!');
+        console.log('Remote video playing');
     }).catch(err => {
-        console.warn('Autoplay blocked unmuted video playback, retrying muted:', err);
+        console.warn('Video play catch fallback:', err);
         DOM.remoteVideo.muted = true;
-        DOM.remoteVideo.play().catch(e => console.error('Video play error:', e));
+        DOM.remoteVideo.play().catch(e => console.error(e));
     });
     
-    // Update UI
     DOM.callStatus.textContent = '';
     DOM.callStatus.classList.add('hidden');
     DOM.callDuration.classList.remove('hidden');
@@ -248,26 +255,23 @@ function handleStreamConnected(remoteStream) {
     if (!State.callDurationInterval) startCallTimer();
 }
 
-function resetToWaitingRoom() {
+function resetToWaitingState() {
     State.call = null;
     State.remoteStream = null;
     DOM.remoteVideo.srcObject = null;
     
     stopCallTimer();
     DOM.callDuration.classList.add('hidden');
-    
-    DOM.callStatus.textContent = 'Waiting for partner...';
+    DOM.callStatus.textContent = State.isPartnerOnline ? 'Reconnecting...' : 'Waiting for partner...';
     DOM.callStatus.classList.remove('hidden');
-    
-    startPollingPartner();
 }
 
-// --- 4. Video & Audio Setup ---
+// --- 4. Local Media Setup ---
 async function setupLocalMedia() {
     if (State.localStream) return State.localStream;
     
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, 
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
         audio: true
     });
     
@@ -284,14 +288,17 @@ function showCallScreen() {
     DOM.callDuration.classList.add('hidden');
 }
 
-// --- 5. Controls & Actions ---
+// --- 5. FaceTime Controls ---
 DOM.btnEndCall.addEventListener('click', () => {
-    if (State.call) State.call.close();
     endCallCleanup();
 });
 
 function endCallCleanup() {
-    stopPollingPartner();
+    if (State.presenceChannel) {
+        State.presenceChannel.untrack();
+        State.presenceChannel.unsubscribe();
+        State.presenceChannel = null;
+    }
     
     if (State.peer) {
         State.peer.destroy();
@@ -326,9 +333,7 @@ DOM.btnMic.addEventListener('click', () => {
     if (!State.localStream) return;
     State.isMicMuted = !State.isMicMuted;
     const audioTrack = State.localStream.getAudioTracks()[0];
-    if (audioTrack) {
-        audioTrack.enabled = !State.isMicMuted;
-    }
+    if (audioTrack) audioTrack.enabled = !State.isMicMuted;
     updateControlButtons();
 });
 
@@ -336,9 +341,7 @@ DOM.btnCam.addEventListener('click', () => {
     if (!State.localStream) return;
     State.isCamOff = !State.isCamOff;
     const videoTrack = State.localStream.getVideoTracks()[0];
-    if (videoTrack) {
-        videoTrack.enabled = !State.isCamOff;
-    }
+    if (videoTrack) videoTrack.enabled = !State.isCamOff;
     updateControlButtons();
 });
 
@@ -357,9 +360,9 @@ DOM.btnIsolation.addEventListener('click', async () => {
         updateControlButtons();
         showToast(State.isVoiceIsolationOn ? 'Voice Isolation: ON' : 'Voice Isolation: OFF');
     } catch (error) {
-        console.error('Failed to apply voice isolation constraints:', error);
-        State.isVoiceIsolationOn = !State.isVoiceIsolationOn; 
-        showToast('Voice isolation is not supported on this device.');
+        console.error(error);
+        State.isVoiceIsolationOn = !State.isVoiceIsolationOn;
+        showToast('Voice isolation not supported on this device.');
     }
 });
 
@@ -369,7 +372,7 @@ function updateControlButtons() {
     DOM.btnIsolation.classList.toggle('active', State.isVoiceIsolationOn);
 }
 
-// --- 6. Floating PiP Drag Logic ---
+// --- 6. Draggable PiP ---
 let isDragging = false;
 let pipStartX, pipStartY, initialMouseX, initialMouseY;
 
@@ -392,12 +395,12 @@ function dragStart(e) {
     pipStartX = rect.left;
     pipStartY = rect.top;
     
-    if(e.type.includes('touch')) e.preventDefault();
+    if (e.type.includes('touch')) e.preventDefault();
 }
 
 function dragMove(e) {
     if (!isDragging) return;
-    e.preventDefault(); 
+    e.preventDefault();
     
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
@@ -439,7 +442,7 @@ function dragEnd() {
     }, 300);
 }
 
-// --- 7. Call Timer ---
+// --- 7. Call Timer & Toast ---
 function startCallTimer() {
     if (State.callDurationInterval) clearInterval(State.callDurationInterval);
     State.callStartTime = Date.now();
@@ -468,5 +471,5 @@ function showToast(message) {
     }, 3000);
 }
 
-// Bootstrap
+// Start app
 initApp();
