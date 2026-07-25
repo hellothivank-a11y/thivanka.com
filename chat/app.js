@@ -806,8 +806,18 @@ function sendCallChatMessage() {
     mainInput.value = prev;
 }
 
+function handleRemoteVideoClick() {
+    const callScreen = document.getElementById('callScreen');
+    if (callScreen && callScreen.classList.contains('chat-open')) {
+        closeCallChat();
+    }
+}
+
 function handleCallChatKeyPress(e) {
-    if (e.key === 'Enter') sendCallChatMessage();
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendCallChatMessage();
+    }
 }
 
 function toggleSideBySideMode() {
@@ -945,7 +955,10 @@ async function sendMessage(mediaPayload = null) {
 }
 
 function handleInputKeyPress(e) {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+    }
 }
 
 function handleInputTyping() {
