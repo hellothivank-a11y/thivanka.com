@@ -616,6 +616,32 @@ function setupCallListeners(call) {
         remoteVideo.srcObject = remoteStream;
         remoteVideo.play();
 
+        // Smart aspect ratio detection — prevent face cropping on landscape screens
+        const applyAspectRatio = () => {
+            const vw = remoteVideo.videoWidth;
+            const vh = remoteVideo.videoHeight;
+            if (!vw || !vh) return;
+
+            const videoAspect  = vw / vh;                             // e.g. 1.78 for 16:9
+            const screenAspect = window.innerWidth / window.innerHeight;
+
+            // Use contain when video is landscape AND screen is also landscape (desktop/laptop),
+            // which causes heavy zoom on faces. Portrait-to-portrait stays as cover.
+            if (videoAspect > 1.2 && screenAspect > 1.0) {
+                remoteVideo.classList.add('contain-mode');
+            } else if (videoAspect > 1.2 && screenAspect <= 1.0) {
+                // Landscape video on portrait screen — contain so full face visible
+                remoteVideo.classList.add('contain-mode');
+            } else {
+                // Portrait video on portrait screen — cover fills perfectly
+                remoteVideo.classList.remove('contain-mode');
+            }
+        };
+
+        remoteVideo.addEventListener('loadedmetadata', applyAspectRatio);
+        remoteVideo.addEventListener('resize', applyAspectRatio);
+        window.addEventListener('resize', applyAspectRatio);
+
         startCallTimer();
         document.getElementById('callPartnerName').innerText =
             currentUsername === 'Hani' ? 'Bani' : 'Hani';
@@ -632,6 +658,7 @@ function setupCallListeners(call) {
 
 function cleanUpCall() {
     hideCallScreen();
+    closeCallChat(); // close drawer if open
 
     const remoteVideo = document.getElementById('remoteVideo');
     const localVideo  = document.getElementById('localVideo');
@@ -640,6 +667,9 @@ function cleanUpCall() {
         remoteVideo.srcObject.getTracks().forEach(t => t.stop());
         remoteVideo.srcObject = null;
     }
+    // Reset aspect ratio class
+    remoteVideo.classList.remove('contain-mode');
+
     if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         localStream = null;
@@ -709,6 +739,71 @@ async function flipCamera() {
         console.error('Camera flip error:', err);
         showToast('Could not flip camera.');
     }
+}
+
+// ── In-Call Chat Drawer ─────────────────────────────────────────────
+let callChatOpen = false;
+
+function toggleCallChat() {
+    const drawer  = document.getElementById('callChatDrawer');
+    const chatBtn = document.getElementById('callChatBtn');
+    callChatOpen  = !callChatOpen;
+
+    drawer.classList.toggle('open', callChatOpen);
+    chatBtn.classList.toggle('active', callChatOpen);
+
+    if (callChatOpen) {
+        // Populate drawer with current messages from the main chat
+        syncCallChatMessages();
+        setTimeout(() => {
+            const msgs = document.getElementById('callChatMessages');
+            if (msgs) msgs.scrollTop = msgs.scrollHeight;
+            document.getElementById('callChatInput').focus();
+        }, 400); // after slide-in animation
+    }
+}
+
+function closeCallChat() {
+    const drawer  = document.getElementById('callChatDrawer');
+    const chatBtn = document.getElementById('callChatBtn');
+    if (!drawer) return;
+    callChatOpen = false;
+    drawer.classList.remove('open');
+    if (chatBtn) chatBtn.classList.remove('active');
+}
+
+// Mirror the main #messageList content into the drawer
+function syncCallChatMessages() {
+    const source = document.getElementById('messageList');
+    const target = document.getElementById('callChatMessages');
+    if (!source || !target) return;
+    target.innerHTML = source.innerHTML;
+}
+
+// Also push new messages into the drawer in real-time if it's open
+function appendToCallChatIfOpen(msgWrapperHTML) {
+    if (!callChatOpen) return;
+    const target = document.getElementById('callChatMessages');
+    if (!target) return;
+    target.insertAdjacentHTML('beforeend', msgWrapperHTML);
+    target.scrollTop = target.scrollHeight;
+}
+
+function sendCallChatMessage() {
+    const input = document.getElementById('callChatInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    // Re-use the main sendMessage flow, setting input temporarily
+    const mainInput = document.getElementById('messageInput');
+    const prev = mainInput.value;
+    mainInput.value = text;
+    sendMessage();
+    mainInput.value = prev;
+}
+
+function handleCallChatKeyPress(e) {
+    if (e.key === 'Enter') sendCallChatMessage();
 }
 
 function toggleSideBySideMode() {
@@ -1060,6 +1155,9 @@ async function renderMessage(data, isInitialLoad = false) {
     msgWrapper.innerHTML = html;
     messageList.appendChild(msgWrapper);
     messageList.scrollTo({ top: messageList.scrollHeight, behavior: isInitialLoad ? 'auto' : 'smooth' });
+
+    // Mirror new message live into the in-call chat drawer if it's open
+    if (!isInitialLoad) appendToCallChatIfOpen(msgWrapper.outerHTML);
 
     lastRenderedSender = data.sender;
     lastRenderedTime   = date;
