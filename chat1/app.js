@@ -4,9 +4,9 @@
  */
 
 // --- Configuration ---
-const SUPABASE_URL = 'https://hfkwgumcdgpsqjjwtxik.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_Jtj7u2jXgqQt1oIC3P-pTg_nsF_foAQ';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'https://ufiwakxqrepwnngspjxv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Ft_wdmxDIjL9ngoihVFKPA_EnYoD3r8';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Application State ---
 const State = {
@@ -32,34 +32,34 @@ const DOM = {
     dashboardScreen: document.getElementById('dashboard-screen'),
     callScreen: document.getElementById('call-screen'),
     incomingOverlay: document.getElementById('incoming-call-overlay'),
-    
+
     // Inputs & Buttons
     usernameInput: document.getElementById('username-input'),
     loginBtn: document.getElementById('login-btn'),
     usersList: document.getElementById('users-list'),
     myUsernameDisplay: document.getElementById('my-username-display'),
-    
+
     // Video Call
     localVideo: document.getElementById('local-video'),
     remoteVideo: document.getElementById('remote-video'),
     pipContainer: document.getElementById('pip-container'),
     callPartnerName: document.getElementById('call-partner-name'),
     callDuration: document.getElementById('call-duration'),
-    
+
     // Controls
     btnIsolation: document.getElementById('btn-voice-isolation'),
     btnMic: document.getElementById('btn-toggle-mic'),
     btnCam: document.getElementById('btn-toggle-cam'),
     btnChat: document.getElementById('btn-toggle-chat'),
     btnEndCall: document.getElementById('btn-end-call'),
-    
+
     // Chat
     chatDrawer: document.getElementById('chat-drawer'),
     btnCloseChat: document.getElementById('btn-close-chat'),
     chatMessages: document.getElementById('chat-messages'),
     chatInput: document.getElementById('chat-input'),
     btnSendMsg: document.getElementById('btn-send-msg'),
-    
+
     // Incoming Call
     incomingCallerName: document.getElementById('incoming-caller-name'),
     incomingCallerInitial: document.getElementById('incoming-caller-initial'),
@@ -77,13 +77,13 @@ async function handleLogin() {
     const username = DOM.usernameInput.value.trim();
     if (!username) return alert('Please enter a username.');
     if (username.length > 20) return alert('Username too long.');
-    
+
     State.username = username;
     DOM.myUsernameDisplay.textContent = username;
-    
+
     DOM.onboardingScreen.classList.add('hidden');
     DOM.dashboardScreen.classList.remove('hidden');
-    
+
     initPeer();
     initPresence();
 }
@@ -100,7 +100,7 @@ function initPeer() {
     });
 
     State.peer.on('call', handleIncomingCall);
-    
+
     State.peer.on('connection', (conn) => {
         setupDataConnection(conn);
     });
@@ -115,7 +115,7 @@ function initPeer() {
 
 // --- 3. Supabase Presence (Dashboard) ---
 function initPresence() {
-    State.presenceChannel = supabase.channel('online-users', {
+    State.presenceChannel = supabaseClient.channel('online-users', {
         config: {
             presence: {
                 key: State.username
@@ -140,7 +140,7 @@ function initPresence() {
 
 function renderUsersList(presenceState) {
     DOM.usersList.innerHTML = '';
-    
+
     // Flatten state object
     const users = [];
     for (const id in presenceState) {
@@ -181,19 +181,19 @@ function renderUsersList(presenceState) {
 async function startCall(partnerUsername) {
     try {
         await setupLocalMedia();
-        
+
         DOM.callPartnerName.textContent = partnerUsername;
         showCallScreen();
         startCallTimer();
-        
+
         // Initiate Call
         const call = State.peer.call(partnerUsername, State.localStream);
         setupCallEventHandlers(call);
-        
+
         // Initiate Data Connection for Chat
         const conn = State.peer.connect(partnerUsername);
         setupDataConnection(conn);
-        
+
     } catch (err) {
         console.error('Failed to start call', err);
         alert('Could not access camera/microphone.');
@@ -205,31 +205,31 @@ let pendingIncomingCall = null;
 function handleIncomingCall(call) {
     pendingIncomingCall = call;
     const callerName = call.peer;
-    
+
     DOM.incomingCallerName.textContent = callerName;
     DOM.incomingCallerInitial.textContent = callerName.charAt(0).toUpperCase();
     DOM.incomingOverlay.classList.remove('hidden');
-    
+
     // Play ringing sound conceptually here
 }
 
 DOM.btnAccept.addEventListener('click', async () => {
     DOM.incomingOverlay.classList.add('hidden');
     if (!pendingIncomingCall) return;
-    
+
     try {
         await setupLocalMedia();
         DOM.callPartnerName.textContent = pendingIncomingCall.peer;
         showCallScreen();
         startCallTimer();
-        
+
         pendingIncomingCall.answer(State.localStream);
         setupCallEventHandlers(pendingIncomingCall);
         pendingIncomingCall = null;
     } catch (err) {
         console.error('Failed to answer call', err);
         alert('Could not access camera/microphone to answer.');
-        if(pendingIncomingCall) pendingIncomingCall.close();
+        if (pendingIncomingCall) pendingIncomingCall.close();
     }
 });
 
@@ -243,12 +243,12 @@ DOM.btnDecline.addEventListener('click', () => {
 
 function setupCallEventHandlers(call) {
     State.call = call;
-    
+
     call.on('stream', (remoteStream) => {
         State.remoteStream = remoteStream;
         DOM.remoteVideo.srcObject = remoteStream;
     });
-    
+
     call.on('close', endCallCleanup);
     call.on('error', (err) => {
         console.error('Call Error:', err);
@@ -258,9 +258,9 @@ function setupCallEventHandlers(call) {
 
 async function setupLocalMedia() {
     if (State.localStream) return;
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } }, 
-        audio: { noiseSuppression: false, echoCancellation: true } 
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: { noiseSuppression: false, echoCancellation: true }
     });
     State.localStream = stream;
     DOM.localVideo.srcObject = stream;
@@ -285,19 +285,19 @@ function endCallCleanup() {
     }
     DOM.remoteVideo.srcObject = null;
     DOM.localVideo.srcObject = null;
-    
+
     State.call = null;
     State.remoteStream = null;
     State.dataConnection = null;
-    
+
     stopCallTimer();
-    
+
     // Reset UI
     DOM.chatMessages.innerHTML = '';
     closeChatDrawer();
     DOM.callScreen.classList.add('hidden');
     DOM.dashboardScreen.classList.remove('hidden');
-    
+
     // Reset states
     State.isMicMuted = false;
     State.isCamOff = false;
@@ -326,7 +326,7 @@ DOM.btnIsolation.addEventListener('click', async () => {
     if (!audioTrack) return;
 
     State.isVoiceIsolationOn = !State.isVoiceIsolationOn;
-    
+
     try {
         await audioTrack.applyConstraints({
             noiseSuppression: State.isVoiceIsolationOn,
@@ -387,7 +387,7 @@ DOM.chatInput.addEventListener('keypress', (e) => {
 function sendChatMessage() {
     const text = DOM.chatInput.value.trim();
     if (!text || !State.dataConnection) return;
-    
+
     State.dataConnection.send({ message: text });
     appendMessage(text, true);
     DOM.chatInput.value = '';
@@ -406,9 +406,9 @@ let isDragging = false;
 let pipStartX, pipStartY, initialMouseX, initialMouseY;
 
 DOM.pipContainer.addEventListener('mousedown', dragStart);
-DOM.pipContainer.addEventListener('touchstart', dragStart, {passive: false});
+DOM.pipContainer.addEventListener('touchstart', dragStart, { passive: false });
 window.addEventListener('mousemove', dragMove);
-window.addEventListener('touchmove', dragMove, {passive: false});
+window.addEventListener('touchmove', dragMove, { passive: false });
 window.addEventListener('mouseup', dragEnd);
 window.addEventListener('touchend', dragEnd);
 
@@ -416,28 +416,28 @@ function dragStart(e) {
     isDragging = true;
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    
+
     initialMouseX = clientX;
     initialMouseY = clientY;
-    
+
     const rect = DOM.pipContainer.getBoundingClientRect();
     pipStartX = rect.left;
     pipStartY = rect.top;
-    
+
     // Prevent default to stop text selection during drag
-    if(e.type.includes('touch')) e.preventDefault();
+    if (e.type.includes('touch')) e.preventDefault();
 }
 
 function dragMove(e) {
     if (!isDragging) return;
     e.preventDefault(); // Prevent scrolling on touch
-    
+
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    
+
     const deltaX = clientX - initialMouseX;
     const deltaY = clientY - initialMouseY;
-    
+
     // Convert to absolute positioning to override bottom/right
     DOM.pipContainer.style.bottom = 'auto';
     DOM.pipContainer.style.right = 'auto';
@@ -448,27 +448,27 @@ function dragMove(e) {
 function dragEnd() {
     if (!isDragging) return;
     isDragging = false;
-    
+
     // Snap to edges (simplified implementation)
     const rect = DOM.pipContainer.getBoundingClientRect();
     const snapMargin = 20;
-    
+
     let newLeft = rect.left;
     let newTop = rect.top;
-    
+
     if (rect.left < window.innerWidth / 2) {
         newLeft = snapMargin;
     } else {
         newLeft = window.innerWidth - rect.width - snapMargin;
     }
-    
+
     if (rect.top < snapMargin) newTop = snapMargin + 80; // avoid header
     if (rect.bottom > window.innerHeight - snapMargin) newTop = window.innerHeight - rect.height - snapMargin - 100; // avoid dock
-    
+
     DOM.pipContainer.style.transition = 'left 0.3s, top 0.3s';
     DOM.pipContainer.style.left = `${newLeft}px`;
     DOM.pipContainer.style.top = `${newTop}px`;
-    
+
     setTimeout(() => {
         DOM.pipContainer.style.transition = 'transform var(--transition-fast), box-shadow var(--transition-fast)';
     }, 300);
