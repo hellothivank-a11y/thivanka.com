@@ -1,12 +1,12 @@
 /* ════════════════════════════════════════════════════════════════
-   CONNECT — Honey & Bunny  |  Full App Logic (FIXED)
+   CONNECT — Honey & Bunny  |  Full App Logic (STABLE WEBRTC)
    ════════════════════════════════════════════════════════════════ */
 
 // ── Configuration ───────────────────────────────────────────────
 const SUPABASE_URL = "https://ufiwakxqrepwnngspjxv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ft_wdmxDIjL9ngoihVFKPA_EnYoD3r8";
 
-// User credentials  { name, emoji, passcode }
+// User credentials { name, emoji, passcode }
 const USERS = {
     Honey: { emoji: "🍯", passcode: "1234", partner: "Bunny" },
     Bunny: { emoji: "🐰", passcode: "5678", partner: "Honey" }
@@ -65,10 +65,16 @@ function selectUser(name) {
     typedPasscode = "";
     updateDots();
 
-    document.getElementById("btn-honey").classList.toggle("active", name === "Honey");
-    document.getElementById("btn-honey").setAttribute("aria-pressed", name === "Honey");
-    document.getElementById("btn-bunny").classList.toggle("active", name === "Bunny");
-    document.getElementById("btn-bunny").setAttribute("aria-pressed", name === "Bunny");
+    const btnH = document.getElementById("btn-honey");
+    const btnB = document.getElementById("btn-bunny");
+    if(btnH) {
+        btnH.classList.toggle("active", name === "Honey");
+        btnH.setAttribute("aria-pressed", name === "Honey");
+    }
+    if(btnB) {
+        btnB.classList.toggle("active", name === "Bunny");
+        btnB.setAttribute("aria-pressed", name === "Bunny");
+    }
 
     hidePasscodeError();
 }
@@ -105,7 +111,8 @@ function showPasscodeError() {
         const dot = document.getElementById(`dot-${i}`);
         if(dot) dot.classList.add("error");
     }
-    document.getElementById("passcode-error").classList.remove("hidden");
+    const err = document.getElementById("passcode-error");
+    if(err) err.classList.remove("hidden");
     setTimeout(() => {
         typedPasscode = "";
         updateDots();
@@ -287,7 +294,6 @@ async function sendMessage() {
 
     input.value = "";
 
-    // FIXED: sb.from instead of supabase.from
     const { error } = await sb
         .from("messages")
         .insert([{ sender: currentUser, content: text }]);
@@ -348,14 +354,15 @@ async function startCall(type) {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
 
-        // FIXED: sb.from instead of supabase.from
         const { data, error } = await sb
             .from("calls")
             .insert([{
                 type,
                 status: "pending",
                 caller: currentUser,
-                offer: { type: offer.type, sdp: offer.sdp }
+                offer: { type: offer.type, sdp: offer.sdp },
+                caller_candidates: [],
+                callee_candidates: []
             }])
             .select()
             .single();
@@ -368,18 +375,17 @@ async function startCall(type) {
 
         currentCallId = data.id;
 
-        // FIXED: Realtime Candidate Accumulation
-        const callerCandidates = [];
+        // Ice candidate gather & update
         peerConnection.onicecandidate = async (e) => {
             if (e.candidate) {
-                callerCandidates.push(e.candidate.toJSON());
-                await sb
-                    .from("calls")
-                    .update({ caller_candidates: callerCandidates })
-                    .eq("id", currentCallId);
+                const { data: latest } = await sb.from("calls").select("caller_candidates").eq("id", currentCallId).single();
+                const currentList = latest?.caller_candidates || [];
+                currentList.push(e.candidate.toJSON());
+                await sb.from("calls").update({ caller_candidates: currentList }).eq("id", currentCallId);
             }
         };
 
+        // Realtime sync with Callee
         if (callChannel) callChannel.unsubscribe();
         callChannel = sb.channel(`call:${currentCallId}`)
             .on("postgres_changes", {
@@ -391,12 +397,9 @@ async function startCall(type) {
                 const call = payload.new;
 
                 if (call.answer && !peerConnection.currentRemoteDescription) {
-                    await peerConnection.setRemoteDescription(
-                        new RTCSessionDescription(call.answer)
-                    );
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(call.answer));
                 }
 
-                // FIXED: Adding Callee Candidates properly
                 if (call.callee_candidates && Array.isArray(call.callee_candidates)) {
                     for (const c of call.callee_candidates) {
                         try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); }
@@ -475,9 +478,7 @@ async function acceptCall() {
         peerConnection = createPeerConnection();
         localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-        await peerConnection.setRemoteDescription(
-            new RTCSessionDescription(call.offer)
-        );
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(call.offer));
 
         if (call.caller_candidates && Array.isArray(call.caller_candidates)) {
             for (const c of call.caller_candidates) {
@@ -491,15 +492,12 @@ async function acceptCall() {
 
         currentCallId = call.id;
 
-        const calleeCandidates = [];
         peerConnection.onicecandidate = async (e) => {
             if (e.candidate) {
-                calleeCandidates.push(e.candidate.toJSON());
-                // FIXED: sb.from instead of supabase.from
-                await sb
-                    .from("calls")
-                    .update({ callee_candidates: calleeCandidates })
-                    .eq("id", currentCallId);
+                const { data: latest } = await sb.from("calls").select("callee_candidates").eq("id", currentCallId).single();
+                const currentList = latest?.callee_candidates || [];
+                currentList.push(e.candidate.toJSON());
+                await sb.from("calls").update({ callee_candidates: currentList }).eq("id", currentCallId);
             }
         };
 
@@ -547,8 +545,9 @@ function createPeerConnection() {
 
     pc.ontrack = (e) => {
         const remoteVideo = document.getElementById("remote-video");
-        remoteVideo.srcObject = e.streams[0];
-        document.getElementById("idle-state").classList.add("hidden");
+        if(remoteVideo) remoteVideo.srcObject = e.streams[0];
+        const idleState = document.getElementById("idle-state");
+        if(idleState) idleState.classList.add("hidden");
     };
 
     pc.oniceconnectionstatechange = () => {
@@ -570,9 +569,11 @@ function toggleMute() {
     localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
 
     const btn = document.getElementById("btn-mute");
-    btn.classList.toggle("muted", isMuted);
-    btn.setAttribute("aria-pressed", isMuted);
-    btn.title = isMuted ? "Unmute" : "Mute";
+    if(btn) {
+        btn.classList.toggle("muted", isMuted);
+        btn.setAttribute("aria-pressed", isMuted);
+        btn.title = isMuted ? "Unmute" : "Mute";
+    }
 
     showToast(isMuted ? "🔇 Muted" : "🎙️ Unmuted");
 }
@@ -586,9 +587,11 @@ function toggleCamera() {
     videoTracks.forEach(t => { t.enabled = !isCameraOff; });
 
     const btn = document.getElementById("btn-camera");
-    btn.classList.toggle("cam-off", isCameraOff);
-    btn.setAttribute("aria-pressed", isCameraOff);
-    btn.title = isCameraOff ? "Turn On Camera" : "Turn Off Camera";
+    if(btn) {
+        btn.classList.toggle("cam-off", isCameraOff);
+        btn.setAttribute("aria-pressed", isCameraOff);
+        btn.title = isCameraOff ? "Turn On Camera" : "Turn Off Camera";
+    }
 
     showToast(isCameraOff ? "📵 Camera off" : "📹 Camera on");
 }
@@ -602,8 +605,11 @@ async function endCall(remote = false) {
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (callChannel) { callChannel.unsubscribe(); callChannel = null; }
 
-    document.getElementById("remote-video").srcObject = null;
-    document.getElementById("local-video").srcObject = null;
+    const rVideo = document.getElementById("remote-video");
+    const lVideo = document.getElementById("local-video");
+    if(rVideo) rVideo.srcObject = null;
+    if(lVideo) lVideo.srcObject = null;
+
     currentCallId = null;
     isMuted = false;
     isCameraOff = false;
@@ -613,44 +619,56 @@ async function endCall(remote = false) {
 }
 
 function setInCallUI(inCall, callType) {
-    document.getElementById("controls-idle").classList.toggle("hidden", inCall);
-    document.getElementById("controls-in-call").classList.toggle("hidden", !inCall);
-    document.getElementById("idle-state").classList.toggle("hidden", inCall);
+    const cIdle = document.getElementById("controls-idle");
+    const cInCall = document.getElementById("controls-in-call");
+    const idleSt = document.getElementById("idle-state");
+    const btnCam = document.getElementById("btn-camera");
+    const btnMute = document.getElementById("btn-mute");
+
+    if(cIdle) cIdle.classList.toggle("hidden", inCall);
+    if(cInCall) cInCall.classList.toggle("hidden", !inCall);
+    if(idleSt) idleSt.classList.toggle("hidden", inCall);
 
     if (inCall) {
         startCallTimer();
-        if (callType === "audio") {
-            document.getElementById("btn-camera").style.display = "none";
-        } else {
-            document.getElementById("btn-camera").style.display = "";
+        if (callType === "audio" && btnCam) {
+            btnCam.style.display = "none";
+        } else if(btnCam) {
+            btnCam.style.display = "";
         }
     } else {
         stopCallTimer();
-        document.getElementById("idle-state").classList.remove("hidden");
-        document.getElementById("btn-mute").classList.remove("muted");
-        document.getElementById("btn-camera").classList.remove("cam-off");
-        document.getElementById("btn-camera").style.display = "";
+        if(idleSt) idleSt.classList.remove("hidden");
+        if(btnMute) btnMute.classList.remove("muted");
+        if(btnCam) {
+            btnCam.classList.remove("cam-off");
+            btnCam.style.display = "";
+        }
     }
 }
 
 function startCallTimer() {
     callStartTime = Date.now();
-    document.getElementById("call-timer").classList.remove("hidden");
+    const timer = document.getElementById("call-timer");
+    if(timer) timer.classList.remove("hidden");
     callTimerInterval = setInterval(updateTimer, 1000);
 }
 
 function stopCallTimer() {
     clearInterval(callTimerInterval);
     callTimerInterval = null;
-    document.getElementById("call-timer").classList.add("hidden");
-    document.getElementById("timer-text").textContent = "0:00";
+    const timer = document.getElementById("call-timer");
+    const text = document.getElementById("timer-text");
+    if(timer) timer.classList.add("hidden");
+    if(text) text.textContent = "0:00";
 }
 
 function updateTimer() {
     const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
     const m = Math.floor(elapsed / 60);
     const s = elapsed % 60;
-    document.getElementById("timer-text").textContent = `${m}:${s.toString().padStart(2, "0")}`;
+    const text = document.getElementById("timer-text");
+    if(text) text.textContent = `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 let toastTimeout = null;
