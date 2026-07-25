@@ -512,6 +512,11 @@ function initPeer() {
         showToast('Connection issue: ' + err.type);
     });
 
+    // Incoming P2P DataChannel connection handler (files, progress signals)
+    peer.on('connection', conn => {
+        setupDataConnection(conn);
+    });
+
     // Incoming call handler
     peer.on('call', call => {
         // Prevent self-call loop
@@ -856,7 +861,11 @@ function sendCallChatMessage() {
     if (!text) return;
     input.value = '';
     autoResizeTextarea(input);
-    // Re-use the main sendMessage flow, setting input temporarily
+
+    const row = document.getElementById('callChatInputRow');
+    if (row) row.classList.remove('typing-active');
+
+    // Re-use main sendMessage flow
     const mainInput = document.getElementById('messageInput');
     const prev = mainInput.value;
     mainInput.value = text;
@@ -903,7 +912,11 @@ function insertEmoji(emoji) {
     input.selectionStart = input.selectionEnd = newPos;
     input.focus();
 
-    autoResizeTextarea(input);
+    if (activeTargetInputId === 'callChatInput') {
+        handleCallChatTyping();
+    } else {
+        handleInputTyping();
+    }
 }
 
 window.addEventListener('click', (e) => {
@@ -986,49 +999,7 @@ function closeSettingsModalOnOverlay(e) {
 
 
 /* ═══════════════════════════════════════════════════════════════════
-   CRYPTOGRAPHIC HELPERS
-   ═══════════════════════════════════════════════════════════════════ */
-function encryptText(text, key) {
-    return CryptoJS.AES.encrypt(text, key).toString();
-}
-
-function decryptText(ciphertext, key) {
-    try {
-        const bytes = CryptoJS.AES.decrypt(ciphertext, key);
-        const result = bytes.toString(CryptoJS.enc.Utf8);
-        return result || '•••••••• (Invalid Key)';
-    } catch { return '••••••••'; }
-}
-
-function linkify(inputText) {
-    const p1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gim;
-    let out = inputText.replace(p1, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-    const p2 = /(^|[^/])(www\.[\S]+(\b|$))/gim;
-    out = out.replace(p2, '$1<a href="http://$2" target="_blank" rel="noopener">$2</a>');
-    return out;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════
-   MEDIA STORAGE (SUPABASE STORAGE BUCKET)
-   ═══════════════════════════════════════════════════════════════════ */
-async function uploadEncryptedMediaToStorage(encryptedPayload, extension = 'enc') {
-    const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${extension}`;
-    const blob = new Blob([encryptedPayload], { type: 'text/plain' });
-
-    const { data, error } = await supabaseClient.storage
-        .from('oasis-media')
-        .upload(fileName, blob, { contentType: 'text/plain', cacheControl: '3600' });
-
-    if (error) { console.error('Storage upload failed:', error); throw error; }
-
-    const { data: urlData } = supabaseClient.storage.from('oasis-media').getPublicUrl(fileName);
-    return urlData.publicUrl;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════
-   SECURE CHAT LOGIC
+   SECURE CHAT & TYPING AUTO-EXPAND LOGIC
    ═══════════════════════════════════════════════════════════════════ */
 async function sendMessage(mediaPayload = null) {
     const secretKey = localStorage.getItem('oasis_key');
@@ -1050,6 +1021,9 @@ async function sendMessage(mediaPayload = null) {
         autoResizeTextarea(msgInput);
         msgInput.focus();
         broadcastTyping(false);
+
+        const wrapper = document.getElementById('inputContainerWrapper');
+        if (wrapper) wrapper.classList.remove('typing-active');
     }
 
     const { data, error } = await supabaseClient
@@ -1073,10 +1047,38 @@ function handleInputKeyPress(e) {
 
 function handleInputTyping() {
     const msgInput = document.getElementById('messageInput');
-    if (msgInput) autoResizeTextarea(msgInput);
+    if (!msgInput) return;
+
+    autoResizeTextarea(msgInput);
+
+    const wrapper = document.getElementById('inputContainerWrapper');
+    if (wrapper) {
+        if (msgInput.value.trim().length > 0) {
+            wrapper.classList.add('typing-active');
+        } else {
+            wrapper.classList.remove('typing-active');
+        }
+    }
+
     broadcastTyping(true);
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => broadcastTyping(false), 2000);
+}
+
+function handleCallChatTyping() {
+    const input = document.getElementById('callChatInput');
+    if (!input) return;
+
+    autoResizeTextarea(input);
+
+    const row = document.getElementById('callChatInputRow');
+    if (row) {
+        if (input.value.trim().length > 0) {
+            row.classList.add('typing-active');
+        } else {
+            row.classList.remove('typing-active');
+        }
+    }
 }
 
 // Auto-expanding textarea up to 4 lines (~100px max)
@@ -1102,49 +1104,355 @@ function broadcastTyping(isTyping) {
         });
     }
 }
-
-function triggerImageUpload() {
-    document.getElementById('imageFileInput').click();
+function encryptText(text, key) {
+    return CryptoJS.AES.encrypt(text, key).toString();
 }
 
-function handleImageFileSelect(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { showToast('File must be an image.'); return; }
-    showToast('Processing & encrypting image...');
+function decryptText(ciphertext, key) {
+    try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+        const result = bytes.toString(CryptoJS.enc.Utf8);
+        return result || '•••••••• (Invalid Key)';
+    } catch { return '••••••••'; }
+}
 
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        const img = new Image();
-        img.onload = async function() {
-            const maxDim = 800;
-            let w = img.width, h = img.height;
-            if (w > h ? w > maxDim : h > maxDim) {
-                if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-                else        { w = Math.round(w * maxDim / h); h = maxDim; }
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            const b64 = canvas.toDataURL('image/jpeg', 0.7);
-            const payload = `IMAGE:${b64}`;
-            try {
-                showToast('Uploading encrypted image...');
-                const url = await uploadEncryptedMediaToStorage(payload, 'enc');
-                sendMessage(`IMAGE_URL:${url}`);
-            } catch {
-                sendMessage(payload);
-            }
-            document.getElementById('imageFileInput').value = '';
-        };
-        img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
+function linkify(inputText) {
+    const p1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gim;
+    let out = inputText.replace(p1, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    const p2 = /(^|[^/])(www\.[\S]+(\b|$))/gim;
+    out = out.replace(p2, '$1<a href="http://$2" target="_blank" rel="noopener">$2</a>');
+    return out;
 }
 
 
 /* ═══════════════════════════════════════════════════════════════════
-   VOICE NOTES
+   DIRECT PEER-TO-PEER (P2P) FILE TRANSFER & WEBRTC DATACHANNELS
+   ═══════════════════════════════════════════════════════════════════ */
+let p2pDataConnection = null;
+const CHUNK_SIZE = 32768; // 32KB binary chunks
+const activeP2PTransfers = {}; // Receiver state store
+
+function setupDataConnection(conn) {
+    p2pDataConnection = conn;
+
+    conn.on('open', () => {
+        console.log('P2P DataChannel active with:', conn.peer);
+    });
+
+    conn.on('data', data => {
+        handleIncomingP2PPacket(data);
+    });
+
+    conn.on('close', () => {
+        console.log('P2P DataChannel closed.');
+        if (p2pDataConnection === conn) p2pDataConnection = null;
+    });
+
+    conn.on('error', err => {
+        console.error('P2P DataChannel error:', err);
+    });
+}
+
+function getOrConnectDataChannel(targetPeerId) {
+    if (p2pDataConnection && p2pDataConnection.open) {
+        return Promise.resolve(p2pDataConnection);
+    }
+    return new Promise((resolve, reject) => {
+        if (!peer) { reject(new Error('Peer network not initialized.')); return; }
+        const conn = peer.connect(targetPeerId, { reliable: true });
+        setupDataConnection(conn);
+        conn.on('open', () => resolve(conn));
+        conn.on('error', err => reject(err));
+        setTimeout(() => {
+            if (conn && conn.open) resolve(conn);
+        }, 2000);
+    });
+}
+
+function triggerP2PFileUpload() {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.click();
+}
+
+function handleP2PFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = ''; // Reset input so same file can be picked again
+    sendP2PFile(file);
+}
+
+async function sendP2PFile(file) {
+    const targetPartner = currentUsername.toLowerCase() === 'hani' ? 'oasis_bani' : 'oasis_hani';
+    const transferId = 'p2p_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const fileName   = file.name;
+    const fileSize   = file.size;
+    const fileType   = file.type || 'application/octet-stream';
+    const totalChunks = Math.ceil(fileSize / CHUNK_SIZE);
+
+    // 1. Render Progress Card in Sender's Chat UI
+    renderProgressCard(transferId, fileName, fileSize, fileType, true, 0);
+
+    showToast(`Sending ${fileName} via P2P...`);
+
+    try {
+        const conn = await getOrConnectDataChannel(targetPartner);
+        
+        // Send Header Packet
+        conn.send({
+            type: 'P2P_FILE_START',
+            transferId,
+            fileName,
+            fileSize,
+            fileType,
+            totalChunks,
+            sender: currentUsername
+        });
+
+        // Start Streaming Chunks
+        sendP2PChunkSequentially(file, transferId, 0, totalChunks, conn);
+    } catch (err) {
+        console.error('P2P File Transfer connection error:', err);
+        showToast('P2P connection issue. Partner may be offline.');
+        updateProgressCardError(transferId, 'Partner Offline');
+    }
+}
+
+function sendP2PChunkSequentially(file, transferId, chunkIndex, totalChunks, conn) {
+    const start = chunkIndex * CHUNK_SIZE;
+    const end   = Math.min(start + CHUNK_SIZE, file.size);
+    const blobSlice = file.slice(start, end);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const arrayBuffer = e.target.result;
+        const base64Data = arrayBufferToBase64(arrayBuffer);
+
+        try {
+            conn.send({
+                type: 'P2P_FILE_CHUNK',
+                transferId,
+                chunkIndex,
+                chunkData: base64Data
+            });
+
+            const progress = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+            updateProgressCardPercentage(transferId, progress);
+
+            if (chunkIndex + 1 < totalChunks) {
+                setTimeout(() => {
+                    sendP2PChunkSequentially(file, transferId, chunkIndex + 1, totalChunks, conn);
+                }, 10); // yields event loop for smooth UI
+            } else {
+                conn.send({
+                    type: 'P2P_FILE_END',
+                    transferId
+                });
+
+                // Finalize Sender UI -> Replace progress card with Rich Media Card
+                const blobUrl = URL.createObjectURL(file);
+                replaceProgressCardWithMediaCard(transferId, file.name, file.type || 'application/octet-stream', file.size, blobUrl, true);
+                showToast(`Sent ${file.name} via P2P ❤️`);
+            }
+        } catch (err) {
+            console.error('Chunk send error:', err);
+            updateProgressCardError(transferId, 'Transfer Error');
+        }
+    };
+    reader.readAsArrayBuffer(blobSlice);
+}
+
+function handleIncomingP2PPacket(packet) {
+    if (!packet || !packet.type) return;
+
+    if (packet.type === 'P2P_FILE_START') {
+        const { transferId, fileName, fileSize, fileType, totalChunks, sender } = packet;
+        activeP2PTransfers[transferId] = {
+            fileName,
+            fileSize,
+            fileType,
+            totalChunks,
+            chunks: new Array(totalChunks),
+            receivedCount: 0,
+            sender
+        };
+
+        renderProgressCard(transferId, fileName, fileSize, fileType, false, 0);
+        showToast(`Receiving ${fileName} via P2P...`);
+    }
+    else if (packet.type === 'P2P_FILE_CHUNK') {
+        const { transferId, chunkIndex, chunkData } = packet;
+        const transfer = activeP2PTransfers[transferId];
+        if (!transfer) return;
+
+        const arrayBuffer = base64ToArrayBuffer(chunkData);
+        transfer.chunks[chunkIndex] = arrayBuffer;
+        transfer.receivedCount++;
+
+        const progress = Math.round((transfer.receivedCount / transfer.totalChunks) * 100);
+        updateProgressCardPercentage(transferId, progress);
+    }
+    else if (packet.type === 'P2P_FILE_END') {
+        const { transferId } = packet;
+        const transfer = activeP2PTransfers[transferId];
+        if (!transfer) return;
+
+        // Reassemble incoming binary chunks into a single Blob
+        const fileBlob = new Blob(transfer.chunks, { type: transfer.fileType });
+        const blobUrl  = URL.createObjectURL(fileBlob);
+
+        replaceProgressCardWithMediaCard(transferId, transfer.fileName, transfer.fileType, transfer.fileSize, blobUrl, false);
+        showToast(`Received ${transfer.fileName} via P2P ❤️`);
+
+        delete activeP2PTransfers[transferId];
+    }
+}
+
+function renderProgressCard(transferId, fileName, fileSize, fileType, isSender, initialProgress) {
+    const msgList = document.getElementById('messageList');
+    if (!msgList) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper ${isSender ? 'sent' : 'received'}`;
+    wrapper.id = `msg_${transferId}`;
+
+    const iconEmoji = fileType.startsWith('image/') ? '🖼️' : fileType.startsWith('video/') ? '🎥' : fileType.startsWith('audio/') ? '🎵' : '📄';
+
+    wrapper.innerHTML = `
+        <div class="message-bubble p2p-progress-bubble">
+            <div class="p2p-progress-card">
+                <div class="p2p-file-header">
+                    <div class="p2p-file-icon">${iconEmoji}</div>
+                    <div class="p2p-file-details">
+                        <span class="p2p-file-name">${escapeHtml(fileName)}</span>
+                        <span class="p2p-file-size">${formatFileSize(fileSize)}</span>
+                    </div>
+                </div>
+                <div class="p2p-progress-track">
+                    <div class="p2p-progress-fill" id="fill_${transferId}" style="width: ${initialProgress}%;"></div>
+                </div>
+                <div class="p2p-progress-status" id="status_${transferId}">
+                    <span>${isSender ? 'Sending P2P' : 'Receiving P2P'}</span>
+                    <span class="p2p-percent-label" id="percent_${transferId}">${initialProgress}%</span>
+                </div>
+            </div>
+        </div>`;
+
+    msgList.appendChild(wrapper);
+    msgList.scrollTop = msgList.scrollHeight;
+
+    appendToCallChatIfOpen(wrapper.outerHTML);
+}
+
+function updateProgressCardPercentage(transferId, percent) {
+    const fill    = document.getElementById(`fill_${transferId}`);
+    const percentLabel = document.getElementById(`percent_${transferId}`);
+    if (fill) fill.style.width = `${percent}%`;
+    if (percentLabel) percentLabel.innerText = `${percent}%`;
+}
+
+function updateProgressCardError(transferId, errorMsg) {
+    const statusEl = document.getElementById(`status_${transferId}`);
+    if (statusEl) {
+        statusEl.innerHTML = `<span style="color:var(--ios-red);">${escapeHtml(errorMsg)}</span>`;
+    }
+}
+
+function replaceProgressCardWithMediaCard(transferId, fileName, fileType, fileSize, blobUrl, isSender) {
+    const wrapper = document.getElementById(`msg_${transferId}`);
+    if (!wrapper) return;
+
+    let mediaHTML = '';
+    const isImage = fileType.startsWith('image/');
+    const isVideo = fileType.startsWith('video/');
+    const isAudio = fileType.startsWith('audio/');
+
+    if (isImage) {
+        mediaHTML = `
+            <div class="p2p-media-card image-media">
+                <img src="${blobUrl}" alt="${escapeHtml(fileName)}" class="p2p-img-preview" onclick="openImageModal('${blobUrl}')">
+                <div class="p2p-media-meta">
+                    <span class="p2p-media-name">${escapeHtml(fileName)}</span>
+                    <a href="${blobUrl}" download="${escapeHtml(fileName)}" class="p2p-dl-btn" title="Download Original">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Download</span>
+                    </a>
+                </div>
+            </div>`;
+    } else if (isVideo) {
+        mediaHTML = `
+            <div class="p2p-media-card video-media">
+                <video src="${blobUrl}" controls class="p2p-video-preview"></video>
+                <div class="p2p-media-meta">
+                    <span class="p2p-media-name">${escapeHtml(fileName)}</span>
+                    <a href="${blobUrl}" download="${escapeHtml(fileName)}" class="p2p-dl-btn">Download Video</a>
+                </div>
+            </div>`;
+    } else if (isAudio) {
+        mediaHTML = `
+            <div class="p2p-media-card audio-media">
+                <audio src="${blobUrl}" controls class="p2p-audio-preview"></audio>
+                <div class="p2p-media-meta">
+                    <span class="p2p-media-name">${escapeHtml(fileName)} • ${formatFileSize(fileSize)}</span>
+                    <a href="${blobUrl}" download="${escapeHtml(fileName)}" class="p2p-dl-btn">Download Audio</a>
+                </div>
+            </div>`;
+    } else {
+        const fileExt = fileName.split('.').pop().toUpperCase() || 'FILE';
+        mediaHTML = `
+            <div class="p2p-media-card doc-media">
+                <div class="p2p-doc-header">
+                    <div class="p2p-doc-badge">${escapeHtml(fileExt)}</div>
+                    <div class="p2p-doc-info">
+                        <span class="p2p-media-name">${escapeHtml(fileName)}</span>
+                        <span class="p2p-doc-size">${formatFileSize(fileSize)}</span>
+                    </div>
+                </div>
+                <a href="${blobUrl}" download="${escapeHtml(fileName)}" class="p2p-dl-btn p2p-dl-btn-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Download Original File</span>
+                </a>
+            </div>`;
+    }
+
+    wrapper.querySelector('.message-bubble').innerHTML = mediaHTML;
+
+    const msgList = document.getElementById('messageList');
+    if (msgList) msgList.scrollTop = msgList.scrollHeight;
+
+    appendToCallChatIfOpen(wrapper.outerHTML);
+}
+
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+function base64ToArrayBuffer(base64) {
+    const binaryString = window.atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   VOICE NOTES (P2P TRANSMISSION)
    ═══════════════════════════════════════════════════════════════════ */
 function startVoiceRecording() {
     if (isRecording) return;
@@ -1157,18 +1465,8 @@ function startVoiceRecording() {
             mediaRecorder.onstop = () => {
                 if (!audioChunks.length) return;
                 const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.onload = async function(evt) {
-                    const payload = `AUDIO:${evt.target.result}`;
-                    try {
-                        showToast('Uploading encrypted voice note...');
-                        const url = await uploadEncryptedMediaToStorage(payload, 'enc');
-                        sendMessage(`AUDIO_URL:${url}`);
-                    } catch {
-                        sendMessage(payload);
-                    }
-                };
-                reader.readAsDataURL(blob);
+                const voiceFile = new File([blob], `voicenote_${Date.now()}.webm`, { type: 'audio/webm' });
+                sendP2PFile(voiceFile);
                 stream.getTracks().forEach(t => t.stop());
             };
             mediaRecorder.start();
