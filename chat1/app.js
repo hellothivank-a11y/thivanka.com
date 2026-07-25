@@ -1,5 +1,6 @@
 /**
  * FaceTime Web App - Supabase Realtime Presence + PeerJS Auto-Connect
+ * (FIXED: Outgoing call retries & Stream timing issues)
  */
 
 // --- Supabase Config ---
@@ -13,8 +14,8 @@ const ROLE_WIFE = 'oasis_wife';
 
 // --- State ---
 const State = {
-    myRole: null,        // 'oasis_husband' or 'oasis_wife'
-    targetRole: null,    // opposite of myRole
+    myRole: null,
+    targetRole: null,
     peer: null,
     call: null,
     localStream: null,
@@ -89,10 +90,7 @@ DOM.btnJoinRoom.addEventListener('click', async () => {
         await setupLocalMedia();
         showCallScreen();
         
-        // Step A: Initialize PeerJS with my static PeerID
         initPeer();
-        
-        // Step B: Track Presence on Supabase
         initSupabasePresence();
         
     } catch (err) {
@@ -102,6 +100,10 @@ DOM.btnJoinRoom.addEventListener('click', async () => {
 });
 
 function initPeer() {
+    if (State.peer) {
+        try { State.peer.destroy(); } catch (e) {}
+    }
+
     State.peer = new Peer(State.myRole, {
         debug: 1,
         config: {
@@ -118,13 +120,12 @@ function initPeer() {
         console.log('PeerJS ready with ID:', id);
     });
 
-    // Auto-answer incoming calls from partner
     State.peer.on('call', handleIncomingCall);
 
     State.peer.on('error', (err) => {
         console.error('PeerJS Error:', err);
         if (err.type === 'unavailable-id') {
-            showToast('Account active elsewhere. Reconnecting...');
+            console.warn('ID collision, re-initializing peer...');
             setTimeout(() => {
                 if (State.peer) State.peer.destroy();
                 initPeer();
@@ -135,6 +136,10 @@ function initPeer() {
 
 // --- 3. Supabase Realtime Presence Signaling ---
 function initSupabasePresence() {
+    if (State.presenceChannel) {
+        supabaseClient.removeChannel(State.presenceChannel);
+    }
+
     State.presenceChannel = supabaseClient.channel('oasis_facetime_presence', {
         config: { presence: { key: State.myRole } }
     });
@@ -142,22 +147,23 @@ function initSupabasePresence() {
     State.presenceChannel
         .on('presence', { event: 'sync' }, () => {
             const presenceState = State.presenceChannel.presenceState();
-            console.log('Presence state updated:', presenceState);
+            console.log('Presence sync:', presenceState);
             
-            // Check if partner is online
             const isPartnerPresent = Boolean(presenceState[State.targetRole]);
             State.isPartnerOnline = isPartnerPresent;
             
             if (isPartnerPresent) {
-                console.log('Partner detected online via Supabase Presence!');
-                DOM.callStatus.textContent = 'Partner detected! Connecting...';
+                console.log('Partner detected online!');
+                if (!State.remoteStream) {
+                    DOM.callStatus.textContent = 'Partner online! Connecting...';
+                }
                 
-                // Designated Initiator (Husband calls Wife) to avoid dual-call glare
+                // Husband is primary caller, but retries if call was lost
                 if (State.myRole === ROLE_HUSBAND && !State.call) {
-                    initiateCallToPartner();
+                    setTimeout(() => initiateCallToPartner(), 500);
                 }
             } else {
-                if (!State.call) {
+                if (!State.remoteStream) {
                     DOM.callStatus.textContent = 'Waiting for partner...';
                 }
             }
@@ -167,7 +173,7 @@ function initSupabasePresence() {
                 console.log('Partner left the room');
                 State.isPartnerOnline = false;
                 if (State.call) {
-                    State.call.close();
+                    try { State.call.close(); } catch(e){}
                 }
                 resetToWaitingState();
             }
@@ -183,16 +189,16 @@ function initSupabasePresence() {
 }
 
 function initiateCallToPartner() {
-    if (State.call || !State.localStream) return;
+    if (State.call || !State.localStream || !State.peer) return;
     
-    console.log('Initiating PeerJS call to:', State.targetRole);
+    console.log('Initiating call to:', State.targetRole);
     const outCall = State.peer.call(State.targetRole, State.localStream);
     
     if (outCall) {
         State.call = outCall;
         
         outCall.on('stream', (remoteStream) => {
-            console.log('Call stream connected on initiator side!');
+            console.log('Call connected (Initiator Side)');
             handleStreamConnected(remoteStream);
         });
         
@@ -202,25 +208,30 @@ function initiateCallToPartner() {
         
         outCall.on('error', (err) => {
             console.error('Outgoing call error:', err);
-            State.call = null;
+            State.call = null; // Clear call state so it can retry
         });
     }
 }
 
-function handleIncomingCall(inCall) {
-    console.log('Incoming PeerJS call received from:', inCall.peer);
+async function handleIncomingCall(inCall) {
+    console.log('Incoming call from:', inCall.peer);
     
+    // Ensure local stream is ready before answering
+    if (!State.localStream) {
+        await setupLocalMedia();
+    }
+
     if (State.call && State.remoteStream) {
-        console.log('Already connected, ignoring duplicate call');
+        console.log('Ignoring duplicate incoming call');
         return;
     }
 
     State.call = inCall;
-    console.log('Auto-answering call...');
+    console.log('Auto-answering...');
     inCall.answer(State.localStream);
     
     inCall.on('stream', (remoteStream) => {
-        console.log('Call stream connected on answerer side!');
+        console.log('Call connected (Answerer Side)');
         handleStreamConnected(remoteStream);
     });
     
@@ -243,7 +254,7 @@ function handleStreamConnected(remoteStream) {
     DOM.remoteVideo.play().then(() => {
         console.log('Remote video playing');
     }).catch(err => {
-        console.warn('Video play catch fallback:', err);
+        console.warn('Playback error fallback:', err);
         DOM.remoteVideo.muted = true;
         DOM.remoteVideo.play().catch(e => console.error(e));
     });
@@ -256,13 +267,16 @@ function handleStreamConnected(remoteStream) {
 }
 
 function resetToWaitingState() {
+    if (State.call) {
+        try { State.call.close(); } catch(e){}
+    }
     State.call = null;
     State.remoteStream = null;
     DOM.remoteVideo.srcObject = null;
     
     stopCallTimer();
     DOM.callDuration.classList.add('hidden');
-    DOM.callStatus.textContent = State.isPartnerOnline ? 'Reconnecting...' : 'Waiting for partner...';
+    DOM.callStatus.textContent = State.isPartnerOnline ? 'Connecting...' : 'Waiting for partner...';
     DOM.callStatus.classList.remove('hidden');
 }
 
@@ -298,6 +312,10 @@ function endCallCleanup() {
         State.presenceChannel.untrack();
         State.presenceChannel.unsubscribe();
         State.presenceChannel = null;
+    }
+    
+    if (State.call) {
+        try { State.call.close(); } catch(e){}
     }
     
     if (State.peer) {
