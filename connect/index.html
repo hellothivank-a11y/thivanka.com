@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thivanka & Wife - Connect</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+    <!-- Login Overlay (දෙන්නට විතරක් ඇතුල් වෙන්න) -->
+    <div id="login-screen" class="overlay">
+        <div class="card">
+            <h2>🔒 Connect</h2>
+            <p>කවුද ලොග් වෙන්නේ?</p>
+            <select id="user-select">
+                <option value="Thivanka">Thivanka</option>
+                <option value="Wife">Wife</option>
+            </select>
+            <input type="password" id="passcode" placeholder="Passcode එක ගහන්න">
+            <button onclick="login()">Enter</button>
+        </div>
+    </div>
+
+    <!-- Main App Screen -->
+    <div id="app-screen" class="hidden">
+        <!-- Main Video Grid -->
+        <div class="video-container">
+            <video id="remote-video" autoplay playsinline class="remote-video"></video>
+            <video id="local-video" autoplay playsinline muted class="local-video"></video>
+
+            <!-- Video Control Buttons -->
+            <div class="call-controls">
+                <button id="btn-video" onclick="startCall('video')">📹 Video Call</button>
+                <button id="btn-audio" onclick="startCall('audio')">📞 Voice Call</button>
+                <button id="btn-end" onclick="endCall()" class="danger hidden">❌ End</button>
+            </div>
+        </div>
+
+        <!-- Right Side Chat Box -->
+        <div class="chat-container">
+            <div class="chat-header">💬 Private Chat</div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="msg-input" placeholder="මැසේජ් එකක් ලියන්න..."
+                    onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
