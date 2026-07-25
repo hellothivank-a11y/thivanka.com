@@ -284,53 +284,148 @@
         <img class="img-modal-content" id="imageModalTarget" src="" alt="Zoomed view">
     </div>
 
-    <!-- IOS SETTINGS MODAL (BOTTOM SHEET) -->
+    <!-- IOS SETTINGS MODAL (BOTTOM SHEET / FLOATING CARD) -->
     <div class="settings-modal" id="settingsModal" onclick="closeSettingsModalOnOverlay(event)">
         <div class="settings-card" onclick="event.stopPropagation()">
             <div class="ios-sheet-handle"></div>
+            
             <div class="settings-header">
                 <h3>Settings</h3>
-                <button class="settings-close-btn" onclick="closeSettingsModal()">&times;</button>
+                <button class="settings-done-btn" onclick="closeSettingsModal()">Done</button>
             </div>
 
+            <!-- APPLE ID / USER PROFILE CARD -->
+            <div class="ios-profile-card">
+                <div class="ios-profile-avatar" id="settingsProfileAvatar">👑</div>
+                <div class="ios-profile-info">
+                    <div class="ios-profile-name" id="settingsProfileName">Hani</div>
+                    <div class="ios-profile-sub" id="settingsProfileSub">Dev Lead • Encrypted Space</div>
+                    <div class="ios-profile-fp-row">
+                        <span class="ios-profile-fp-label">Safety Code:</span>
+                        <span class="ios-profile-fp-badge" id="settingsModalFingerprint">•••••</span>
+                    </div>
+                </div>
+                <span class="settings-chevron">›</span>
+            </div>
+
+            <!-- GROUP 1: PREFERENCES -->
             <div class="ios-settings-group">
-                <div class="ios-settings-group-title">NOTIFICATIONS</div>
+                <div class="ios-settings-group-title">PREFERENCES</div>
+                
                 <div class="ios-settings-item" onclick="requestNotificationPermission()">
                     <div class="settings-item-left">
                         <div class="settings-icon-box blue">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         </div>
-                        <span id="settingsPushLabel">Push Notifications</span>
+                        <span>Push Notifications</span>
                     </div>
-                    <span class="settings-item-badge" id="settingsPushStatus">Disabled</span>
+                    <div class="settings-item-right">
+                        <span class="settings-item-badge" id="settingsPushStatus">Disabled</span>
+                        <span class="settings-chevron">›</span>
+                    </div>
+                </div>
+
+                <div class="ios-settings-divider"></div>
+
+                <div class="ios-settings-item">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box purple">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        </div>
+                        <span>In-App Sounds & Haptics</span>
+                    </div>
+                    <label class="ios-switch">
+                        <input type="checkbox" id="settingsSoundToggle" checked onchange="toggleSoundSetting(this.checked)">
+                        <span class="ios-switch-slider"></span>
+                    </label>
+                </div>
+
+                <div class="ios-settings-divider"></div>
+
+                <div class="ios-settings-item">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box orange">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        </div>
+                        <span>Appearance & Theme</span>
+                    </div>
+                    <span class="settings-item-badge">Dark Glass</span>
                 </div>
             </div>
 
+            <!-- GROUP 2: SECURITY & PRIVACY -->
             <div class="ios-settings-group">
                 <div class="ios-settings-group-title">SECURITY & PRIVACY</div>
+                
                 <div class="ios-settings-item" id="settingsBioRow" onclick="registerBiometrics()">
                     <div class="settings-item-left">
                         <div class="settings-icon-box green">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
                         </div>
-                        <span>Biometric Lock (Face ID / Touch ID)</span>
+                        <span>Biometric Lock (Face ID)</span>
                     </div>
-                    <span class="settings-item-badge" id="settingsBioStatus">Setup</span>
+                    <div class="settings-item-right">
+                        <span class="settings-item-badge" id="settingsBioStatus">Setup</span>
+                        <span class="settings-chevron">›</span>
+                    </div>
                 </div>
-                <div class="ios-settings-item" onclick="switchAccount()">
+
+                <div class="ios-settings-divider"></div>
+
+                <div class="ios-settings-item" onclick="triggerPanic(); closeSettingsModal();">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box amber">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <span>Instant Panic Lock</span>
+                    </div>
+                    <span class="settings-chevron">›</span>
+                </div>
+            </div>
+
+            <!-- GROUP 3: CONNECTION & STORAGE -->
+            <div class="ios-settings-group">
+                <div class="ios-settings-group-title">CONNECTION & STORAGE</div>
+                
+                <div class="ios-settings-item">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box teal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                        </div>
+                        <span>P2P FaceTime & Messaging</span>
+                    </div>
+                    <span class="settings-item-badge active-green" id="settingsPeerStatus">Ready</span>
+                </div>
+
+                <div class="ios-settings-divider"></div>
+
+                <div class="ios-settings-item">
+                    <div class="settings-item-left">
+                        <div class="settings-icon-box gray">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                        </div>
+                        <span>Encrypted Local Storage</span>
+                    </div>
+                    <span class="settings-item-badge">IndexedDB</span>
+                </div>
+            </div>
+
+            <!-- GROUP 4: ACCOUNT ACTION -->
+            <div class="ios-settings-group">
+                <div class="ios-settings-item destructive" onclick="switchAccount()">
                     <div class="settings-item-left">
                         <div class="settings-icon-box red">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
                         </div>
-                        <span>Switch Account / Key</span>
+                        <span class="destructive-text">Switch Account / Encryption Key</span>
                     </div>
                     <span class="settings-chevron">›</span>
                 </div>
             </div>
 
             <div class="settings-footer-info">
-                <div>Code: <span id="settingsModalFingerprint">•••••</span></div>
-                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:3px;">End-to-End Encrypted Space</div>
+                <div class="settings-app-version">Oasis Console v2.4.0 (Build 2026)</div>
+                <div class="settings-app-sub">End-to-End Encrypted Secure Channel</div>
             </div>
         </div>
     </div>
