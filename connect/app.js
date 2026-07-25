@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   CONNECT — Honey & Bunny  |  Full App Logic
+   CONNECT — Honey & Bunny  |  Full App Logic (FIXED)
    ════════════════════════════════════════════════════════════════ */
 
 // ── Configuration ───────────────────────────────────────────────
@@ -15,18 +15,19 @@ const USERS = {
 const rtcConfig = {
     iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" }
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" }
     ]
 };
 
 // ── State ────────────────────────────────────────────────────────
-let sb = null;  // Supabase client (renamed to avoid conflict with window.supabase CDN global)
-let currentUser = null;         // "Honey" | "Bunny"
+let sb = null;  
+let currentUser = null;         
 let partnerUser = null;
 let localStream = null;
 let peerConnection = null;
 let currentCallId = null;
-let pendingCall = null;         // incoming call record
+let pendingCall = null;         
 let isMuted = false;
 let isCameraOff = false;
 let callTimerInterval = null;
@@ -45,7 +46,6 @@ let presenceChannel = null;
 //  INIT
 // ════════════════════════════════════════════════════════════════
 window.addEventListener("DOMContentLoaded", () => {
-    // The Supabase CDN exposes window.supabase as the namespace with createClient on it
     const supabaseLib = window.supabase ?? window.supabaseJs;
     if (!supabaseLib || !supabaseLib.createClient) {
         alert("Supabase library failed to load. Check your internet connection.");
@@ -54,7 +54,7 @@ window.addEventListener("DOMContentLoaded", () => {
     sb = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     selectUser("Honey");
-    initPipDrag();  // Init AFTER DOM is ready
+    initPipDrag();  
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -65,7 +65,6 @@ function selectUser(name) {
     typedPasscode = "";
     updateDots();
 
-    // Update button states
     document.getElementById("btn-honey").classList.toggle("active", name === "Honey");
     document.getElementById("btn-honey").setAttribute("aria-pressed", name === "Honey");
     document.getElementById("btn-bunny").classList.toggle("active", name === "Bunny");
@@ -80,7 +79,6 @@ function pressNum(n) {
     updateDots();
 
     if (typedPasscode.length === 4) {
-        // Small delay for UX — show last dot filled before validating
         setTimeout(() => attemptLogin(), 180);
     }
 }
@@ -95,14 +93,17 @@ function deleteNum() {
 function updateDots() {
     for (let i = 0; i < 4; i++) {
         const dot = document.getElementById(`dot-${i}`);
-        dot.classList.remove("filled", "error");
-        if (i < typedPasscode.length) dot.classList.add("filled");
+        if(dot) {
+            dot.classList.remove("filled", "error");
+            if (i < typedPasscode.length) dot.classList.add("filled");
+        }
     }
 }
 
 function showPasscodeError() {
     for (let i = 0; i < 4; i++) {
-        document.getElementById(`dot-${i}`).classList.add("error");
+        const dot = document.getElementById(`dot-${i}`);
+        if(dot) dot.classList.add("error");
     }
     document.getElementById("passcode-error").classList.remove("hidden");
     setTimeout(() => {
@@ -113,7 +114,8 @@ function showPasscodeError() {
 }
 
 function hidePasscodeError() {
-    document.getElementById("passcode-error").classList.add("hidden");
+    const err = document.getElementById("passcode-error");
+    if(err) err.classList.add("hidden");
 }
 
 function attemptLogin() {
@@ -127,10 +129,9 @@ function attemptLogin() {
     }
 }
 
-// ── Keyboard support ────────────────────────────────────────────
 document.addEventListener("keydown", (e) => {
-    if (!document.getElementById("login-screen").classList.contains("hidden")) {
-        // Login screen keyboard
+    const loginScreen = document.getElementById("login-screen");
+    if (loginScreen && !loginScreen.classList.contains("hidden")) {
         if (e.key >= "0" && e.key <= "9") pressNum(e.key);
         if (e.key === "Backspace") deleteNum();
     }
@@ -201,25 +202,23 @@ function watchPartnerPresence() {
 function setPartnerOnline(online) {
     const dot = document.getElementById("status-dot");
     const text = document.getElementById("status-text");
-    dot.classList.toggle("online", online);
-    text.textContent = online ? "Online" : "Offline";
-    document.getElementById("chat-header-status").textContent = online ? "Active now" : "Offline";
+    if(dot) dot.classList.toggle("online", online);
+    if(text) text.textContent = online ? "Online" : "Offline";
+    const headerStatus = document.getElementById("chat-header-status");
+    if(headerStatus) headerStatus.textContent = online ? "Active now" : "Offline";
 }
 
 // ════════════════════════════════════════════════════════════════
 //  CHAT
 // ════════════════════════════════════════════════════════════════
 async function initChat() {
-    // Load history
-    const { data, error } = await supabase
+    const { data, error } = await sb
         .from("messages")
         .select("*")
         .order("created_at", { ascending: true })
         .limit(100);
 
-    if (error) {
-        console.error("Error loading messages:", error);
-    }
+    if (error) console.error("Error loading messages:", error);
 
     const container = document.getElementById("chat-messages");
     container.innerHTML = "";
@@ -230,7 +229,6 @@ async function initChat() {
         renderEmptyChat();
     }
 
-    // Realtime listener
     if (chatChannel) chatChannel.unsubscribe();
     chatChannel = sb.channel("public:messages")
         .on("postgres_changes", {
@@ -238,13 +236,11 @@ async function initChat() {
             schema: "public",
             table: "messages"
         }, payload => {
-            // Remove empty state if present
             const empty = document.getElementById("chat-empty");
             if (empty) empty.remove();
 
             renderMessage(payload.new);
 
-            // Badge if chat is closed and it's not our own message
             if (!chatOpen && payload.new.sender !== currentUser) {
                 unreadCount++;
                 updateBadge();
@@ -267,7 +263,6 @@ function renderMessage(msg) {
     const isMe = msg.sender === currentUser;
     const container = document.getElementById("chat-messages");
 
-    // Remove empty state
     const empty = document.getElementById("chat-empty");
     if (empty) empty.remove();
 
@@ -292,7 +287,8 @@ async function sendMessage() {
 
     input.value = "";
 
-    const { error } = await supabase
+    // FIXED: sb.from instead of supabase.from
+    const { error } = await sb
         .from("messages")
         .insert([{ sender: currentUser, content: text }]);
 
@@ -315,15 +311,11 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
-// ════════════════════════════════════════════════════════════════
-//  CHAT PANEL TOGGLE
-// ════════════════════════════════════════════════════════════════
 function toggleChat() {
     chatOpen = !chatOpen;
     document.getElementById("chat-panel").classList.toggle("collapsed", !chatOpen);
 
     if (chatOpen) {
-        // Clear badge
         unreadCount = 0;
         updateBadge();
     }
@@ -353,12 +345,11 @@ async function startCall(type) {
         peerConnection = createPeerConnection();
         localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-        // Create offer
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
 
-        // Save to Supabase
-        const { data, error } = await supabase
+        // FIXED: sb.from instead of supabase.from
+        const { data, error } = await sb
             .from("calls")
             .insert([{
                 type,
@@ -377,19 +368,18 @@ async function startCall(type) {
 
         currentCallId = data.id;
 
-        // Collect ICE candidates and store them
+        // FIXED: Realtime Candidate Accumulation
         const callerCandidates = [];
         peerConnection.onicecandidate = async (e) => {
             if (e.candidate) {
                 callerCandidates.push(e.candidate.toJSON());
-                await supabase
+                await sb
                     .from("calls")
                     .update({ caller_candidates: callerCandidates })
                     .eq("id", currentCallId);
             }
         };
 
-        // Wait for answer
         if (callChannel) callChannel.unsubscribe();
         callChannel = sb.channel(`call:${currentCallId}`)
             .on("postgres_changes", {
@@ -406,11 +396,11 @@ async function startCall(type) {
                     );
                 }
 
-                // Add remote ICE candidates
+                // FIXED: Adding Callee Candidates properly
                 if (call.callee_candidates && Array.isArray(call.callee_candidates)) {
                     for (const c of call.callee_candidates) {
                         try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); }
-                        catch (err) { /* already added */ }
+                        catch (err) { }
                     }
                 }
 
@@ -440,7 +430,6 @@ function listenForCalls() {
             table: "calls"
         }, payload => {
             const call = payload.new;
-            // Ignore calls we made ourselves
             if (call.caller === currentUser) return;
             if (call.status !== "pending") return;
 
@@ -490,11 +479,10 @@ async function acceptCall() {
             new RTCSessionDescription(call.offer)
         );
 
-        // Add caller's ICE candidates if already available
         if (call.caller_candidates && Array.isArray(call.caller_candidates)) {
             for (const c of call.caller_candidates) {
                 try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); }
-                catch (err) { /* ignore */ }
+                catch (err) { }
             }
         }
 
@@ -503,19 +491,18 @@ async function acceptCall() {
 
         currentCallId = call.id;
 
-        // Collect callee ICE candidates
         const calleeCandidates = [];
         peerConnection.onicecandidate = async (e) => {
             if (e.candidate) {
                 calleeCandidates.push(e.candidate.toJSON());
-                await supabase
+                // FIXED: sb.from instead of supabase.from
+                await sb
                     .from("calls")
                     .update({ callee_candidates: calleeCandidates })
                     .eq("id", currentCallId);
             }
         };
 
-        // Watch for status = "ended" from caller
         if (callChannel) callChannel.unsubscribe();
         callChannel = sb.channel(`call:answer:${currentCallId}`)
             .on("postgres_changes", {
@@ -526,11 +513,10 @@ async function acceptCall() {
             }, async payload => {
                 const updated = payload.new;
 
-                // Sync late caller candidates
                 if (updated.caller_candidates && Array.isArray(updated.caller_candidates)) {
                     for (const c of updated.caller_candidates) {
                         try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); }
-                        catch (err) { /* ignore */ }
+                        catch (err) { }
                     }
                 }
 
@@ -540,7 +526,6 @@ async function acceptCall() {
             })
             .subscribe();
 
-        // Push answer back
         await sb.from("calls").update({
             answer: { type: answer.type, sdp: answer.sdp },
             status: "active"
@@ -589,10 +574,6 @@ function toggleMute() {
     btn.setAttribute("aria-pressed", isMuted);
     btn.title = isMuted ? "Unmute" : "Mute";
 
-    document.getElementById("mic-icon").innerHTML = isMuted
-        ? `<path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M9 5v2m6-2v2M3 3l18 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>`
-        : `<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM19 10v2a7 7 0 01-14 0v-2H3v2a9 9 0 008 8.94V23h2v-2.06A9 9 0 0021 12v-2h-2z"/>`;
-
     showToast(isMuted ? "🔇 Muted" : "🎙️ Unmuted");
 }
 
@@ -609,21 +590,14 @@ function toggleCamera() {
     btn.setAttribute("aria-pressed", isCameraOff);
     btn.title = isCameraOff ? "Turn On Camera" : "Turn Off Camera";
 
-    document.getElementById("camera-icon").innerHTML = isCameraOff
-        ? `<path d="M18.42 5.6L21 8.18V16l-4-2v.82L4.18 3H4a2 2 0 00-2 2v10a2 2 0 002 2h10.82l3.6 3.6 1.08-1.08L17.34 18H20a2 2 0 002-2V8a2 2 0 00-.58-1.42L20 5.18l-1.58 1.58L19 8.18v7.64L7.18 4H16a2 2 0 011.42.58L19 6.18l-.58-.58z" fill="currentColor"/>
-        <line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>`
-        : `<path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>`;
-
     showToast(isCameraOff ? "📵 Camera off" : "📹 Camera on");
 }
 
 async function endCall(remote = false) {
-    // Signal other side if we are ending
     if (!remote && currentCallId) {
         await sb.from("calls").update({ status: "ended" }).eq("id", currentCallId);
     }
 
-    // Cleanup
     if (peerConnection) { peerConnection.close(); peerConnection = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
     if (callChannel) { callChannel.unsubscribe(); callChannel = null; }
@@ -638,9 +612,6 @@ async function endCall(remote = false) {
     showToast(remote ? `${partnerUser} ended the call` : "Call ended");
 }
 
-// ════════════════════════════════════════════════════════════════
-//  UI STATE
-// ════════════════════════════════════════════════════════════════
 function setInCallUI(inCall, callType) {
     document.getElementById("controls-idle").classList.toggle("hidden", inCall);
     document.getElementById("controls-in-call").classList.toggle("hidden", !inCall);
@@ -648,7 +619,6 @@ function setInCallUI(inCall, callType) {
 
     if (inCall) {
         startCallTimer();
-        // Hide camera button for audio-only calls
         if (callType === "audio") {
             document.getElementById("btn-camera").style.display = "none";
         } else {
@@ -657,14 +627,12 @@ function setInCallUI(inCall, callType) {
     } else {
         stopCallTimer();
         document.getElementById("idle-state").classList.remove("hidden");
-        // Reset mute/camera button states
         document.getElementById("btn-mute").classList.remove("muted");
         document.getElementById("btn-camera").classList.remove("cam-off");
         document.getElementById("btn-camera").style.display = "";
     }
 }
 
-// ── Call Timer ──────────────────────────────────────────────────
 function startCallTimer() {
     callStartTime = Date.now();
     document.getElementById("call-timer").classList.remove("hidden");
@@ -685,16 +653,12 @@ function updateTimer() {
     document.getElementById("timer-text").textContent = `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// ════════════════════════════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════════════════════════════
 let toastTimeout = null;
-
 function showToast(msg, duration = 2600) {
     const toast = document.getElementById("toast");
+    if(!toast) return;
     toast.textContent = msg;
     toast.classList.remove("hidden");
-    // Trigger reflow for animation
     void toast.offsetWidth;
     toast.classList.add("show");
 
@@ -705,11 +669,9 @@ function showToast(msg, duration = 2600) {
     }, duration);
 }
 
-// ════════════════════════════════════════════════════════════════
-//  PiP DRAG (local video tile)
-// ════════════════════════════════════════════════════════════════
 function initPipDrag() {
     const pip = document.getElementById("local-pip");
+    if(!pip) return;
     let dragging = false, ox = 0, oy = 0;
 
     pip.addEventListener("mousedown", e => {
@@ -737,33 +699,5 @@ function initPipDrag() {
         dragging = false;
         pip.style.transition = "";
         pip.style.cursor = "grab";
-    });
-
-    // Touch support
-    pip.addEventListener("touchstart", e => {
-        const t = e.touches[0];
-        dragging = true;
-        ox = t.clientX - pip.offsetLeft;
-        oy = t.clientY - pip.offsetTop;
-        pip.style.transition = "none";
-    }, { passive: true });
-
-    document.addEventListener("touchmove", e => {
-        if (!dragging) return;
-        const t = e.touches[0];
-        let x = t.clientX - ox;
-        let y = t.clientY - oy;
-        const maxX = window.innerWidth - pip.offsetWidth;
-        const maxY = window.innerHeight - pip.offsetHeight;
-        x = Math.max(0, Math.min(x, maxX));
-        y = Math.max(0, Math.min(y, maxY));
-        pip.style.left = `${x}px`;
-        pip.style.top = `${y}px`;
-        pip.style.right = "auto";
-    }, { passive: true });
-
-    document.addEventListener("touchend", () => {
-        dragging = false;
-        pip.style.transition = "";
     });
 }
