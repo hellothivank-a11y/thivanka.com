@@ -3,42 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FaceTime Web - Auto-Connect</title>
+    <title>FaceTime Web - Supabase Auto-Connect</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- PeerJS Only -->
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Connection Screen -->
+    <!-- Role / Connection Screen -->
     <div id="connection-screen" class="screen glass-modal-container active">
         <div class="glass-modal">
             <div style="margin: 0 auto 24px; width: 80px; height: 80px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); overflow: hidden;">
                 <img src="icon-192.png" alt="Logo" width="100%" height="100%" style="object-fit: cover; display: block;">
             </div>
-            <h2>Secure Room</h2>
+            <h2>FaceTime</h2>
             
-            <!-- Role Selection (Shown if no role saved) -->
+            <!-- Role Selection -->
             <div id="role-selection" class="id-section">
-                <p class="section-label" style="text-align: center;">Select Your Identity</p>
+                <p class="section-label" style="text-align: center;">Who are you?</p>
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
-                    <button id="btn-role-a" class="primary-btn" style="background: rgba(255,255,255,0.15);">I am User A</button>
-                    <button id="btn-role-b" class="primary-btn" style="background: rgba(255,255,255,0.15);">I am User B</button>
+                    <button id="btn-role-husband" class="primary-btn">Husband</button>
+                    <button id="btn-role-wife" class="primary-btn" style="background: #E52B50;">Wife</button>
                 </div>
             </div>
 
-            <!-- Join Room (Shown once role is selected) -->
+            <!-- Join Room -->
             <div id="join-section" class="id-section hidden" style="text-align: center;">
-                <p class="section-label" style="text-align: center; margin-bottom: 16px;">You are <span id="current-role-display" style="color: var(--ios-green);">User A</span></p>
-                <button id="btn-join-room" class="primary-btn">Join Secure Room</button>
-                <button id="btn-change-role" style="margin-top: 16px; font-size: 13px; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">Change Role</button>
+                <p class="section-label" style="text-align: center; margin-bottom: 16px;">Account: <span id="current-role-display" style="color: var(--ios-green); font-weight: 700;">Husband</span></p>
+                <button id="btn-join-room" class="primary-btn">Enter FaceTime</button>
+                <button id="btn-change-role" style="margin-top: 16px; font-size: 13px; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">Switch Account</button>
             </div>
         </div>
     </div>
@@ -79,7 +82,6 @@
     <!-- Toast Notification -->
     <div id="toast-notification" class="toast hidden"></div>
 
-    <!-- Scripts -->
     <script src="app.js"></script>
 </body>
 </html>
