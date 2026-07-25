@@ -93,62 +93,74 @@ DOM.btnChangeRole.addEventListener('click', showRoleSelection);
 // --- 2. Joining the Waiting Room ---
 DOM.btnJoinRoom.addEventListener('click', async () => {
     try {
-        // FIX #4: Guarantee Media Stream resolves BEFORE initializing PeerJS or attempting calls
         await setupLocalMedia();
         showCallScreen();
         
-        // FIX #3: Explicitly pass reliable STUN servers to guarantee NAT traversal
+        // Setup PeerJS with STUN servers
         State.peer = new Peer(State.myRole, {
-            debug: 1, // Reduced debug to prevent console spam
+            debug: 1,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' }
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' }
                 ]
             }
         });
         
         State.peer.on('open', (id) => {
-            console.log('Peer connected to server with ID:', id);
+            console.log('PeerJS connected as:', id);
             startPollingPartner();
         });
         
+        // Listen for incoming calls (Both User A and User B listen)
         State.peer.on('call', handleIncomingCall);
         
         State.peer.on('error', (err) => {
-            // Suppress the expected 'peer-unavailable' errors during polling
             if (err.type === 'peer-unavailable') {
+                // Ignore silent polling errors when partner is not yet online
                 return;
             }
             console.error('PeerJS Error:', err);
             if (err.type === 'unavailable-id') {
-                showToast('ID is already in use elsewhere.');
-                endCallCleanup();
+                showToast('ID in use. Reconnecting...');
+                setTimeout(() => {
+                    if (State.peer) State.peer.destroy();
+                    DOM.btnJoinRoom.click();
+                }, 1500);
             }
         });
         
     } catch (err) {
         console.error('Failed to join room', err);
-        showToast('Could not access camera/microphone. Please allow permissions.');
+        showToast('Could not access camera/microphone.');
     }
 });
 
-// --- 3. Robust Auto-Connect Logic ---
+// --- 3. Asymmetric Auto-Connect Logic ---
 function startPollingPartner() {
     if (State.pollingInterval) clearInterval(State.pollingInterval);
     
-    // Attempt to call partner every 3 seconds
-    State.pollingInterval = setInterval(() => {
-        // Do not poll if we are already successfully connected
-        if (State.call && State.remoteStream) return; 
+    // Designated Initiator: User A polls User B.
+    // User B listens passively to prevent SDP glare collision.
+    if (State.myRole !== ROLE_A_ID) {
+        console.log('User B active: Listening for incoming call from User A...');
+        return;
+    }
+
+    console.log('User A active: Polling User B (', State.partnerId, ')');
+    
+    const attemptCall = () => {
+        if (State.call || State.remoteStream) return;
         
-        console.log('Polling partner:', State.partnerId);
+        console.log('User A calling:', State.partnerId);
         const outCall = State.peer.call(State.partnerId, State.localStream);
         
         if (outCall) {
             outCall.on('stream', (remoteStream) => {
-                console.log('Outgoing call connected!');
+                console.log('User A connected to User B stream!');
                 State.call = outCall;
                 stopPollingPartner();
                 handleStreamConnected(remoteStream);
@@ -158,7 +170,10 @@ function startPollingPartner() {
                 if (State.call === outCall) resetToWaitingRoom();
             });
         }
-    }, 3000);
+    };
+
+    attemptCall();
+    State.pollingInterval = setInterval(attemptCall, 3000);
 }
 
 function stopPollingPartner() {
@@ -168,27 +183,23 @@ function stopPollingPartner() {
     }
 }
 
-// FIX #2: Flawless Auto-Answer
+// Auto-Answer Incoming Calls
 function handleIncomingCall(inCall) {
     console.log('Incoming call received from:', inCall.peer);
     
-    // FIX #1: Race Condition - IMMEDIATELY stop outgoing polls if an incoming call arrives
     stopPollingPartner();
     
-    // If we already established a fully active call, ignore duplicate incoming events to prevent streams overwriting
     if (State.call && State.remoteStream) {
-        console.log('Already in an active call, ignoring duplicate incoming call.');
+        console.log('Already connected, ignoring duplicate call.');
         return;
     }
 
     State.call = inCall;
-    
-    console.log('Auto-answering call...');
-    // Ensure local stream is passed dynamically and correctly
+    console.log('Auto-answering call with local stream...');
     inCall.answer(State.localStream);
     
     inCall.on('stream', (remoteStream) => {
-        console.log('Incoming call stream received!');
+        console.log('Incoming stream received successfully!');
         handleStreamConnected(remoteStream);
     });
     
@@ -197,14 +208,16 @@ function handleIncomingCall(inCall) {
     });
 }
 
-// Unified function to handle UI transition once a stream is successfully received
 function handleStreamConnected(remoteStream) {
-    if (State.remoteStream === remoteStream) return; // Prevent duplicate triggers
+    if (State.remoteStream === remoteStream) return;
     
     State.remoteStream = remoteStream;
     DOM.remoteVideo.srcObject = remoteStream;
     
-    // Transition UI out of waiting state
+    // Play video explicitly to bypass browser autoplay restrictions
+    DOM.remoteVideo.play().catch(e => console.log('Video play error:', e));
+    
+    // Update UI
     DOM.callStatus.textContent = '';
     DOM.callStatus.classList.add('hidden');
     DOM.callDuration.classList.remove('hidden');
@@ -223,15 +236,13 @@ function resetToWaitingRoom() {
     DOM.callStatus.textContent = 'Waiting for partner...';
     DOM.callStatus.classList.remove('hidden');
     
-    // Partner disconnected, resume polling automatically
-    startPollingPartner(); 
+    startPollingPartner();
 }
 
-// --- 4. Video & Audio Management ---
+// --- 4. Video & Audio Setup ---
 async function setupLocalMedia() {
     if (State.localStream) return;
     
-    // Request media securely
     const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, 
         audio: { noiseSuppression: false, echoCancellation: true } 
@@ -249,7 +260,7 @@ function showCallScreen() {
     DOM.callDuration.classList.add('hidden');
 }
 
-// --- 5. Controls ---
+// --- 5. Controls & Actions ---
 DOM.btnEndCall.addEventListener('click', () => {
     if (State.call) State.call.close();
     endCallCleanup();
@@ -278,11 +289,9 @@ function endCallCleanup() {
     DOM.callDuration.classList.add('hidden');
     DOM.callStatus.classList.remove('hidden');
     
-    // Reset UI back to Connection Screen
     DOM.callScreen.classList.add('hidden');
     DOM.connectionScreen.classList.remove('hidden');
     
-    // Reset control states
     State.isMicMuted = false;
     State.isCamOff = false;
     State.isVoiceIsolationOn = false;
@@ -309,7 +318,6 @@ DOM.btnCam.addEventListener('click', () => {
     updateControlButtons();
 });
 
-// Voice Isolation (Noise Cancellation toggle)
 DOM.btnIsolation.addEventListener('click', async () => {
     if (!State.localStream) return;
     const audioTrack = State.localStream.getAudioTracks()[0];
