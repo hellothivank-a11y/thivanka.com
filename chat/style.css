@@ -1206,23 +1206,25 @@ a { color: var(--ios-blue); text-decoration: none; }
     background: var(--ios-blue-active);
 }
 
-/* ── QUICK EMOJI PICKER POPUP ─────────────────────────────────────── */
+/* ── FULL EMOJI PICKER POPUP (GLASS POPOVER) ─────────────────────── */
 .emoji-picker-popup {
     position: fixed;
     bottom: 75px;
     left: 16px;
-    z-index: 900;
-    background: rgba(28, 28, 30, 0.92);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    z-index: 1000;
+    background: rgba(28, 28, 30, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px;
-    padding: 10px 12px;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    padding: 6px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
     opacity: 0;
-    transform: scale(0.9) translateY(10px);
+    transform: scale(0.92) translateY(10px);
     pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+    max-width: calc(100vw - 32px);
+    overflow: hidden;
 }
 
 .emoji-picker-popup.show {
@@ -1231,30 +1233,29 @@ a { color: var(--ios-blue); text-decoration: none; }
     pointer-events: all;
 }
 
-.emoji-picker-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 8px;
-    max-width: 320px;
+emoji-picker {
+    --background: transparent;
+    --border-color: transparent;
+    --category-emoji-size: 1.1rem;
+    --emoji-size: 1.25rem;
+    --num-columns: 8;
+    width: 320px;
+    height: 320px;
+    max-width: 85vw;
+    max-height: 45vh;
+    font-family: var(--font-system);
 }
 
-.emoji-item {
-    font-size: 1.4rem;
-    cursor: pointer;
-    text-align: center;
-    padding: 4px;
-    border-radius: 8px;
-    transition: transform 0.15s ease, background 0.15s ease;
-    user-select: none;
-}
-
-.emoji-item:hover {
-    background: rgba(255, 255, 255, 0.12);
-    transform: scale(1.2);
-}
-
-.emoji-item:active {
-    transform: scale(0.95);
+@media (max-width: 480px) {
+    .emoji-picker-popup {
+        left: 10px;
+        bottom: 70px;
+    }
+    emoji-picker {
+        width: 290px;
+        height: 280px;
+        --num-columns: 7;
+    }
 }
 
 
