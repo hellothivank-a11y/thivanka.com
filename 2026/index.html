@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Private Space</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #121212; color: #e0e0e0; display: flex; flex-direction: column; height: 100vh; padding: 10px; }
+        
+        /* Setup / Login Section */
+        .setup-box { background: #1e1e1e; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        input { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #2a2a2a; color: white; margin: 5px; width: 80%; max-width: 250px; }
+        button { padding: 10px 15px; border-radius: 5px; border: none; background: #007bff; color: white; cursor: pointer; font-weight: bold; margin: 5px; }
+        button:hover { background: #0056b3; }
+        
+        /* Main Grid */
+        .container { display: flex; flex: 1; gap: 10px; flex-wrap: wrap; height: calc(100vh - 120px); }
+        
+        /* Video Container */
+        .video-section { flex: 2; min-width: 300px; display: flex; flex-direction: column; gap: 10px; justify-content: center; align-items: center; background: #1e1e1e; border-radius: 10px; padding: 10px; }
+        .video-grid { display: flex; width: 100%; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        video { width: 48%; max-width: 450px; border-radius: 8px; background: #000; object-fit: cover; aspect-ratio: 16/9; }
+        
+        /* Chat Section */
+        .chat-section { flex: 1; min-width: 280px; background: #1e1e1e; border-radius: 10px; display: flex; flex-direction: column; padding: 10px; }
+        .chat-box { flex: 1; overflow-y: auto; background: #121212; border-radius: 5px; padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: 70vh; }
+        .message { padding: 8px 12px; border-radius: 8px; max-width: 80%; word-break: break-word; font-size: 14px; }
+        .me { background: #007bff; align-self: flex-end; color: white; }
+        .them { background: #333; align-self: flex-start; color: white; }
+        .chat-input { display: flex; margin-top: 10px; gap: 5px; }
+        .chat-input input { flex: 1; width: auto; }
+    </style>
+</head>
+<body>
+
+    <div class="setup-box">
+        <h3>🔒 Private Call & Chat</h3>
+        <p style="font-size: 12px; color: #aaa; margin-bottom: 8px;">දෙන්නම එකම Secret Room Name එක ගහලා Connect වෙන්න.</p>
+        <input type="text" id="room-id" placeholder="Secret Room Name (eg: love123)">
+        <button onclick="startSession()">Connect</button>
+    </div>
+
+    <div class="container">
+        <!-- Video Stream Section -->
+        <div class="video-section">
+            <div class="video-grid">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <video id="remoteVideo" autoplay playsinline></video>
+            </div>
+        </div>
+
+        <!-- Real-time Chat Section -->
+        <div class="chat-section">
+            <div class="chat-box" id="chatBox">
+                <div class="message them">System: Enter room name and click Connect.</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let peer = null;
+        let conn = null;
+        let localStream = null;
+
+        // Camera & Mic On කරගැනීම
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+            localStream = stream;
+            document.getElementById('localVideo').srcObject = stream;
+        }).catch(err => alert("Camera/Mic access access denied!"));
+
+        function startSession() {
+            const roomName = document.getElementById('room-id').value.trim();
+            if (!roomName) return alert("Secret Room Name එකක් ගහන්න!");
+
+            // PeerJS Connect වීම
+            peer = new Peer();
+
+            peer.on('open', id => {
+                // පළමුව අනෙක් කෙනාගේ Room ID එකට Call / Message කරන්න ට්‍රයි කිරීම
+                connectToPeer(roomName);
+            });
+
+            // Incoming Data / Chat Connections
+            peer.on('connection', connection => {
+                conn = connection;
+                setupChatListener();
+            });
+
+            // Incoming Calls
+            peer.on('call', call => {
+                call.answer(localStream);
+                call.on('stream', remoteStream => {
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                });
+            });
+        }
+
+        function connectToPeer(roomName) {
+            // Chat Connection
+            conn = peer.connect(roomName);
+            setupChatListener();
+
+            // Video Call Connection
+            const call = peer.call(roomName, localStream);
+            if (call) {
+                call.on('stream', remoteStream => {
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                });
+            }
+        }
+
+        function setupChatListener() {
+            if (!conn) return;
+            conn.on('open', () => {
+                appendMessage("System", "Connected with partner!", "them");
+            });
+            conn.on('data', data => {
+                appendMessage("Partner", data, "them");
+            });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const msg = input.value.trim();
+            if (!msg || !conn) return;
+
+            conn.send(msg);
+            appendMessage("Me", msg, "me");
+            input.value = "";
+        }
+
+        function appendMessage(sender, text, type) {
+            const box = document.getElementById('chatBox');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            msgDiv.innerText = text;
+            box.appendChild(msgDiv);
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+</html>
