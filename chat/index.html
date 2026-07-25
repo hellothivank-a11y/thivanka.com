@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="DevUtils">
+    <meta name="description" content="A system logging and remote developer console utility.">
     <title>DevUtils Console — Dev System Tool</title>
     <!-- PWA Manifest & App Icons -->
     <link rel="manifest" href="manifest.json">
@@ -26,16 +27,78 @@
 </head>
 <body>
 
-    <!-- PANIC SCREEN -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 0: PANIC LOCK SCREEN (highest priority overlay)       -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="panic-screen" id="panicScreen">
-        <div>System locked. Double-click or use biometrics to restore.</div>
-        <button class="panic-bio-btn" id="panicBioBtn" onclick="unlockWithBiometrics()" style="margin-top:15px; display:none;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
-            Unlock with Biometrics (Touch ID / Face ID)
-        </button>
+        <div class="panic-content">
+            <div class="panic-lock-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <p>System locked</p>
+            <p class="panic-sub">Double-tap to restore access</p>
+            <button class="panic-bio-btn" id="panicBioBtn" onclick="unlockWithBiometrics()" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
+                Use Biometrics (Face ID / Touch ID)
+            </button>
+        </div>
     </div>
 
-    <!-- ONBOARDING / SETUP OVERLAY -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 1: FULL-BLEED FACETIME CALL SCREEN                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="call-screen" id="callScreen">
+
+        <!-- Remote Full-Screen Video -->
+        <video id="remoteVideo" autoplay playsinline class="remote-video-fill"></video>
+
+        <!-- Ambient gradient overlay (top and bottom) -->
+        <div class="call-gradient-top"></div>
+        <div class="call-gradient-bottom"></div>
+
+        <!-- Call Status Bar (top) -->
+        <div class="call-status-bar">
+            <div class="call-timer" id="callTimer">00:00</div>
+            <div class="call-partner-name" id="callPartnerName">Connecting...</div>
+        </div>
+
+        <!-- Draggable PiP Self-View -->
+        <div class="pip-self-view" id="selfView">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <button class="pip-eye-btn" id="pipToggleBtn" onclick="toggleSelfViewVisibility(event)" title="Hide self view">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+        </div>
+
+        <!-- Restore PiP when hidden -->
+        <button class="restore-pip-btn" id="restorePipBtn" onclick="toggleSelfViewVisibility(event)" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Show Me</span>
+        </button>
+
+        <!-- Floating Glass Control Dock -->
+        <div class="video-dock" id="videoDock">
+            <button class="dock-btn" id="toggleAudioBtn" onclick="toggleLocalAudio()" title="Mute Mic">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+            </button>
+            <button class="dock-btn" id="toggleVideoBtn" onclick="toggleLocalVideo()" title="Toggle Camera">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
+            <button class="dock-btn dock-btn--flip" onclick="flipCamera()" title="Flip Camera">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            </button>
+            <button class="dock-btn desktop-only" onclick="toggleSideBySideMode()" title="Side-by-Side View" id="toggleSideBySideBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+            </button>
+            <button class="dock-btn dock-btn--end" onclick="endCall()" title="End Call">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 2: ONBOARDING / SETUP SCREEN                          -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="setup-overlay" id="setupOverlay">
         <div class="setup-card">
             <div class="ios-sheet-handle"></div>
@@ -43,7 +106,7 @@
                 <h1>OASIS</h1>
                 <p>A completely private, end-to-end encrypted space for the two of you.</p>
             </div>
-            
+
             <div class="form-group">
                 <label>Who are you?</label>
                 <div class="user-toggle" id="userToggle">
@@ -56,21 +119,19 @@
                 <label>Secret Shared Key</label>
                 <input type="password" id="secretKeyInput" class="glass-input" placeholder="Type a key known only to you two..." value="1234">
                 <button class="pwd-toggle-btn" id="pwdToggle" onclick="togglePasswordVisibility()">
-                    <!-- eye icon -->
                     <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <!-- eye off icon (hidden initially) -->
                     <svg id="eyeClosedIcon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                 </button>
             </div>
 
-            <!-- Emoji fingerprint verification box -->
+            <!-- Safety fingerprint -->
             <div class="fingerprint-box">
                 <div class="fingerprint-label">Encryption Safety Code</div>
                 <div class="fingerprint-emojis" id="fingerprintPreview">🔐✨🌸🤍💎</div>
                 <div class="fingerprint-label" style="font-size:0.55rem; color:var(--text-muted); margin-top:2px;">Both partners must see the same emojis</div>
             </div>
 
-            <button class="enter-btn" onclick="enterOasis()">ENTER OASIS</button>
+            <button class="enter-btn" id="enterBtn" onclick="enterOasis()">ENTER OASIS</button>
             <button class="bio-setup-btn" id="bioSetupBtn" onclick="registerBiometrics()" style="display:none; margin-top:10px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04c.054-.19.123-.377.207-.559.605-1.309 1.488-2.476 2.597-3.443M12 7.5a4.5 4.5 0 0 0-4.5 4.5c0 .425.057.838.163 1.232m8.674-1.232c0-1.62-.862-3.04-2.15-3.816m0 0a5.972 5.972 0 0 0-3.687-.816m7.837 4.632c0 4.22-2.1 7.952-5.32 10.198"/></svg>
                 Enable Biometric Lock
@@ -78,73 +139,31 @@
         </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- LAYER 3: MAIN CHAT APPLICATION                              -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="app-container" id="appContainer">
-        
-        <!-- IMMERSIVE VIDEO CANVAS -->
-        <div class="video-canvas" id="videoCanvas">
-            <div class="partner-view">
-                <video id="remoteVideo" autoplay playsinline class="cover-fit"></video>
-                <div class="video-orientation-badge" id="videoOrientationBadge" style="display:none;">Landscape</div>
-            </div>
-
-            <!-- Self PIP View -->
-            <div class="self-view" id="selfView">
-                <video id="localVideo" autoplay muted playsinline></video>
-                <button class="pip-toggle-btn" id="pipToggleBtn" onclick="toggleSelfViewVisibility(event)" title="Hide my camera preview">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
-            </div>
-
-            <!-- Restore PIP Button when minimized -->
-            <button class="restore-pip-btn" id="restorePipBtn" onclick="toggleSelfViewVisibility(event)" style="display:none;" title="Restore my camera preview">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span>Show Self</span>
-            </button>
-
-            <!-- Video Overlay Control Panel -->
-            <div class="video-overlay-controls">
-                <button class="control-circle-btn" id="toggleAudioBtn" onclick="toggleLocalAudio()" title="Mute Mic">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-                </button>
-                <button class="control-circle-btn" id="toggleVideoBtn" onclick="toggleLocalVideo()" title="Toggle Camera">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </button>
-                <button class="control-circle-btn" id="toggleVideoFitBtn" onclick="toggleVideoFitMode()" title="Fit / Fill Screen">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                </button>
-                <button class="control-circle-btn desktop-only" id="toggleSideBySideBtn" onclick="toggleSideBySideMode()" title="Expand / Side-by-Side View">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
-                </button>
-                <button class="control-circle-btn" onclick="toggleFullScreen()" title="Toggle Fullscreen">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-                </button>
-                <button class="control-circle-btn off" onclick="endCall()" title="End Call">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-                </button>
-            </div>
-        </div>
 
         <!-- APP HEADER -->
-        <div class="app-header">
+        <div class="app-header" id="appHeader">
             <div class="brand-bar">
-                <h2 id="spaceTitle">OASIS SPACE</h2>
+                <h2 id="spaceTitle">OASIS</h2>
                 <div class="header-actions">
-                    <!-- Status Badge -->
+                    <!-- Partner status badge -->
                     <div class="status-badge">
                         <div class="status-dot" id="statusDot"></div>
                         <span id="partnerStatusLabel">Offline</span>
                     </div>
 
-                    <!-- Call Button -->
-                    <button class="icon-btn" onclick="initiateCall()" title="Call Partner">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <!-- 1-click Call Button -->
+                    <button class="icon-btn" id="callBtn" onclick="initiateCall()" title="Call Partner">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     </button>
 
-                    <!-- Dropdown Trigger -->
+                    <!-- Menu trigger -->
                     <div class="dropdown-wrapper">
-                        <button class="icon-btn" onclick="toggleMenu(event)" title="Settings">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        <button class="icon-btn" onclick="toggleMenu(event)" title="More options">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                         </button>
                         <div class="dropdown-menu" id="dropdownMenu">
                             <button class="dropdown-item" onclick="openSettingsModal()">
@@ -153,7 +172,7 @@
                             </button>
                             <hr style="border:0; border-top:0.5px solid var(--ios-border); margin:4px 0;">
                             <button class="dropdown-item danger" onclick="clearAllMessages()">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                 Clear Chat
                             </button>
                             <button class="dropdown-item danger" onclick="triggerPanic()">
@@ -164,71 +183,75 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Sub header displaying safety emoji matching and Peer ID info -->
+            <!-- Sub-header: fingerprint + connection state -->
             <div class="sub-header-bar">
                 <div>Code: <span class="fingerprint-preview" id="headerFingerprint">•••••</span></div>
-                <div id="peerInfoDisplay">Initializing space...</div>
+                <div id="peerInfoDisplay">Initializing...</div>
             </div>
         </div>
 
-        <!-- SPATIAL CHAT CONTAINER -->
+        <!-- CHAT MESSAGES -->
         <div class="chat-container" id="messageList"></div>
 
         <!-- TYPING INDICATOR -->
-        <div class="typing-bubble" id="typingIndicator" style="display: none;">
+        <div class="typing-bubble" id="typingIndicator" style="display:none;">
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
         </div>
 
-        <!-- CHAT FOOTER & INPUTS -->
+        <!-- CHAT FOOTER & INPUT BAR -->
         <div class="chat-footer">
             <div class="input-container-wrapper">
-                
-                <!-- Left actions: Attachments / Audio -->
                 <div class="chat-actions-left">
-                    <!-- Image Input File Trigger -->
                     <button class="attachment-btn" onclick="triggerImageUpload()" title="Send Image">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </button>
-                    <!-- Audio Recorder Button -->
                     <button class="attachment-btn" id="audioRecordBtn" title="Hold to record voice note">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
                     </button>
                 </div>
-                
-                <!-- Hidden inputs -->
-                <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFileSelect(event)">
-                
-                <!-- Text input -->
+                <input type="file" id="imageFileInput" accept="image/*" style="display:none;" onchange="handleImageFileSelect(event)">
                 <input type="text" id="messageInput" class="chat-input" placeholder="Whisper something sweet..." onkeypress="handleInputKeyPress(event)" oninput="handleInputTyping()">
-                
-                <!-- Send button inside container -->
                 <button class="send-circle-btn" onclick="sendMessage()" title="Send Message">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- GLOBAL MODALS (outside app-container for proper z-index)     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
     <!-- INCOMING CALL RING OVERLAY -->
-    <div class="call-modal" id="incomingCallModal">
-        <div class="caller-avatar" id="callerAvatar"></div>
-        <div class="caller-name" id="callerNameLabel">Partner</div>
-        <div class="call-status-label" id="callStatusLabel">Calling securely...</div>
-        <div class="call-actions-row">
-            <button class="call-action-circle decline" onclick="declineCall()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
-            </button>
-            <button class="call-action-circle accept" onclick="acceptCall()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </button>
+    <div class="incoming-call-overlay" id="incomingCallModal">
+        <div class="incoming-call-card">
+            <div class="caller-avatar-ring">
+                <div class="caller-avatar-pulse"></div>
+                <div class="caller-avatar" id="callerAvatar"></div>
+            </div>
+            <div class="caller-name" id="callerNameLabel">Partner</div>
+            <div class="caller-status" id="callStatusLabel">Incoming secure call...</div>
+            <div class="call-actions-row">
+                <div class="call-action-group">
+                    <button class="call-action-circle decline" onclick="declineCall()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/></svg>
+                    </button>
+                    <span class="call-action-label">Decline</span>
+                </div>
+                <div class="call-action-group">
+                    <button class="call-action-circle accept" onclick="acceptCall()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </button>
+                    <span class="call-action-label">Accept</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- TOAST NOTIFICATION -->
-    <div class="toast-msg" id="toastMessage">Toast content</div>
+    <div class="toast-msg" id="toastMessage"></div>
 
     <!-- IMAGE LIGHTBOX MODAL -->
     <div class="img-modal" id="imageModal" onclick="closeImageModal()">
