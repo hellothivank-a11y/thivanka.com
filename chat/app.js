@@ -622,18 +622,16 @@ function setupCallListeners(call) {
             const vh = remoteVideo.videoHeight;
             if (!vw || !vh) return;
 
-            const videoAspect  = vw / vh;                             // e.g. 1.78 for 16:9
-            const screenAspect = window.innerWidth / window.innerHeight;
-
-            // Use contain when video is landscape AND screen is also landscape (desktop/laptop),
-            // which causes heavy zoom on faces. Portrait-to-portrait stays as cover.
-            if (videoAspect > 1.2 && screenAspect > 1.0) {
+            const isDesktop = window.innerWidth >= 768;
+            if (isDesktop) {
                 remoteVideo.classList.add('contain-mode');
-            } else if (videoAspect > 1.2 && screenAspect <= 1.0) {
-                // Landscape video on portrait screen — contain so full face visible
+                return;
+            }
+
+            const videoAspect = vw / vh;
+            if (videoAspect > 1.25) {
                 remoteVideo.classList.add('contain-mode');
             } else {
-                // Portrait video on portrait screen — cover fills perfectly
                 remoteVideo.classList.remove('contain-mode');
             }
         };
@@ -745,12 +743,14 @@ async function flipCamera() {
 let callChatOpen = false;
 
 function toggleCallChat() {
-    const drawer  = document.getElementById('callChatDrawer');
-    const chatBtn = document.getElementById('callChatBtn');
-    callChatOpen  = !callChatOpen;
+    const callScreen = document.getElementById('callScreen');
+    const drawer     = document.getElementById('callChatDrawer');
+    const chatBtn    = document.getElementById('callChatBtn');
+    callChatOpen     = !callChatOpen;
 
-    drawer.classList.toggle('open', callChatOpen);
-    chatBtn.classList.toggle('active', callChatOpen);
+    if (callScreen) callScreen.classList.toggle('chat-open', callChatOpen);
+    if (drawer)     drawer.classList.toggle('open', callChatOpen);
+    if (chatBtn)    chatBtn.classList.toggle('active', callChatOpen);
 
     if (callChatOpen) {
         // Populate drawer with current messages from the main chat
@@ -758,18 +758,20 @@ function toggleCallChat() {
         setTimeout(() => {
             const msgs = document.getElementById('callChatMessages');
             if (msgs) msgs.scrollTop = msgs.scrollHeight;
-            document.getElementById('callChatInput').focus();
-        }, 400); // after slide-in animation
+            const input = document.getElementById('callChatInput');
+            if (input) input.focus();
+        }, 300); // after slide-in animation
     }
 }
 
 function closeCallChat() {
-    const drawer  = document.getElementById('callChatDrawer');
-    const chatBtn = document.getElementById('callChatBtn');
-    if (!drawer) return;
-    callChatOpen = false;
-    drawer.classList.remove('open');
-    if (chatBtn) chatBtn.classList.remove('active');
+    const callScreen = document.getElementById('callScreen');
+    const drawer     = document.getElementById('callChatDrawer');
+    const chatBtn    = document.getElementById('callChatBtn');
+    callChatOpen     = false;
+    if (callScreen) callScreen.classList.remove('chat-open');
+    if (drawer)     drawer.classList.remove('open');
+    if (chatBtn)    chatBtn.classList.remove('active');
 }
 
 // Mirror the main #messageList content into the drawer
