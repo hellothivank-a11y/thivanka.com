@@ -256,8 +256,14 @@ function enterOasis() {
     localStorage.setItem('oasis_user', currentUsername);
     localStorage.setItem('oasis_key', secretKey);
 
-    document.getElementById('spaceTitle').innerText = `${currentUsername.toUpperCase()}'S OASIS`;
-    document.getElementById('headerFingerprint').innerText = generateSafetyFingerprint(secretKey);
+    const partnerName = currentUsername === 'Hani' ? 'Bani' : 'Hani';
+    const partnerAvatar = currentUsername === 'Hani' ? '🌸' : '👑';
+    const titleEl = document.getElementById('spaceTitle');
+    if (titleEl) titleEl.innerText = partnerName;
+    const avatarEl = document.getElementById('headerAvatar');
+    if (avatarEl) avatarEl.innerText = partnerAvatar;
+    const fpEl = document.getElementById('headerFingerprint');
+    if (fpEl) fpEl.innerText = generateSafetyFingerprint(secretKey);
     document.getElementById('setupOverlay').classList.add('hidden');
 
     // Destroy previous peer connection if user identity changed
