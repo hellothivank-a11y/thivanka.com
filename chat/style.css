@@ -1471,6 +1471,13 @@ a { color: var(--ios-blue); text-decoration: none; }
         object-fit: contain;
     }
 
+    /* Desktop webcam 4:3 aspect ratio for local self view preview (full face & shoulders) */
+    .pip-self-view {
+        width: 180px;
+        height: 125px;
+        border-radius: 16px;
+    }
+
     /* Desktop In-Call Chat Sidebar */
     .call-chat-drawer {
         top: 0;
@@ -1498,10 +1505,10 @@ a { color: var(--ios-blue); text-decoration: none; }
     .call-screen.chat-open .remote-video-fill {
         width: calc(100% - 360px);
         left: 0;
+        cursor: pointer;
     }
 
-    .call-screen.chat-open .call-status-bar,
-    .call-screen.chat-open .video-dock {
+    .call-screen.chat-open .call-status-bar {
         left: calc((100% - 360px) / 2);
     }
 
@@ -1528,6 +1535,7 @@ a { color: var(--ios-blue); text-decoration: none; }
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
         border: 1px solid rgba(255, 255, 255, 0.15);
         object-fit: cover;
+        cursor: pointer;
     }
 
     /* Mobile Chat Drawer expands to slide up below/behind PiP card */
@@ -1545,12 +1553,13 @@ a { color: var(--ios-blue); text-decoration: none; }
         opacity: 0;
         pointer-events: none;
     }
+}
 
-    /* Video dock stays accessible at bottom on mobile when chat is open */
-    .call-screen.chat-open .video-dock {
-        z-index: 1000;
-        bottom: max(16px, calc(var(--safe-bottom) + 12px));
-    }
+/* Hide bottom call control dock when chat overlay is open */
+.call-screen.chat-open .video-dock {
+    transform: translate(-50%, 160%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
