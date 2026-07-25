@@ -149,13 +149,15 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupAudioRecordButton() {
-    const audioBtn = document.getElementById('audioRecordBtn');
-    if (!audioBtn) return;
-    audioBtn.addEventListener('mousedown', startVoiceRecording);
-    audioBtn.addEventListener('mouseup', stopVoiceRecording);
-    audioBtn.addEventListener('mouseleave', cancelVoiceRecording);
-    audioBtn.addEventListener('touchstart', e => { e.preventDefault(); startVoiceRecording(); }, { passive: false });
-    audioBtn.addEventListener('touchend',   e => { e.preventDefault(); stopVoiceRecording(); });
+    const audioBtns = [document.getElementById('audioRecordBtn'), document.getElementById('callAudioRecordBtn')];
+    audioBtns.forEach(audioBtn => {
+        if (!audioBtn) return;
+        audioBtn.addEventListener('mousedown', startVoiceRecording);
+        audioBtn.addEventListener('mouseup', stopVoiceRecording);
+        audioBtn.addEventListener('mouseleave', cancelVoiceRecording);
+        audioBtn.addEventListener('touchstart', e => { e.preventDefault(); startVoiceRecording(); }, { passive: false });
+        audioBtn.addEventListener('touchend',   e => { e.preventDefault(); stopVoiceRecording(); });
+    });
 }
 
 function setupVisualViewportFix() {
@@ -1031,7 +1033,10 @@ function startVoiceRecording() {
                 stream.getTracks().forEach(t => t.stop());
             };
             mediaRecorder.start();
-            document.getElementById('audioRecordBtn').classList.add('recording');
+            ['audioRecordBtn', 'callAudioRecordBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.classList.add('recording');
+            });
             showToast('Recording... Release to send.');
         })
         .catch(err => {
@@ -1043,7 +1048,10 @@ function startVoiceRecording() {
 function stopVoiceRecording() {
     if (!isRecording) return;
     isRecording = false;
-    document.getElementById('audioRecordBtn').classList.remove('recording');
+    ['audioRecordBtn', 'callAudioRecordBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.remove('recording');
+    });
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
         showToast('Voice note processing...');
@@ -1053,7 +1061,10 @@ function stopVoiceRecording() {
 function cancelVoiceRecording() {
     if (!isRecording) return;
     isRecording = false;
-    document.getElementById('audioRecordBtn').classList.remove('recording');
+    ['audioRecordBtn', 'callAudioRecordBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.remove('recording');
+    });
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         audioChunks = [];
         mediaRecorder.stop();
