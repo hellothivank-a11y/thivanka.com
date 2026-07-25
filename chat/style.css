@@ -173,12 +173,19 @@ a { color: var(--ios-blue); text-decoration: none; }
     height: 100%;
     object-fit: cover;    /* default — portrait/mobile match */
     background: #111;
-    transition: object-fit 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Smart aspect ratio override: contain when screen is wider than video */
 .remote-video-fill.contain-mode {
     object-fit: contain;
+}
+
+.call-status-bar,
+.video-dock,
+.pip-self-view,
+.restore-pip-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Gradient overlays for legibility */
@@ -329,7 +336,7 @@ a { color: var(--ios-blue); text-decoration: none; }
     color: #fff;
 }
 
-/* ── IN-CALL CHAT DRAWER ─────────────────────────────────────────── */
+/* ── IN-CALL CHAT DRAWER / SIDEBAR ─────────────────────────────────── */
 .call-chat-drawer {
     position: absolute;
     bottom: 0;
@@ -345,7 +352,7 @@ a { color: var(--ios-blue); text-decoration: none; }
     display: flex;
     flex-direction: column;
     transform: translateY(100%);
-    transition: transform 0.38s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 }
 
@@ -1432,6 +1439,55 @@ a { color: var(--ios-blue); text-decoration: none; }
     color: var(--text-sub);
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   DESKTOP / WEB OPTIMIZATIONS (min-width: 768px)
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+    /* Prevent faces from being awkwardly zoomed in on desktop web */
+    .remote-video-fill {
+        object-fit: contain;
+    }
+
+    /* Desktop In-Call Chat Sidebar */
+    .call-chat-drawer {
+        top: 0;
+        bottom: 0;
+        left: auto;
+        right: 0;
+        width: 360px;
+        height: 100%;
+        border-radius: 0;
+        border-top: none;
+        border-left: 1px solid rgba(255, 255, 255, 0.12);
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .call-chat-drawer.open {
+        transform: translateX(0);
+    }
+
+    .call-chat-drawer-handle {
+        display: none;
+    }
+
+    /* Desktop Video Shrink & Re-center when chat sidebar is open */
+    .call-screen.chat-open .remote-video-fill {
+        width: calc(100% - 360px);
+        left: 0;
+    }
+
+    .call-screen.chat-open .call-status-bar,
+    .call-screen.chat-open .video-dock {
+        left: calc((100% - 360px) / 2);
+    }
+
+    .call-screen.chat-open .pip-self-view,
+    .call-screen.chat-open .restore-pip-btn {
+        right: calc(360px + 16px);
+    }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    ANDROID / MOBILE OPTIMIZATIONS
