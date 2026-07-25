@@ -1,240 +1,244 @@
-const SUPABASE_URL = 'https://hfkwgumcdgpsqjjwtxik.supabase.co';
+/* ═══════════════════════════════════════════════════════════════════
+   OASIS — PRODUCTION APP.JS
+   FaceTime Native Hybrid | Deterministic PeerJS | End-to-End Encrypted
+   ═══════════════════════════════════════════════════════════════════ */
+
+// ─── SUPABASE & PUSH CREDENTIALS ───────────────────────────────────
+const SUPABASE_URL     = 'https://hfkwgumcdgpsqjjwtxik.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Jtj7u2jXgqQt1oIC3P-pTg_nsF_foAQ';
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa16tH9Z81A2lJ-J3J22vXq8wZ5F3E7Q3z834g5';
+const VAPID_PUBLIC_KEY  = 'BEl62iUYgUivxIkv69yViEuiBIa16tH9Z81A2lJ-J3J22vXq8wZ5F3E7Q3z834g5';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let peer, localStream, currentCall;
-let currentMyId = '';
+
+// ─── APP STATE ──────────────────────────────────────────────────────
+let peer          = null;
+let localStream   = null;
+let currentCall   = null;
+let currentMyId   = '';
 let partnerPeerId = '';
 let currentUsername = 'Hani';
-let activeChannel = null;
+
+let activeChannel   = null;
 let presenceChannel = null;
-let heartbeatInterval;
-let typingTimeout;
+let heartbeatInterval = null;
+let typingTimeout     = null;
+
 let isAudioMuted = false;
 let isVideoMuted = false;
+let isFrontCamera = true;
+let callStartTime = null;
+let callTimerInterval = null;
+
+// Voice note recording state
+let isRecording  = false;
+let mediaRecorder = null;
+let audioChunks  = [];
+
 let swRegistration = null;
 
-// Audio recording state
-let isRecording = false;
-let mediaRecorder = null;
-let audioChunks = [];
-
-// Audio constraint configuration for crystal-clear noise reduction
+// ─── AUDIO / VIDEO CONSTRAINTS (HD Quality) ────────────────────────
 const AUDIO_CONSTRAINTS = {
     echoCancellation: true,
     noiseSuppression: true,
-    autoGainControl: true,
-    sampleRate: 48000,
-    channelCount: 1
+    autoGainControl:  true,
+    sampleRate:       48000,
+    channelCount:     1
 };
 
-// Initialize Dexie IndexedDB for local message caching
+const VIDEO_CONSTRAINTS = {
+    width:     { ideal: 1280 },
+    height:    { ideal: 720  },
+    frameRate: { ideal: 30   },
+    facingMode: 'user'
+};
+
+// ─── INDEXEDDB (DEXIE) ─────────────────────────────────────────────
 const db = new Dexie('OasisLocalDB');
 db.version(1).stores({
     messages: 'id, created_at, sender, encrypted_message'
 });
 
-// Register Service Worker for PWA & Server Push Notifications
+// ─── SERVICE WORKER REGISTRATION ───────────────────────────────────
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => {
                 swRegistration = reg;
-                console.log('Oasis Service Worker registered successfully:', reg.scope);
+                console.log('Oasis SW registered:', reg.scope);
                 subscribeWebPush();
             })
-            .catch(err => {
-                console.warn('Oasis Service Worker registration failed:', err);
-            });
+            .catch(err => console.warn('SW registration failed:', err));
     });
 }
 
-// Helper to convert Base64 VAPID Key to Uint8Array for Web Push API
+// ─── VAPID KEY HELPER ──────────────────────────────────────────────
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData  = window.atob(base64);
+    const output   = new Uint8Array(rawData.length);
     for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
+        output[i] = rawData.charCodeAt(i);
     }
-    return outputArray;
+    return output;
 }
 
-// --- SECURE INITIALIZATION ---
 
-// Load initial config from persistent storage (localStorage)
+/* ═══════════════════════════════════════════════════════════════════
+   INITIALIZATION
+   ═══════════════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
     updateNotificationButtonState();
     checkBiometricSupport();
 
+    // ── URL Parameter Identity Detection ─────────────────────────
+    // Usage: open app as  yourapp.com/?user=hani  or  ?user=bani
+    const params  = new URLSearchParams(window.location.search);
+    const urlUser = params.get('user');
+    if (urlUser) {
+        const name = urlUser.charAt(0).toUpperCase() + urlUser.slice(1).toLowerCase();
+        if (name === 'Hani' || name === 'Bani') {
+            currentUsername = name;
+            selectUser(currentUsername);
+        }
+    }
+
+    // ── Persistent login ──────────────────────────────────────────
     const savedUser = localStorage.getItem('oasis_user');
-    const savedKey = localStorage.getItem('oasis_key');
-    const savedPartnerId = localStorage.getItem('oasis_partner_id');
+    const savedKey  = localStorage.getItem('oasis_key');
 
     if (savedUser && savedKey) {
         document.getElementById('secretKeyInput').value = savedKey;
         selectUser(savedUser);
-        if (savedPartnerId) {
-            partnerPeerId = savedPartnerId;
-        }
-        // Automatically enter space (Persistent Login)
         enterOasis();
     } else {
         updateSafetyFingerprint();
     }
 
-    // Set up password field listeners
-    document.getElementById('secretKeyInput').addEventListener('input', () => {
-        updateSafetyFingerprint();
+    // Password field live fingerprint
+    document.getElementById('secretKeyInput').addEventListener('input', updateSafetyFingerprint);
+
+    // Audio record button events (hold to record)
+    setupAudioRecordButton();
+
+    // Mobile keyboard viewport fix
+    setupVisualViewportFix();
+
+    // Global key / interaction listeners
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') triggerPanic();
     });
 
-    // Audio recording button events
+    document.getElementById('panicScreen').addEventListener('dblclick', restoreFromPanic);
+    document.getElementById('panicScreen').addEventListener('touchend', (() => {
+        let lastTap = 0;
+        return () => {
+            const now = Date.now();
+            if (now - lastTap < 400) restoreFromPanic();
+            lastTap = now;
+        };
+    })());
+
+    window.addEventListener('click', () => {
+        const menu = document.getElementById('dropdownMenu');
+        if (menu && menu.classList.contains('show')) menu.classList.remove('show');
+    });
+
+    // PiP drag
+    initSelfViewDrag();
+});
+
+function setupAudioRecordButton() {
     const audioBtn = document.getElementById('audioRecordBtn');
-    if (audioBtn) {
-        audioBtn.addEventListener('mousedown', startVoiceRecording);
-        audioBtn.addEventListener('mouseup', stopVoiceRecording);
-        audioBtn.addEventListener('mouseleave', cancelVoiceRecording);
-        
-        audioBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startVoiceRecording();
-        }, { passive: false });
-        audioBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            stopVoiceRecording();
-        });
-    }
+    if (!audioBtn) return;
+    audioBtn.addEventListener('mousedown', startVoiceRecording);
+    audioBtn.addEventListener('mouseup', stopVoiceRecording);
+    audioBtn.addEventListener('mouseleave', cancelVoiceRecording);
+    audioBtn.addEventListener('touchstart', e => { e.preventDefault(); startVoiceRecording(); }, { passive: false });
+    audioBtn.addEventListener('touchend',   e => { e.preventDefault(); stopVoiceRecording(); });
+}
 
-    // --- MOBILE KEYBOARD VIEWPORT FIX ---
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            const appContainer = document.getElementById('appContainer');
-            if (appContainer) {
-                appContainer.style.height = `${window.visualViewport.height}px`;
-            }
-            // Auto scroll chat list to latest message when keyboard pops up
-            const messageList = document.getElementById('messageList');
-            if (messageList) {
-                messageList.scrollTop = messageList.scrollHeight;
-            }
-        });
-    }
-
+function setupVisualViewportFix() {
+    if (!window.visualViewport) return;
+    window.visualViewport.addEventListener('resize', () => {
+        const appContainer = document.getElementById('appContainer');
+        if (appContainer) appContainer.style.height = `${window.visualViewport.height}px`;
+        const msgList = document.getElementById('messageList');
+        if (msgList) msgList.scrollTop = msgList.scrollHeight;
+    });
     const msgInput = document.getElementById('messageInput');
     if (msgInput) {
         msgInput.addEventListener('focus', () => {
             setTimeout(() => {
-                const messageList = document.getElementById('messageList');
-                if (messageList) {
-                    messageList.scrollTop = messageList.scrollHeight;
-                }
-            }, 150); // slight delay to allow keyboard animation to finish
+                const msgList = document.getElementById('messageList');
+                if (msgList) msgList.scrollTop = msgList.scrollHeight;
+            }, 150);
         });
     }
+}
 
-    // Escape key listener for panic mode
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            triggerPanic();
-        }
-    });
 
-    // Double-click panic restore
-    document.getElementById('panicScreen').addEventListener('dblclick', () => {
-        restoreFromPanic();
-    });
-
-    // Handle clicking outside dropdown
-    window.addEventListener('click', () => {
-        const menu = document.getElementById('dropdownMenu');
-        if (menu && menu.classList.contains('show')) {
-            menu.classList.remove('show');
-        }
-    });
-
-    // Setup Safe Dragging for selfView PIP
-    initSelfViewDrag();
-});
-
-// --- ONBOARDING UX & AUTHENTICATION ---
-
+/* ═══════════════════════════════════════════════════════════════════
+   ONBOARDING UX & USER SELECTION
+   ═══════════════════════════════════════════════════════════════════ */
 function selectUser(user) {
     currentUsername = user;
     const options = document.querySelectorAll('.user-option');
     options.forEach(opt => {
         opt.classList.remove('active', 'hani-active', 'bani-active');
-        if (opt.innerText === user) {
-            opt.classList.add('active');
-            opt.classList.add(user === 'Hani' ? 'hani-active' : 'bani-active');
+        if (opt.innerText.trim() === user) {
+            opt.classList.add('active', user === 'Hani' ? 'hani-active' : 'bani-active');
         }
     });
 }
 
 function updateSafetyFingerprint() {
     const key = document.getElementById('secretKeyInput').value;
-    const fingerprint = generateSafetyFingerprint(key);
-    document.getElementById('fingerprintPreview').innerText = fingerprint;
+    const fp  = generateSafetyFingerprint(key);
+    const el  = document.getElementById('fingerprintPreview');
+    if (el) el.innerText = fp;
 }
 
-// SHA-256 Emoji Fingerprint generator
 function generateSafetyFingerprint(key) {
-    if (!key) return "🔐✨🌸🤍💎";
+    if (!key) return '🔐✨🌸🤍💎';
     try {
         const hash = CryptoJS.SHA256(key).toString();
-        const emojiSet = ["❤️", "💖", "✨", "🌸", "🤍", "💎", "🌟", "🌹", "🧸", "🍯", "🦄", "🌈", "🍭", "🍀", "🎀", "🕊️", "🎈", "🔮", "🪐", "🥂"];
-        let fingerprint = "";
+        const emojiSet = ['❤️','💖','✨','🌸','🤍','💎','🌟','🌹','🧸','🍯','🦄','🌈','🍭','🍀','🎀','🕊️','🎈','🔮','🪐','🥂'];
+        let fp = '';
         for (let i = 0; i < 5; i++) {
-            const hexSegment = hash.substr(i * 4, 4);
-            const val = parseInt(hexSegment, 16);
-            const index = val % emojiSet.length;
-            fingerprint += emojiSet[index];
+            const hex = hash.substr(i * 4, 4);
+            fp += emojiSet[parseInt(hex, 16) % emojiSet.length];
         }
-        return fingerprint;
-    } catch (e) {
-        return "🔐✨🌸🤍💎";
-    }
+        return fp;
+    } catch { return '🔐✨🌸🤍💎'; }
 }
 
 function togglePasswordVisibility() {
-    const pwdInput = document.getElementById('secretKeyInput');
-    const eyeOpen = document.getElementById('eyeOpenIcon');
-    const eyeClosed = document.getElementById('eyeClosedIcon');
-    
-    if (pwdInput.type === 'password') {
-        pwdInput.type = 'text';
-        eyeOpen.style.display = 'none';
-        eyeClosed.style.display = 'block';
+    const input = document.getElementById('secretKeyInput');
+    const open  = document.getElementById('eyeOpenIcon');
+    const closed = document.getElementById('eyeClosedIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        open.style.display  = 'none';
+        closed.style.display = 'block';
     } else {
-        pwdInput.type = 'password';
-        eyeOpen.style.display = 'block';
-        eyeClosed.style.display = 'none';
+        input.type = 'password';
+        open.style.display  = 'block';
+        closed.style.display = 'none';
     }
 }
 
 function enterOasis() {
     const secretKey = document.getElementById('secretKeyInput').value.trim();
-    if (!secretKey) {
-        showToast("Please enter an Encryption Key.");
-        return;
-    }
+    if (!secretKey) { showToast('Please enter an Encryption Key.'); return; }
 
-    // Save session permanently in localStorage
     localStorage.setItem('oasis_user', currentUsername);
-    localStorage.setItem('oasis_key', secretKey);
-    if (partnerPeerId) {
-        localStorage.setItem('oasis_partner_id', partnerPeerId);
-    }
+    localStorage.setItem('oasis_key',  secretKey);
 
-    // Set UI labels
-    document.getElementById('spaceTitle').innerText = `${currentUsername.toUpperCase()}'S OASIS`;
+    document.getElementById('spaceTitle').innerText     = `${currentUsername.toUpperCase()}'S OASIS`;
     document.getElementById('headerFingerprint').innerText = generateSafetyFingerprint(secretKey);
-
-    // Hide onboarding panel
     document.getElementById('setupOverlay').classList.add('hidden');
 
-    // Initialize systems
     initPeer();
     loadInitialMessages();
     setupStatusTracking();
@@ -245,32 +249,17 @@ function enterOasis() {
 }
 
 function setupAutoReconnectAndSync() {
-    const handleAppResume = async () => {
+    const handleResume = async () => {
         if (document.visibilityState === 'visible') {
-            console.log("App resumed/focused — auto-syncing state...");
+            console.log('App resumed — syncing...');
             subscribeRealtime();
             loadInitialMessages();
             setupPresence();
             checkPartnerStatus();
         }
     };
-    document.addEventListener('visibilitychange', handleAppResume);
-    window.addEventListener('focus', handleAppResume);
-}
-
-function checkAndAutoRequestNotificationPermission() {
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                showToast("Notifications enabled! ❤️");
-                updateNotificationButtonState();
-                subscribeWebPush();
-            }
-        });
-    } else if (Notification.permission === 'granted') {
-        subscribeWebPush();
-    }
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleResume);
 }
 
 function showSettingsSetup() {
@@ -278,85 +267,79 @@ function showSettingsSetup() {
 }
 
 function switchAccount() {
-    if (confirm("Switch user account or change encryption key? You will need to re-authenticate.")) {
+    if (confirm('Switch user account or change encryption key? You will need to re-authenticate.')) {
         localStorage.removeItem('oasis_user');
         localStorage.removeItem('oasis_key');
         showSettingsSetup();
     }
 }
 
-// --- BIOMETRIC LOCK (WEBAUTHN API) ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   BIOMETRIC LOCK (WEBAUTHN API)
+   ═══════════════════════════════════════════════════════════════════ */
 function checkBiometricSupport() {
-    if (window.PublicKeyCredential) {
-        const bioSetupBtn = document.getElementById('bioSetupBtn');
-        if (bioSetupBtn) bioSetupBtn.style.display = 'flex';
-
-        if (localStorage.getItem('oasis_bio_cred_id')) {
-            const panicBioBtn = document.getElementById('panicBioBtn');
-            if (panicBioBtn) panicBioBtn.style.display = 'inline-flex';
-        }
+    if (!window.PublicKeyCredential) return;
+    const bioSetupBtn = document.getElementById('bioSetupBtn');
+    if (bioSetupBtn) bioSetupBtn.style.display = 'flex';
+    if (localStorage.getItem('oasis_bio_cred_id')) {
+        const panicBioBtn = document.getElementById('panicBioBtn');
+        if (panicBioBtn) panicBioBtn.style.display = 'inline-flex';
     }
 }
 
 async function registerBiometrics() {
     if (!window.PublicKeyCredential) {
-        showToast("Biometrics not supported on this device/browser.");
+        showToast('Biometrics not supported on this device/browser.');
         return;
     }
     try {
-        showToast("Prompting for biometric setup...");
+        showToast('Prompting for biometric setup...');
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
         const credential = await navigator.credentials.create({
             publicKey: {
-                challenge: challenge,
-                rp: { name: "DevUtils Oasis Console" },
+                challenge,
+                rp: { name: 'DevUtils Oasis Console' },
                 user: {
                     id: Uint8Array.from(currentUsername, c => c.charCodeAt(0)),
                     name: currentUsername,
                     displayName: currentUsername
                 },
-                pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-                authenticatorSelection: { userVerification: "preferred" },
+                pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+                authenticatorSelection: { userVerification: 'preferred' },
                 timeout: 60000
             }
         });
-
         if (credential) {
             const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
             localStorage.setItem('oasis_bio_cred_id', credId);
-            showToast("Biometric lock enabled! 🔓");
+            showToast('Biometric lock enabled! 🔓');
             checkBiometricSupport();
         }
     } catch (e) {
-        console.error("Biometric registration error:", e);
-        showToast("Biometric registration canceled or unsupported.");
+        console.error('Biometric registration error:', e);
+        showToast('Biometric registration canceled or unsupported.');
     }
 }
 
 async function unlockWithBiometrics() {
     const credId = localStorage.getItem('oasis_bio_cred_id');
-    if (!credId) {
-        showToast("No biometric credential saved. Double-click to type key.");
-        return false;
-    }
-
+    if (!credId) { showToast('No biometric credential saved.'); return false; }
     try {
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
         const rawId = Uint8Array.from(atob(credId), c => c.charCodeAt(0));
         const assertion = await navigator.credentials.get({
             publicKey: {
-                challenge: challenge,
+                challenge,
                 allowCredentials: [{ id: rawId, type: 'public-key' }],
                 userVerification: 'preferred',
                 timeout: 60000
             }
         });
-
         if (assertion) {
-            showToast("Biometric authentication successful! ❤️");
+            showToast('Biometric authentication successful! ❤️');
             const savedKey = localStorage.getItem('oasis_key');
             if (savedKey) {
                 document.getElementById('secretKeyInput').value = savedKey;
@@ -368,32 +351,47 @@ async function unlockWithBiometrics() {
             }
         }
     } catch (e) {
-        console.error("Biometric unlock failed:", e);
-        showToast("Biometric unlock failed. Use Secret Key.");
+        console.error('Biometric unlock failed:', e);
+        showToast('Biometric unlock failed. Use Secret Key.');
     }
     return false;
 }
 
-// --- PWA & SERVER WEB PUSH NOTIFICATION HANDLERS ---
+
+/* ═══════════════════════════════════════════════════════════════════
+   PUSH NOTIFICATIONS & SERVICE WORKER
+   ═══════════════════════════════════════════════════════════════════ */
+function checkAndAutoRequestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showToast('Notifications enabled! ❤️');
+                updateNotificationButtonState();
+                subscribeWebPush();
+            }
+        });
+    } else if (Notification.permission === 'granted') {
+        subscribeWebPush();
+    }
+}
 
 function requestNotificationPermission() {
     if (!('Notification' in window)) {
-        showToast("Notifications are not supported on this browser.");
+        showToast('Notifications are not supported on this browser.');
         return;
     }
-
     Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
-            showToast("Push notifications enabled! ❤️");
+            showToast('Push notifications enabled! ❤️');
             updateNotificationButtonState();
             subscribeWebPush();
         } else if (permission === 'denied') {
-            showToast("Notification permission blocked in browser settings.");
+            showToast('Notification permission blocked in browser settings.');
         }
     });
 }
 
-// Subscribe to Web Push & Upsert to Supabase `user_push_subscriptions`
 async function subscribeWebPush() {
     if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') return;
     try {
@@ -405,32 +403,15 @@ async function subscribeWebPush() {
                 applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
             });
         }
-
         if (sub) {
             const subJson = JSON.stringify(sub);
-            
-            // Upsert into Supabase `user_push_subscriptions` table
             const { error } = await supabaseClient
                 .from('user_push_subscriptions')
-                .upsert({
-                    username: currentUsername,
-                    subscription: subJson,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'username' });
-
-            if (error) {
-                console.warn("Supabase user_push_subscriptions upsert warning:", error.message);
-                await supabaseClient.from('push_subscriptions').upsert({
-                    username: currentUsername,
-                    subscription: subJson,
-                    updated_at: new Date().toISOString()
-                });
-            } else {
-                console.log(`Web Push subscription for ${currentUsername} saved to user_push_subscriptions successfully.`);
-            }
+                .upsert({ username: currentUsername, subscription: subJson, updated_at: new Date().toISOString() }, { onConflict: 'username' });
+            if (error) console.warn('Supabase push subscription upsert warning:', error.message);
         }
     } catch (e) {
-        console.warn("Web Push registration error:", e);
+        console.warn('Web Push registration error:', e);
     }
 }
 
@@ -443,8 +424,7 @@ function updateNotificationButtonState() {
 
 function showBackgroundNotification(title, body) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-    const notificationOptions = {
+    const opts = {
         body: body || 'New message received',
         icon: './icon-192.png',
         badge: './icon-192.png',
@@ -453,53 +433,43 @@ function showBackgroundNotification(title, body) {
         renotify: true,
         data: { url: window.location.href }
     };
-
     if (swRegistration && swRegistration.showNotification) {
-        swRegistration.showNotification(title, notificationOptions).catch(err => {
-            console.warn('swRegistration.showNotification failed:', err);
-            fallbackDirectNotification(title, notificationOptions);
+        swRegistration.showNotification(title, opts).catch(err => {
+            console.warn('showNotification failed:', err);
+            try { new Notification(title, opts); } catch (_) {}
         });
     } else if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-            type: 'SHOW_NOTIFICATION',
-            title: title,
-            body: body,
-            icon: './icon-192.png',
-            tag: 'oasis-msg'
-        });
+        navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, icon: './icon-192.png', tag: 'oasis-msg' });
     } else {
-        fallbackDirectNotification(title, notificationOptions);
+        try { new Notification(title, opts); } catch (_) {}
     }
 }
 
-function fallbackDirectNotification(title, options) {
-    try {
-        new Notification(title, options);
-    } catch (e) {
-        console.warn('Fallback Notification failed:', e);
-    }
-}
 
-// --- PEER JS (CALLING & NETWORKING) ---
-
+/* ═══════════════════════════════════════════════════════════════════
+   PEERJS — DETERMINISTIC IDs & 1-CLICK CALLING
+   ═══════════════════════════════════════════════════════════════════ */
 function initPeer() {
     if (peer) return;
 
+    // Deterministic static peer ID based on username
     currentMyId = `oasis_${currentUsername.toLowerCase()}`;
+
     peer = new Peer(currentMyId, {
         config: {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.l.google.com:19302'  },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' }
             ]
         }
     });
-    
+
     peer.on('open', id => {
         currentMyId = id;
         const peerInfo = document.getElementById('peerInfoDisplay');
-        if (peerInfo) peerInfo.innerText = "Encrypted Line Active";
+        if (peerInfo) peerInfo.innerText = 'Encrypted Line Active';
+        // Track in presence channel so partner sees us online
         if (presenceChannel) {
             presenceChannel.track({
                 username: currentUsername,
@@ -510,77 +480,281 @@ function initPeer() {
     });
 
     peer.on('error', err => {
-        console.error("PeerJS error:", err);
-        showToast("Connection issue: " + err.type);
+        console.error('PeerJS error:', err);
+        showToast('Connection issue: ' + err.type);
     });
 
-    // Accept Incoming call flow
+    // Incoming call handler
     peer.on('call', call => {
+        // Prevent self-call loop
         if (call.peer === currentMyId) {
-            console.warn("Ignored self-calling request.");
+            console.warn('Ignored self-call.');
             return;
         }
 
         currentCall = call;
         const partnerName = currentUsername === 'Hani' ? 'Bani' : 'Hani';
-        
-        const incomingModal = document.getElementById('incomingCallModal');
-        incomingModal.classList.add('active');
-        document.getElementById('callerNameLabel').innerText = partnerName;
-        document.getElementById('callStatusLabel').innerText = "Secure Call Request...";
 
-        showBackgroundNotification(`Incoming Call from ${partnerName}`, "Tap to answer call in Oasis ❤️");
+        document.getElementById('incomingCallModal').classList.add('active');
+        document.getElementById('callerNameLabel').innerText  = partnerName;
+        document.getElementById('callStatusLabel').innerText  = 'Incoming secure call...';
+
+        // Set caller avatar emoji
+        const avatarEl = document.getElementById('callerAvatar');
+        if (avatarEl) avatarEl.innerText = partnerName === 'Hani' ? '💙' : '💜';
+
+        showBackgroundNotification(`Incoming Call from ${partnerName}`, 'Tap to answer call in Oasis ❤️');
     });
 }
 
-// --- DIRECT 1-CLICK CALLING ---
-
+// ── 1-Click Call ────────────────────────────────────────────────────
 function initiateCall() {
+    if (!peer) { showToast('Connecting to peer network...'); return; }
+
     const targetPartner = currentUsername.toLowerCase() === 'hani' ? 'oasis_bani' : 'oasis_hani';
+    showToast('Calling...');
 
-    showToast("Calling partner...");
-    
-    navigator.mediaDevices.getUserMedia({ video: true, audio: AUDIO_CONSTRAINTS }).then(stream => {
-        localStream = stream;
-        
-        const localVideo = document.getElementById('localVideo');
-        localVideo.srcObject = stream;
-        localVideo.play();
+    navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS })
+        .then(stream => {
+            localStream = stream;
+            document.getElementById('localVideo').srcObject = stream;
+            document.getElementById('localVideo').play();
 
-        document.getElementById('videoCanvas').classList.add('active');
-        
-        const call = peer.call(targetPartner, stream);
-        currentCall = call;
+            showCallScreen();
 
-        setupCallListeners(call);
-    }).catch(err => {
-        console.error("Camera denied:", err);
-        showToast("Call failed: Camera/Microphone access required.");
+            const call = peer.call(targetPartner, stream);
+            currentCall = call;
+            setupCallListeners(call);
+        })
+        .catch(err => {
+            console.error('Camera denied:', err);
+            showToast('Call failed: Camera/Microphone access required.');
+        });
+}
+
+// ── Accept Incoming Call ────────────────────────────────────────────
+function acceptCall() {
+    document.getElementById('incomingCallModal').classList.remove('active');
+    document.getElementById('callStatusLabel').innerText = 'Answering...';
+
+    navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS })
+        .then(stream => {
+            localStream = stream;
+            document.getElementById('localVideo').srcObject = stream;
+            document.getElementById('localVideo').play();
+
+            showCallScreen();
+            currentCall.answer(stream);
+            setupCallListeners(currentCall);
+        })
+        .catch(err => {
+            console.error('Permission error answering call:', err);
+            showToast('Could not access camera/mic.');
+            declineCall();
+        });
+}
+
+function declineCall() {
+    document.getElementById('incomingCallModal').classList.remove('active');
+    if (currentCall) currentCall.close();
+    showToast('Call declined.');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CALL SCREEN MANAGEMENT
+   ═══════════════════════════════════════════════════════════════════ */
+function showCallScreen() {
+    const callScreen = document.getElementById('callScreen');
+    callScreen.classList.add('active');
+
+    const partnerName = currentUsername === 'Hani' ? 'Bani' : 'Hani';
+    document.getElementById('callPartnerName').innerText = partnerName;
+    document.getElementById('callTimer').innerText = '00:00';
+
+    // Reset dock button states
+    isAudioMuted = false;
+    isVideoMuted = false;
+    document.getElementById('toggleAudioBtn').classList.remove('off');
+    document.getElementById('toggleVideoBtn').classList.remove('off');
+
+    // Restore PiP
+    const selfView  = document.getElementById('selfView');
+    const restoreBtn = document.getElementById('restorePipBtn');
+    if (selfView)   selfView.classList.remove('hidden-pip');
+    if (restoreBtn) restoreBtn.style.display = 'none';
+}
+
+function hideCallScreen() {
+    document.getElementById('callScreen').classList.remove('active');
+    stopCallTimer();
+}
+
+function startCallTimer() {
+    callStartTime = Date.now();
+    callTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+        const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const secs = String(elapsed % 60).padStart(2, '0');
+        const timerEl = document.getElementById('callTimer');
+        if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+    }, 1000);
+}
+
+function stopCallTimer() {
+    if (callTimerInterval) {
+        clearInterval(callTimerInterval);
+        callTimerInterval = null;
+    }
+    callStartTime = null;
+}
+
+// ── Call Lifecycle ──────────────────────────────────────────────────
+function setupCallListeners(call) {
+    call.on('stream', remoteStream => {
+        const remoteVideo = document.getElementById('remoteVideo');
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.play();
+
+        startCallTimer();
+        document.getElementById('callPartnerName').innerText =
+            currentUsername === 'Hani' ? 'Bani' : 'Hani';
+
+        showToast('Call connected securely ❤️');
+    });
+
+    call.on('close', () => cleanUpCall());
+    call.on('error', err => {
+        console.error('Call error:', err);
+        cleanUpCall();
     });
 }
 
-// --- SETTINGS MODAL CONTROL FUNCTIONS ---
+function cleanUpCall() {
+    hideCallScreen();
 
+    const remoteVideo = document.getElementById('remoteVideo');
+    const localVideo  = document.getElementById('localVideo');
+
+    if (remoteVideo.srcObject) {
+        remoteVideo.srcObject.getTracks().forEach(t => t.stop());
+        remoteVideo.srcObject = null;
+    }
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+    }
+    if (localVideo) localVideo.srcObject = null;
+
+    isAudioMuted = false;
+    isVideoMuted = false;
+    isFrontCamera = true;
+    currentCall = null;
+    showToast('Call ended.');
+}
+
+function endCall() {
+    if (currentCall) currentCall.close();
+    cleanUpCall();
+}
+
+// ── In-Call Controls ────────────────────────────────────────────────
+function toggleLocalAudio() {
+    if (!localStream) return;
+    const track = localStream.getAudioTracks()[0];
+    if (!track) return;
+    isAudioMuted = !isAudioMuted;
+    track.enabled = !isAudioMuted;
+    const btn = document.getElementById('toggleAudioBtn');
+    btn.classList.toggle('off', isAudioMuted);
+    showToast(isAudioMuted ? 'Mic muted' : 'Mic unmuted');
+}
+
+function toggleLocalVideo() {
+    if (!localStream) return;
+    const track = localStream.getVideoTracks()[0];
+    if (!track) return;
+    isVideoMuted = !isVideoMuted;
+    track.enabled = !isVideoMuted;
+    const btn = document.getElementById('toggleVideoBtn');
+    btn.classList.toggle('off', isVideoMuted);
+    showToast(isVideoMuted ? 'Camera off' : 'Camera on');
+}
+
+async function flipCamera() {
+    if (!localStream) return;
+    isFrontCamera = !isFrontCamera;
+    const newConstraints = {
+        video: { ...VIDEO_CONSTRAINTS, facingMode: isFrontCamera ? 'user' : 'environment' },
+        audio: AUDIO_CONSTRAINTS
+    };
+    try {
+        const newStream = await navigator.mediaDevices.getUserMedia(newConstraints);
+        const newVideoTrack = newStream.getVideoTracks()[0];
+
+        // Replace track in PeerJS connection
+        if (currentCall && currentCall.peerConnection) {
+            const sender = currentCall.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+            if (sender) sender.replaceTrack(newVideoTrack);
+        }
+
+        // Replace local preview
+        const oldVideoTracks = localStream.getVideoTracks();
+        oldVideoTracks.forEach(t => { localStream.removeTrack(t); t.stop(); });
+        localStream.addTrack(newVideoTrack);
+
+        document.getElementById('localVideo').srcObject = localStream;
+        showToast(isFrontCamera ? 'Front camera' : 'Rear camera');
+    } catch (err) {
+        console.error('Camera flip error:', err);
+        showToast('Could not flip camera.');
+    }
+}
+
+function toggleSideBySideMode() {
+    const container = document.getElementById('appContainer');
+    if (!container) return;
+    container.classList.toggle('side-by-side');
+    showToast(container.classList.contains('side-by-side') ? 'Side-by-Side View' : 'Full-Screen Video');
+}
+
+// ── PiP Self-View Toggle ────────────────────────────────────────────
+function toggleSelfViewVisibility(e) {
+    if (e) e.stopPropagation();
+    const selfView  = document.getElementById('selfView');
+    const restoreBtn = document.getElementById('restorePipBtn');
+    if (!selfView) return;
+
+    if (selfView.classList.contains('hidden-pip')) {
+        selfView.classList.remove('hidden-pip');
+        if (restoreBtn) restoreBtn.style.display = 'none';
+        showToast('Camera preview restored');
+    } else {
+        selfView.classList.add('hidden-pip');
+        if (restoreBtn) restoreBtn.style.display = 'flex';
+        showToast('Camera preview hidden');
+    }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SETTINGS MODAL
+   ═══════════════════════════════════════════════════════════════════ */
 function openSettingsModal() {
     const dropdown = document.getElementById('dropdownMenu');
     if (dropdown) dropdown.classList.remove('show');
-    
+
     const modal = document.getElementById('settingsModal');
-    if (modal) {
-        modal.classList.add('show');
-        updateNotificationButtonState();
-        
-        const bioStatus = document.getElementById('settingsBioStatus');
-        if (bioStatus && localStorage.getItem('oasis_bio_cred_id')) {
-            bioStatus.innerText = 'Active';
-        }
-        
-        const key = localStorage.getItem('oasis_key');
-        const fingerprintEl = document.getElementById('settingsModalFingerprint');
-        if (fingerprintEl && key) {
-            fingerprintEl.innerText = generateSafetyFingerprint(key);
-        }
-    }
+    if (!modal) return;
+    modal.classList.add('show');
+    updateNotificationButtonState();
+
+    const bioStatus = document.getElementById('settingsBioStatus');
+    if (bioStatus) bioStatus.innerText = localStorage.getItem('oasis_bio_cred_id') ? 'Active' : 'Setup';
+
+    const key = localStorage.getItem('oasis_key');
+    const fpEl = document.getElementById('settingsModalFingerprint');
+    if (fpEl && key) fpEl.innerText = generateSafetyFingerprint(key);
 }
 
 function closeSettingsModal() {
@@ -589,223 +763,13 @@ function closeSettingsModal() {
 }
 
 function closeSettingsModalOnOverlay(e) {
-    if (e.target.id === 'settingsModal') {
-        closeSettingsModal();
-    }
+    if (e.target.id === 'settingsModal') closeSettingsModal();
 }
 
-function acceptCall() {
-    document.getElementById('incomingCallModal').classList.remove('active');
-    document.getElementById('callStatusLabel').innerText = "Answering...";
-    
-    navigator.mediaDevices.getUserMedia({ video: true, audio: AUDIO_CONSTRAINTS }).then(stream => {
-        localStream = stream;
-        
-        const localVideo = document.getElementById('localVideo');
-        localVideo.srcObject = stream;
-        localVideo.play();
-        
-        document.getElementById('videoCanvas').classList.add('active');
 
-        currentCall.answer(stream);
-        setupCallListeners(currentCall);
-    }).catch(err => {
-        console.error("Permission error answering call:", err);
-        showToast("Could not access camera/mic.");
-        declineCall();
-    });
-}
-
-function declineCall() {
-    document.getElementById('incomingCallModal').classList.remove('active');
-    if (currentCall) {
-        currentCall.close();
-    }
-    showToast("Call declined.");
-}
-
-// --- DYNAMIC VIDEO CALL ORIENTATION & ASPECT RATIO CALCULATIONS ---
-
-function setupCallListeners(call) {
-    call.on('stream', remoteStream => {
-        const remoteVideo = document.getElementById('remoteVideo');
-        remoteVideo.srcObject = remoteStream;
-        remoteVideo.play();
-        
-        const appContainer = document.getElementById('appContainer');
-        if (appContainer && window.innerWidth > 768) {
-            appContainer.classList.add('side-by-side');
-        }
-
-        const handleVideoOrientation = () => {
-            const width = remoteVideo.videoWidth;
-            const height = remoteVideo.videoHeight;
-            if (!width || !height) return;
-
-            const ratio = width / height;
-            const badge = document.getElementById('videoOrientationBadge');
-            const videoCanvas = document.getElementById('videoCanvas');
-
-            if (badge) {
-                badge.style.display = 'block';
-                badge.innerText = ratio > 1.15 ? `Landscape (${width}x${height})` : `Portrait (${width}x${height})`;
-            }
-
-            if (ratio > 1.15) {
-                videoCanvas.classList.remove('portrait-canvas');
-                videoCanvas.classList.add('landscape-canvas');
-                remoteVideo.classList.remove('cover-fit');
-                remoteVideo.classList.add('contain-fit');
-            } else {
-                videoCanvas.classList.remove('landscape-canvas');
-                videoCanvas.classList.add('portrait-canvas');
-                remoteVideo.classList.remove('cover-fit');
-                remoteVideo.classList.add('contain-fit');
-            }
-        };
-
-        remoteVideo.onloadedmetadata = handleVideoOrientation;
-        remoteVideo.onresize = handleVideoOrientation;
-
-        showToast("Call Connected securely!");
-    });
-
-    call.on('close', () => {
-        cleanUpCall();
-    });
-    
-    call.on('error', err => {
-        console.error("Call error:", err);
-        cleanUpCall();
-    });
-}
-
-function toggleVideoFitMode() {
-    const remoteVideo = document.getElementById('remoteVideo');
-    if (remoteVideo.classList.contains('cover-fit')) {
-        remoteVideo.classList.remove('cover-fit');
-        remoteVideo.classList.add('contain-fit');
-        showToast("Video fit: Contain");
-    } else {
-        remoteVideo.classList.remove('contain-fit');
-        remoteVideo.classList.add('cover-fit');
-        showToast("Video fit: Cover (Fill screen)");
-    }
-}
-
-function toggleSelfViewVisibility(e) {
-    if (e) e.stopPropagation();
-    const selfView = document.getElementById('selfView');
-    const restoreBtn = document.getElementById('restorePipBtn');
-    if (!selfView) return;
-
-    if (selfView.classList.contains('hidden-pip')) {
-        selfView.classList.remove('hidden-pip');
-        if (restoreBtn) restoreBtn.style.display = 'none';
-        showToast("Self camera preview restored");
-    } else {
-        selfView.classList.add('hidden-pip');
-        if (restoreBtn) restoreBtn.style.display = 'flex';
-        showToast("Self camera preview hidden");
-    }
-}
-
-function cleanUpCall() {
-    const videoCanvas = document.getElementById('videoCanvas');
-    videoCanvas.classList.remove('active', 'portrait-canvas', 'landscape-canvas');
-    const appContainer = document.getElementById('appContainer');
-    if (appContainer) appContainer.classList.remove('side-by-side');
-
-    const selfView = document.getElementById('selfView');
-    const restoreBtn = document.getElementById('restorePipBtn');
-    if (selfView) selfView.classList.remove('hidden-pip');
-    if (restoreBtn) restoreBtn.style.display = 'none';
-    
-    const remoteVideo = document.getElementById('remoteVideo');
-    const localVideo = document.getElementById('localVideo');
-    
-    if (remoteVideo.srcObject) {
-        remoteVideo.srcObject.getTracks().forEach(track => track.stop());
-        remoteVideo.srcObject = null;
-    }
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-    }
-    localVideo.srcObject = null;
-    isAudioMuted = false;
-    isVideoMuted = false;
-    document.getElementById('toggleAudioBtn').classList.remove('off');
-    document.getElementById('toggleVideoBtn').classList.remove('off');
-    showToast("Call ended.");
-}
-
-function toggleSideBySideMode() {
-    const appContainer = document.getElementById('appContainer');
-    if (!appContainer) return;
-    appContainer.classList.toggle('side-by-side');
-    if (appContainer.classList.contains('side-by-side')) {
-        showToast("Side-by-Side Desktop View Enabled");
-    } else {
-        showToast("Compact View Enabled");
-    }
-}
-
-function endCall() {
-    if (currentCall) {
-        currentCall.close();
-    }
-    cleanUpCall();
-}
-
-function toggleLocalAudio() {
-    if (!localStream) return;
-    const audioTrack = localStream.getAudioTracks()[0];
-    if (audioTrack) {
-        isAudioMuted = !isAudioMuted;
-        audioTrack.enabled = !isAudioMuted;
-        
-        const btn = document.getElementById('toggleAudioBtn');
-        if (isAudioMuted) {
-            btn.classList.add('off');
-            showToast("Microphone muted");
-        } else {
-            btn.classList.remove('off');
-            showToast("Microphone unmuted");
-        }
-    }
-}
-
-function toggleLocalVideo() {
-    if (!localStream) return;
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (videoTrack) {
-        isVideoMuted = !isVideoMuted;
-        videoTrack.enabled = !isVideoMuted;
-        
-        const btn = document.getElementById('toggleVideoBtn');
-        if (isVideoMuted) {
-            btn.classList.add('off');
-            showToast("Camera disabled");
-        } else {
-            btn.classList.remove('off');
-            showToast("Camera enabled");
-        }
-    }
-}
-
-function toggleFullScreen() {
-    const elem = document.getElementById('videoCanvas');
-    if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-    }
-}
-
-// --- CRYPTOGRAPHIC & MEDIA HELPERS ---
-
+/* ═══════════════════════════════════════════════════════════════════
+   CRYPTOGRAPHIC HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
 function encryptText(text, key) {
     return CryptoJS.AES.encrypt(text, key).toString();
 }
@@ -813,99 +777,82 @@ function encryptText(text, key) {
 function decryptText(ciphertext, key) {
     try {
         const bytes = CryptoJS.AES.decrypt(ciphertext, key);
-        const originalText = bytes.toString(CryptoJS.enc.Utf8);
-        return originalText ? originalText : "•••••••• (Invalid Key)";
-    } catch (e) {
-        return "••••••••";
-    }
+        const result = bytes.toString(CryptoJS.enc.Utf8);
+        return result || '•••••••• (Invalid Key)';
+    } catch { return '••••••••'; }
 }
 
 function linkify(inputText) {
-    const replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
-    let replacedText = inputText.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
-    const replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-    replacedText = replacedText.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
-    return replacedText;
+    const p1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gim;
+    let out = inputText.replace(p1, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    const p2 = /(^|[^/])(www\.[\S]+(\b|$))/gim;
+    out = out.replace(p2, '$1<a href="http://$2" target="_blank" rel="noopener">$2</a>');
+    return out;
 }
 
-// --- MEDIA STORAGE SHIFT (SUPABASE STORAGE BUCKET) ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   MEDIA STORAGE (SUPABASE STORAGE BUCKET)
+   ═══════════════════════════════════════════════════════════════════ */
 async function uploadEncryptedMediaToStorage(encryptedPayload, extension = 'enc') {
     const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${extension}`;
     const blob = new Blob([encryptedPayload], { type: 'text/plain' });
 
-    const { data, error } = await supabaseClient
-        .storage
+    const { data, error } = await supabaseClient.storage
         .from('oasis-media')
         .upload(fileName, blob, { contentType: 'text/plain', cacheControl: '3600' });
 
-    if (error) {
-        console.error("Storage upload failed:", error);
-        throw error;
-    }
+    if (error) { console.error('Storage upload failed:', error); throw error; }
 
-    const { data: publicUrlData } = supabaseClient
-        .storage
-        .from('oasis-media')
-        .getPublicUrl(fileName);
-
-    return publicUrlData.publicUrl;
+    const { data: urlData } = supabaseClient.storage.from('oasis-media').getPublicUrl(fileName);
+    return urlData.publicUrl;
 }
 
-// --- SECURE CHAT LOGIC ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   SECURE CHAT LOGIC
+   ═══════════════════════════════════════════════════════════════════ */
 async function sendMessage(mediaPayload = null) {
     const secretKey = localStorage.getItem('oasis_key');
-    const msgInput = document.getElementById('messageInput');
-    let text = msgInput.value.trim();
+    const msgInput  = document.getElementById('messageInput');
+    const text      = msgInput.value.trim();
 
-    if (!secretKey) {
-        showToast('Encryption key not loaded. Re-authenticate.');
-        return;
-    }
+    if (!secretKey) { showToast('Encryption key not loaded. Re-authenticate.'); return; }
 
-    let payload = "";
-    if (mediaPayload) {
-        payload = mediaPayload;
-    } else {
+    let payload = mediaPayload;
+    if (!payload) {
         if (!text) return;
         payload = `TEXT:${text}`;
     }
 
     const encryptedMsg = encryptText(payload, secretKey);
-    
+
     if (!mediaPayload) {
         msgInput.value = '';
         msgInput.focus();
         broadcastTyping(false);
     }
 
-    const newMsgRecord = { sender: currentUsername, encrypted_message: encryptedMsg };
-
     const { data, error } = await supabaseClient
         .from('chat_messages')
-        .insert([newMsgRecord])
+        .insert([{ sender: currentUsername, encrypted_message: encryptedMsg }])
         .select();
 
     if (error) {
-        showToast("Error sending: " + error.message);
+        showToast('Error sending: ' + error.message);
     } else if (data && data[0]) {
         await db.messages.put(data[0]);
     }
 }
 
 function handleInputKeyPress(e) {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
+    if (e.key === 'Enter') sendMessage();
 }
 
 function handleInputTyping() {
     broadcastTyping(true);
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-        broadcastTyping(false);
-    }, 2000);
+    typingTimeout = setTimeout(() => broadcastTyping(false), 2000);
 }
 
 function broadcastTyping(isTyping) {
@@ -913,12 +860,11 @@ function broadcastTyping(isTyping) {
         activeChannel.send({
             type: 'broadcast',
             event: 'typing',
-            payload: { username: currentUsername, isTyping: isTyping }
+            payload: { username: currentUsername, isTyping }
         });
     }
 }
 
-// Image Selection, Encryption & Supabase Storage Shift
 function triggerImageUpload() {
     document.getElementById('imageFileInput').click();
 }
@@ -926,52 +872,31 @@ function triggerImageUpload() {
 function handleImageFileSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-        showToast("File must be an image.");
-        return;
-    }
-
-    showToast("Processing & encrypting image...");
+    if (!file.type.startsWith('image/')) { showToast('File must be an image.'); return; }
+    showToast('Processing & encrypting image...');
 
     const reader = new FileReader();
     reader.onload = function(evt) {
         const img = new Image();
         img.onload = async function() {
-            const maxDimension = 800;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-                if (width > maxDimension) {
-                    height = Math.round((height * maxDimension) / width);
-                    width = maxDimension;
-                }
-            } else {
-                if (height > maxDimension) {
-                    width = Math.round((width * maxDimension) / height);
-                    height = maxDimension;
-                }
+            const maxDim = 800;
+            let w = img.width, h = img.height;
+            if (w > h ? w > maxDim : h > maxDim) {
+                if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                else        { w = Math.round(w * maxDim / h); h = maxDim; }
             }
-
             const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            const mediaPayload = `IMAGE:${compressedBase64}`;
-            
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            const b64 = canvas.toDataURL('image/jpeg', 0.7);
+            const payload = `IMAGE:${b64}`;
             try {
-                showToast("Uploading encrypted image to cloud storage...");
-                const publicUrl = await uploadEncryptedMediaToStorage(mediaPayload, 'enc');
-                sendMessage(`IMAGE_URL:${publicUrl}`);
-            } catch (err) {
-                console.warn("Storage upload failed, falling back to database payload:", err);
-                sendMessage(mediaPayload);
+                showToast('Uploading encrypted image...');
+                const url = await uploadEncryptedMediaToStorage(payload, 'enc');
+                sendMessage(`IMAGE_URL:${url}`);
+            } catch {
+                sendMessage(payload);
             }
-
             document.getElementById('imageFileInput').value = '';
         };
         img.src = evt.target.result;
@@ -979,61 +904,52 @@ function handleImageFileSelect(e) {
     reader.readAsDataURL(file);
 }
 
-// Audio Recording (Voice Notes with Noise Cancellation Constraints)
+
+/* ═══════════════════════════════════════════════════════════════════
+   VOICE NOTES
+   ═══════════════════════════════════════════════════════════════════ */
 function startVoiceRecording() {
     if (isRecording) return;
-    
-    navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS }).then(stream => {
-        isRecording = true;
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        
-        mediaRecorder.ondataavailable = e => {
-            if (e.data.size > 0) {
-                audioChunks.push(e.data);
-            }
-        };
-
-        mediaRecorder.onstop = () => {
-            if (audioChunks.length === 0) return;
-
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                const base64Audio = evt.target.result;
-                const mediaPayload = `AUDIO:${base64Audio}`;
-
-                try {
-                    showToast("Uploading encrypted voice note to storage...");
-                    const publicUrl = await uploadEncryptedMediaToStorage(mediaPayload, 'enc');
-                    sendMessage(`AUDIO_URL:${publicUrl}`);
-                } catch (err) {
-                    console.warn("Storage upload failed, fallback to DB payload:", err);
-                    sendMessage(mediaPayload);
-                }
+    navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS })
+        .then(stream => {
+            isRecording = true;
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                if (!audioChunks.length) return;
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onload = async function(evt) {
+                    const payload = `AUDIO:${evt.target.result}`;
+                    try {
+                        showToast('Uploading encrypted voice note...');
+                        const url = await uploadEncryptedMediaToStorage(payload, 'enc');
+                        sendMessage(`AUDIO_URL:${url}`);
+                    } catch {
+                        sendMessage(payload);
+                    }
+                };
+                reader.readAsDataURL(blob);
+                stream.getTracks().forEach(t => t.stop());
             };
-            reader.readAsDataURL(audioBlob);
-            
-            stream.getTracks().forEach(track => track.stop());
-        };
-
-        mediaRecorder.start();
-        document.getElementById('audioRecordBtn').classList.add('recording');
-        showToast("Recording... Release to send.");
-    }).catch(err => {
-        console.error("Audio recording permission issue:", err);
-        showToast("Audio recording access denied.");
-    });
+            mediaRecorder.start();
+            document.getElementById('audioRecordBtn').classList.add('recording');
+            showToast('Recording... Release to send.');
+        })
+        .catch(err => {
+            console.error('Audio recording permission issue:', err);
+            showToast('Audio recording access denied.');
+        });
 }
 
 function stopVoiceRecording() {
     if (!isRecording) return;
     isRecording = false;
     document.getElementById('audioRecordBtn').classList.remove('recording');
-    
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
-        showToast("Voice note processing...");
+        showToast('Voice note processing...');
     }
 }
 
@@ -1041,48 +957,30 @@ function cancelVoiceRecording() {
     if (!isRecording) return;
     isRecording = false;
     document.getElementById('audioRecordBtn').classList.remove('recording');
-    
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         audioChunks = [];
         mediaRecorder.stop();
-        showToast("Voice note canceled.");
+        showToast('Voice note canceled.');
     }
 }
 
-// Playback Audio Notes
 function playAudioMsg(btn, audioSrc) {
     const wrapper = btn.closest('.audio-player-wrapper');
-    const progressBar = wrapper.querySelector('.audio-progress-bar');
-    const durationLabel = wrapper.querySelector('.audio-duration');
-    
+    const progress = wrapper.querySelector('.audio-progress-bar');
+    const duration = wrapper.querySelector('.audio-duration');
+    const fmt = t => `${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+
     let audio = wrapper.querySelector('audio');
     if (!audio) {
         audio = new Audio(audioSrc);
         wrapper.appendChild(audio);
-        
         audio.addEventListener('timeupdate', () => {
-            const percent = (audio.currentTime / audio.duration) * 100;
-            progressBar.style.width = `${percent}%`;
-            
-            const formatTime = (time) => {
-                const mins = Math.floor(time / 60);
-                const secs = Math.floor(time % 60);
-                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            };
-            durationLabel.innerText = formatTime(audio.currentTime);
+            progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+            duration.innerText = fmt(audio.currentTime);
         });
-
-        audio.addEventListener('loadedmetadata', () => {
-            const formatTime = (time) => {
-                const mins = Math.floor(time / 60);
-                const secs = Math.floor(time % 60);
-                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            };
-            durationLabel.innerText = formatTime(audio.duration);
-        });
-
+        audio.addEventListener('loadedmetadata', () => { duration.innerText = fmt(audio.duration); });
         audio.addEventListener('ended', () => {
-            progressBar.style.width = '0%';
+            progress.style.width = '0%';
             btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
         });
     }
@@ -1096,350 +994,277 @@ function playAudioMsg(btn, audioSrc) {
     }
 }
 
-// Render Messages & Message Grouping & Layout
+
+/* ═══════════════════════════════════════════════════════════════════
+   MESSAGE RENDERING
+   ═══════════════════════════════════════════════════════════════════ */
 let lastRenderedSender = null;
-let lastRenderedTime = null;
+let lastRenderedTime   = null;
+let dateTrackingString = '';
 
 async function renderMessage(data, isInitialLoad = false) {
     const secretKey = localStorage.getItem('oasis_key');
     const messageList = document.getElementById('messageList');
 
-    let decryptedPayload = "••••••••";
-    if (secretKey) {
-        decryptedPayload = decryptText(data.encrypted_message, secretKey);
-    }
+    let decryptedPayload = '••••••••';
+    if (secretKey) decryptedPayload = decryptText(data.encrypted_message, secretKey);
 
     let msgType = 'TEXT';
     let msgContent = decryptedPayload;
 
-    if (decryptedPayload.startsWith('IMAGE_URL:')) {
-        msgType = 'IMAGE_URL';
-        msgContent = decryptedPayload.substring(10);
-    } else if (decryptedPayload.startsWith('AUDIO_URL:')) {
-        msgType = 'AUDIO_URL';
-        msgContent = decryptedPayload.substring(10);
-    } else if (decryptedPayload.startsWith('IMAGE:')) {
-        msgType = 'IMAGE';
-        msgContent = decryptedPayload.substring(6);
-    } else if (decryptedPayload.startsWith('AUDIO:')) {
-        msgType = 'AUDIO';
-        msgContent = decryptedPayload.substring(6);
-    } else if (decryptedPayload.startsWith('TEXT:')) {
-        msgType = 'TEXT';
-        msgContent = decryptedPayload.substring(5);
-    }
+    if      (decryptedPayload.startsWith('IMAGE_URL:')) { msgType = 'IMAGE_URL'; msgContent = decryptedPayload.substring(10); }
+    else if (decryptedPayload.startsWith('AUDIO_URL:')) { msgType = 'AUDIO_URL'; msgContent = decryptedPayload.substring(10); }
+    else if (decryptedPayload.startsWith('IMAGE:'))     { msgType = 'IMAGE';     msgContent = decryptedPayload.substring(6);  }
+    else if (decryptedPayload.startsWith('AUDIO:'))     { msgType = 'AUDIO';     msgContent = decryptedPayload.substring(6);  }
+    else if (decryptedPayload.startsWith('TEXT:'))      { msgType = 'TEXT';      msgContent = decryptedPayload.substring(5);  }
 
-    const rawTime = data.created_at || new Date().toISOString();
-    const date = new Date(rawTime);
+    const rawTime    = data.created_at || new Date().toISOString();
+    const date       = new Date(rawTime);
     const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const dateDivider = checkAndGetDateDivider(date);
     if (dateDivider) {
-        const divElement = document.createElement('div');
-        divElement.className = 'date-divider';
-        divElement.innerHTML = `<div class="date-divider-line"></div><div class="date-divider-text">${dateDivider}</div><div class="date-divider-line"></div>`;
-        messageList.appendChild(divElement);
+        const div = document.createElement('div');
+        div.className = 'date-divider';
+        div.innerHTML = `<div class="date-divider-line"></div><div class="date-divider-text">${dateDivider}</div><div class="date-divider-line"></div>`;
+        messageList.appendChild(div);
     }
 
     const isSelf = data.sender === currentUsername;
-    const timeDiffMinutes = lastRenderedTime ? Math.abs(date - lastRenderedTime) / 60000 : 999;
-    const isGrouped = lastRenderedSender === data.sender && timeDiffMinutes < 2;
+    const timeDiffMins = lastRenderedTime ? Math.abs(date - lastRenderedTime) / 60000 : 999;
+    const isGrouped    = lastRenderedSender === data.sender && timeDiffMins < 2;
 
     const msgWrapper = document.createElement('div');
     msgWrapper.className = `msg-wrapper ${isSelf ? 'sent' : 'received'}`;
-    
-    if (isGrouped) {
-        msgWrapper.style.marginTop = '4px';
-    }
+    if (isGrouped) msgWrapper.style.marginTop = '2px';
 
-    let innerHTML = "";
-    if (!isGrouped && !isSelf) {
-        innerHTML += `<div class="sender-tag">${data.sender}</div>`;
-    }
+    let html = '';
+    if (!isGrouped && !isSelf) html += `<div class="sender-tag">${data.sender}</div>`;
 
-    let bubbleId = `msg-bubble-${Math.random().toString(36).substring(2, 9)}`;
-    let bubbleContent = "";
+    const bubbleId = `mb-${Math.random().toString(36).substring(2, 9)}`;
+    let bubbleContent = '';
 
-    if (msgType === 'IMAGE_URL') {
-        bubbleContent = `<div id="${bubbleId}"><span style="font-size:0.75rem; color:var(--text-muted);">Decrypting image from storage...</span></div>`;
-    } else if (msgType === 'AUDIO_URL') {
-        bubbleContent = `<div id="${bubbleId}"><span style="font-size:0.75rem; color:var(--text-muted);">Decrypting voice note...</span></div>`;
+    if (msgType === 'IMAGE_URL' || msgType === 'AUDIO_URL') {
+        bubbleContent = `<div id="${bubbleId}"><span style="font-size:0.75rem; color:rgba(255,255,255,0.4);">Decrypting...</span></div>`;
     } else if (msgType === 'IMAGE') {
-        bubbleContent = `<img src="${msgContent}" class="msg-image" onclick="zoomImage('${msgContent}')" alt="Encrypted image attachment">`;
+        bubbleContent = `<img src="${msgContent}" class="msg-image" onclick="zoomImage('${msgContent}')" alt="Image">`;
     } else if (msgType === 'AUDIO') {
-        bubbleContent = `
-            <div class="audio-player-wrapper">
-                <button class="audio-control-btn" onclick="playAudioMsg(this, '${msgContent}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                </button>
-                <div class="audio-progress">
-                    <div class="audio-progress-bar"></div>
-                </div>
-                <div class="audio-duration">0:00</div>
-            </div>
-        `;
+        bubbleContent = buildAudioPlayer(msgContent);
     } else {
         bubbleContent = `<div>${linkify(msgContent)}</div>`;
     }
 
-    innerHTML += `<div class="msg-bubble">${bubbleContent}</div>`;
+    html += `<div class="msg-bubble">${bubbleContent}</div>`;
+    if (!isGrouped) html += `<div class="msg-meta-row"><span>${timeString}</span></div>`;
 
-    if (!isInitialLoad || !isGrouped) {
-        innerHTML += `<div class="msg-meta-row"><span>${timeString}</span></div>`;
-    }
-
-    msgWrapper.innerHTML = innerHTML;
+    msgWrapper.innerHTML = html;
     messageList.appendChild(msgWrapper);
-    
     messageList.scrollTo({ top: messageList.scrollHeight, behavior: isInitialLoad ? 'auto' : 'smooth' });
 
     lastRenderedSender = data.sender;
-    lastRenderedTime = date;
+    lastRenderedTime   = date;
 
-    // Asynchronously resolve Supabase Storage URLs for encrypted media
+    // Resolve encrypted media from storage URLs
     if (msgType === 'IMAGE_URL' || msgType === 'AUDIO_URL') {
         try {
             const res = await fetch(msgContent);
-            const encryptedPayloadText = await res.text();
-            const decryptedData = decryptText(encryptedPayloadText, secretKey);
-            const targetEl = document.getElementById(bubbleId);
-            
-            if (targetEl) {
-                if (decryptedData.startsWith('IMAGE:')) {
-                    const imgSrc = decryptedData.substring(6);
-                    targetEl.innerHTML = `<img src="${imgSrc}" class="msg-image" onclick="zoomImage('${imgSrc}')" alt="Encrypted image attachment">`;
-                } else if (decryptedData.startsWith('AUDIO:')) {
-                    const audioSrc = decryptedData.substring(6);
-                    targetEl.innerHTML = `
-                        <div class="audio-player-wrapper">
-                            <button class="audio-control-btn" onclick="playAudioMsg(this, '${audioSrc}')">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                            </button>
-                            <div class="audio-progress">
-                                <div class="audio-progress-bar"></div>
-                            </div>
-                            <div class="audio-duration">0:00</div>
-                        </div>
-                    `;
+            const encText = await res.text();
+            const dec = decryptText(encText, secretKey);
+            const el  = document.getElementById(bubbleId);
+            if (el) {
+                if (dec.startsWith('IMAGE:')) {
+                    const src = dec.substring(6);
+                    el.innerHTML = `<img src="${src}" class="msg-image" onclick="zoomImage('${src}')" alt="Image">`;
+                } else if (dec.startsWith('AUDIO:')) {
+                    el.innerHTML = buildAudioPlayer(dec.substring(6));
                 } else {
-                    targetEl.innerText = "Decryption error.";
+                    el.innerText = 'Decryption error.';
                 }
             }
-        } catch (e) {
-            console.error("Error loading encrypted media from storage URL:", e);
-            const targetEl = document.getElementById(bubbleId);
-            if (targetEl) targetEl.innerText = "Error loading media file.";
+        } catch (err) {
+            console.error('Error loading encrypted media:', err);
+            const el = document.getElementById(bubbleId);
+            if (el) el.innerText = 'Error loading media.';
         }
     }
 
-    // Trigger partner notification instantly for incoming messages
+    // Notify partner of new message (when not from self)
     if (!isInitialLoad && data.sender !== currentUsername) {
-        let notificationSnippet = "Sent a message";
-        if (msgType === 'TEXT') notificationSnippet = msgContent;
-        else if (msgType === 'IMAGE' || msgType === 'IMAGE_URL') notificationSnippet = "📷 Sent an image";
-        else if (msgType === 'AUDIO' || msgType === 'AUDIO_URL') notificationSnippet = "🎵 Sent a voice note";
-
-        showBackgroundNotification(`New message from ${data.sender}`, notificationSnippet);
+        let snippet = 'Sent a message';
+        if (msgType === 'TEXT')  snippet = msgContent.substring(0, 60);
+        else if (msgType === 'IMAGE' || msgType === 'IMAGE_URL') snippet = '📷 Sent an image';
+        else if (msgType === 'AUDIO' || msgType === 'AUDIO_URL') snippet = '🎵 Sent a voice note';
+        showBackgroundNotification(`Message from ${data.sender}`, snippet);
     }
 }
 
-// Manage Date Boundaries in Chat View
-let dateTrackingString = "";
+function buildAudioPlayer(src) {
+    return `
+        <div class="audio-player-wrapper">
+            <button class="audio-control-btn" onclick="playAudioMsg(this, '${src}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <div class="audio-progress"><div class="audio-progress-bar"></div></div>
+            <div class="audio-duration">0:00</div>
+        </div>`;
+}
+
 function checkAndGetDateDivider(date) {
-    const today = new Date();
+    const today     = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    let dateStr = "";
-    if (date.toDateString() === today.toDateString()) {
-        dateStr = "Today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-        dateStr = "Yesterday";
-    } else {
-        dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-    }
+    let str = '';
+    if (date.toDateString() === today.toDateString())     str = 'Today';
+    else if (date.toDateString() === yesterday.toDateString()) str = 'Yesterday';
+    else str = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
-    if (dateStr !== dateTrackingString) {
-        dateTrackingString = dateStr;
-        return dateStr;
-    }
+    if (str !== dateTrackingString) { dateTrackingString = str; return str; }
     return null;
 }
 
-// --- LOCAL CACHING (INDEXEDDB WITH DEXIE.JS) & INITIAL LOAD ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   LOCAL CACHING & INITIAL LOAD
+   ═══════════════════════════════════════════════════════════════════ */
 async function loadInitialMessages() {
     const messageList = document.getElementById('messageList');
     messageList.innerHTML = '';
-    
     lastRenderedSender = null;
-    lastRenderedTime = null;
-    dateTrackingString = "";
+    lastRenderedTime   = null;
+    dateTrackingString = '';
 
     try {
         const localMsgs = await db.messages.orderBy('created_at').toArray();
-        if (localMsgs && localMsgs.length > 0) {
-            localMsgs.forEach(msg => renderMessage(msg, true));
-        }
+        if (localMsgs.length > 0) localMsgs.forEach(m => renderMessage(m, true));
 
         let query = supabaseClient.from('chat_messages').select('*').order('created_at', { ascending: true });
-        
-        if (localMsgs && localMsgs.length > 0) {
-            const lastCreatedAt = localMsgs[localMsgs.length - 1].created_at;
-            query = query.gt('created_at', lastCreatedAt);
+        if (localMsgs.length > 0) {
+            query = query.gt('created_at', localMsgs[localMsgs.length - 1].created_at);
         } else {
             query = query.limit(100);
         }
 
         const { data, error } = await query;
-
-        if (error) {
-            console.error("Failed to fetch unsynced chat logs:", error.message);
-            return;
-        }
-
+        if (error) { console.error('Failed to fetch messages:', error.message); return; }
         if (data && data.length > 0) {
             await db.messages.bulkPut(data);
-            data.forEach(msg => renderMessage(msg, true));
+            data.forEach(m => renderMessage(m, true));
         }
     } catch (e) {
-        console.error("IndexedDB / message load error:", e);
+        console.error('IndexedDB / message load error:', e);
     }
 }
 
 async function clearAllMessages() {
-    if (confirm("Are you absolutely sure you want to wipe the secure chat history? This cannot be undone.")) {
-        const { error } = await supabaseClient.from('chat_messages').delete().neq('id', 0);
-        if (error) {
-            showToast("Wipe error: " + error.message);
-        } else {
-            await db.messages.clear();
-            document.getElementById('messageList').innerHTML = '';
-            showToast("Chat history completely cleared.");
-            lastRenderedSender = null;
-            lastRenderedTime = null;
-            dateTrackingString = "";
-        }
+    if (!confirm('Are you absolutely sure you want to wipe the secure chat history? This cannot be undone.')) return;
+    const { error } = await supabaseClient.from('chat_messages').delete().neq('id', 0);
+    if (error) {
+        showToast('Wipe error: ' + error.message);
+    } else {
+        await db.messages.clear();
+        document.getElementById('messageList').innerHTML = '';
+        lastRenderedSender = null;
+        lastRenderedTime   = null;
+        dateTrackingString = '';
+        showToast('Chat history completely cleared.');
     }
 }
 
-// Image lightbox operations
+
+/* ═══════════════════════════════════════════════════════════════════
+   IMAGE LIGHTBOX
+   ═══════════════════════════════════════════════════════════════════ */
 function zoomImage(src) {
-    const modal = document.getElementById('imageModal');
-    const target = document.getElementById('imageModalTarget');
-    target.src = src;
-    modal.classList.add('show');
+    document.getElementById('imageModalTarget').src = src;
+    document.getElementById('imageModal').classList.add('show');
 }
 
 function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    modal.classList.remove('show');
+    document.getElementById('imageModal').classList.remove('show');
 }
 
-// --- STATUS & HEARTBEAT TRACKING ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   STATUS & HEARTBEAT
+   ═══════════════════════════════════════════════════════════════════ */
 async function updateMyStatus() {
     try {
-        await supabaseClient.from('online_status').upsert({ 
-            username: currentUsername, 
-            last_seen: new Date().toISOString() 
+        await supabaseClient.from('online_status').upsert({
+            username: currentUsername,
+            last_seen: new Date().toISOString()
         });
-    } catch (e) {
-        // Silence status table errors if not present
-    }
+    } catch { /* silence */ }
 }
 
 async function checkPartnerStatus() {
-    const partnerUsername = currentUsername === 'Hani' ? 'Bani' : 'Hani';
-
+    const partnerName = currentUsername === 'Hani' ? 'Bani' : 'Hani';
     const { data } = await supabaseClient
         .from('online_status')
         .select('last_seen')
-        .eq('username', partnerUsername)
+        .eq('username', partnerName)
         .maybeSingle();
 
     if (data && data.last_seen) {
-        const lastSeenTime = new Date(data.last_seen).getTime();
-        const now = new Date().getTime();
-        
-        if ((now - lastSeenTime) < 15000) {
-            updatePartnerOnlineLabel(true);
-            return;
-        }
+        const stale = (Date.now() - new Date(data.last_seen).getTime()) < 15000;
+        if (stale) { updatePartnerOnlineLabel(true); return; }
     }
-    
-    if (!partnerPeerId) {
-        updatePartnerOnlineLabel(false);
-    }
+    if (!partnerPeerId) updatePartnerOnlineLabel(false);
 }
 
 function updatePartnerOnlineLabel(isOnline) {
-    const statusDot = document.getElementById('statusDot');
+    const dot   = document.getElementById('statusDot');
     const label = document.getElementById('partnerStatusLabel');
-    const appContainer = document.getElementById('appContainer');
-    
-    statusDot.className = 'status-dot';
-    appContainer.style.setProperty('--glow-color', 'transparent');
+    dot.className = 'status-dot';
 
     if (isOnline) {
-        label.innerText = "Online";
-        if (currentUsername === 'Hani') {
-            statusDot.classList.add('online-rose');
-        } else {
-            statusDot.classList.add('online-cyan');
-        }
+        label.innerText = 'Online';
+        dot.classList.add(currentUsername === 'Hani' ? 'online-rose' : 'online-cyan');
     } else {
-        label.innerText = "Offline";
+        label.innerText = 'Offline';
     }
 }
 
 function setupStatusTracking() {
     updateMyStatus();
     if (heartbeatInterval) clearInterval(heartbeatInterval);
-    
     heartbeatInterval = setInterval(() => {
         updateMyStatus();
         checkPartnerStatus();
     }, 6000);
 }
 
-// --- BROADCAST & PRESENCE (SUPABASE REALTIME) ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   SUPABASE REALTIME & PRESENCE
+   ═══════════════════════════════════════════════════════════════════ */
 function subscribeRealtime() {
-    if (activeChannel) {
-        supabaseClient.removeChannel(activeChannel);
-    }
+    if (activeChannel) supabaseClient.removeChannel(activeChannel);
 
     activeChannel = supabaseClient.channel('public:chat_messages')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async payload => {
             await db.messages.put(payload.new);
             renderMessage(payload.new);
-            
+
             if (payload.new.sender !== currentUsername) {
-                const notificationSnippet = payload.new.encrypted_message 
-                    ? "Tap to decrypt and read." 
-                    : "New message received.";
-                showBackgroundNotification(`Message from ${payload.new.sender}`, notificationSnippet);
+                showBackgroundNotification(
+                    `Message from ${payload.new.sender}`,
+                    'Tap to decrypt and read.'
+                );
             }
         })
         .on('broadcast', { event: 'typing' }, payload => {
             const partner = currentUsername === 'Hani' ? 'Bani' : 'Hani';
             if (payload.payload.username === partner) {
-                const indicator = document.getElementById('typingIndicator');
-                if (payload.payload.isTyping) {
-                    indicator.style.display = 'flex';
-                } else {
-                    indicator.style.display = 'none';
-                }
+                document.getElementById('typingIndicator').style.display =
+                    payload.payload.isTyping ? 'flex' : 'none';
             }
         })
         .subscribe();
 }
 
 function setupPresence() {
-    if (presenceChannel) {
-        supabaseClient.removeChannel(presenceChannel);
-    }
+    if (presenceChannel) supabaseClient.removeChannel(presenceChannel);
 
     presenceChannel = supabaseClient.channel('online_presence', {
         config: { presence: { key: currentUsername } }
@@ -1449,7 +1274,7 @@ function setupPresence() {
         .on('presence', { event: 'sync' }, () => {
             const state = presenceChannel.presenceState();
             const partner = currentUsername === 'Hani' ? 'Bani' : 'Hani';
-            
+
             if (state[partner] && state[partner].length > 0) {
                 const partnerData = state[partner][0];
                 if (partnerData.peerId) {
@@ -1461,7 +1286,7 @@ function setupPresence() {
                 checkPartnerStatus();
             }
         })
-        .subscribe(async (status) => {
+        .subscribe(async status => {
             if (status === 'SUBSCRIBED' && currentMyId) {
                 await presenceChannel.track({
                     username: currentUsername,
@@ -1472,8 +1297,10 @@ function setupPresence() {
         });
 }
 
-// --- UI STUFF ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   UI HELPERS
+   ═══════════════════════════════════════════════════════════════════ */
 function toggleMenu(e) {
     e.stopPropagation();
     document.getElementById('dropdownMenu').classList.toggle('show');
@@ -1483,113 +1310,100 @@ function showToast(message) {
     const toast = document.getElementById('toastMessage');
     toast.innerText = message;
     toast.classList.add('show');
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// Safe dragging implementation for PIP
-function initSelfViewDrag() {
-    const selfView = document.getElementById("selfView");
-    const videoCanvas = document.getElementById("videoCanvas");
-    let isDragging = false;
-    let offsetStartX, offsetStartY, initialLeft, initialTop;
 
-    selfView.addEventListener("mousedown", startDrag);
-    selfView.addEventListener("touchstart", startDrag, { passive: false });
+/* ═══════════════════════════════════════════════════════════════════
+   DRAGGABLE PiP SELF-VIEW
+   ═══════════════════════════════════════════════════════════════════ */
+function initSelfViewDrag() {
+    const selfView  = document.getElementById('selfView');
+    const container = document.getElementById('callScreen');
+    if (!selfView || !container) return;
+
+    let dragging = false, startX, startY, initLeft, initTop;
+
+    selfView.addEventListener('mousedown',  startDrag);
+    selfView.addEventListener('touchstart', startDrag, { passive: false });
 
     function startDrag(e) {
-        isDragging = true;
+        if (e.target.closest('.pip-eye-btn')) return;
+        dragging = true;
+
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        offsetStartX = clientX;
-        offsetStartY = clientY;
-        
-        const rect = selfView.getBoundingClientRect();
-        const parentRect = videoCanvas.getBoundingClientRect();
-        
-        initialLeft = rect.left - parentRect.left;
-        initialTop = rect.top - parentRect.top;
+        startX = clientX; startY = clientY;
 
-        document.addEventListener("mousemove", onDrag);
-        document.addEventListener("touchmove", onDrag, { passive: false });
-        document.addEventListener("mouseup", stopDrag);
-        document.addEventListener("touchend", stopDrag);
+        const rect    = selfView.getBoundingClientRect();
+        const pRect   = container.getBoundingClientRect();
+        initLeft = rect.left - pRect.left;
+        initTop  = rect.top  - pRect.top;
+
+        selfView.style.transition = 'none';
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('mouseup',  stopDrag);
+        document.addEventListener('touchend', stopDrag);
     }
 
     function onDrag(e) {
-        if (!isDragging) return;
+        if (!dragging) return;
         if (e.cancelable) e.preventDefault();
-        
+
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        const deltaX = clientX - offsetStartX;
-        const deltaY = clientY - offsetStartY;
+        const pRect   = container.getBoundingClientRect();
+        const sRect   = selfView.getBoundingClientRect();
+        const newLeft = Math.max(8, Math.min(initLeft + (clientX - startX), pRect.width  - sRect.width  - 8));
+        const newTop  = Math.max(8, Math.min(initTop  + (clientY - startY), pRect.height - sRect.height - 8));
 
-        const parentRect = videoCanvas.getBoundingClientRect();
-        const rect = selfView.getBoundingClientRect();
-
-        let newLeft = initialLeft + deltaX;
-        let newTop = initialTop + deltaY;
-
-        newLeft = Math.max(8, Math.min(newLeft, parentRect.width - rect.width - 8));
-        newTop = Math.max(8, Math.min(newTop, parentRect.height - rect.height - 8));
-
-        selfView.style.left = `${newLeft}px`;
-        selfView.style.top = `${newTop}px`;
+        selfView.style.left  = `${newLeft}px`;
+        selfView.style.top   = `${newTop}px`;
         selfView.style.right = 'auto';
     }
 
     function stopDrag() {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        document.removeEventListener("mousemove", onDrag);
-        document.removeEventListener("touchmove", onDrag);
+        if (!dragging) return;
+        dragging = false;
 
-        const parentRect = videoCanvas.getBoundingClientRect();
-        const rect = selfView.getBoundingClientRect();
-        
-        const currentLeft = rect.left - parentRect.left;
-        const currentTop = rect.top - parentRect.top;
-        
-        const snapLeft = currentLeft < (parentRect.width - rect.width) / 2 ? 12 : (parentRect.width - rect.width - 12);
-        const snapTop = currentTop < (parentRect.height - rect.height) / 2 ? 12 : (parentRect.height - rect.height - 12);
-        
-        selfView.style.transition = 'left 0.3s cubic-bezier(0.16, 1, 0.3, 1), top 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
-        selfView.style.left = `${snapLeft}px`;
-        selfView.style.top = `${snapTop}px`;
-        
-        setTimeout(() => {
-            selfView.style.transition = 'transform 0.2s ease, border-color 0.3s';
-        }, 300);
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('touchmove', onDrag);
+        document.removeEventListener('mouseup',  stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+
+        // Snap to nearest corner
+        const pRect  = container.getBoundingClientRect();
+        const sRect  = selfView.getBoundingClientRect();
+        const curLeft = sRect.left - pRect.left;
+        const curTop  = sRect.top  - pRect.top;
+        const snapL = curLeft < (pRect.width - sRect.width) / 2 ? 12 : (pRect.width  - sRect.width  - 12);
+        const snapT = curTop  < (pRect.height - sRect.height) / 2 ? 12 : (pRect.height - sRect.height - 12);
+
+        selfView.style.transition = 'left 0.28s cubic-bezier(0.16,1,0.3,1), top 0.28s cubic-bezier(0.16,1,0.3,1)';
+        selfView.style.left = `${snapL}px`;
+        selfView.style.top  = `${snapT}px`;
+        setTimeout(() => { selfView.style.transition = ''; }, 300);
     }
 }
 
-// --- PANIC MODE & LOCKING ---
 
+/* ═══════════════════════════════════════════════════════════════════
+   PANIC MODE & LOCKING
+   ═══════════════════════════════════════════════════════════════════ */
 function triggerPanic() {
-    const panicScreen = document.getElementById('panicScreen');
-    panicScreen.classList.add('show');
-    
+    document.getElementById('panicScreen').classList.add('show');
     endCall();
-    
-    // Clear login state on panic lock
     localStorage.removeItem('oasis_user');
     localStorage.removeItem('oasis_key');
-    
     document.getElementById('messageList').innerHTML = '';
-
     checkBiometricSupport();
 }
 
 function restoreFromPanic() {
-    const phrase = prompt("Enter Unlock Key:");
+    const phrase = prompt('Enter Unlock Key:');
     if (!phrase) return;
-    
     document.getElementById('secretKeyInput').value = phrase;
     document.getElementById('panicScreen').classList.remove('show');
     showSettingsSetup();
