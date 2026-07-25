@@ -171,8 +171,14 @@ a { color: var(--ios-blue); text-decoration: none; }
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover;    /* default — portrait/mobile match */
     background: #111;
+    transition: object-fit 0.2s ease;
+}
+
+/* Smart aspect ratio override: contain when screen is wider than video */
+.remote-video-fill.contain-mode {
+    object-fit: contain;
 }
 
 /* Gradient overlays for legibility */
@@ -255,6 +261,8 @@ a { color: var(--ios-blue); text-decoration: none; }
     height: 100%;
     object-fit: cover;
     display: block;
+    /* Mirror front camera so it feels like a selfie */
+    transform: scaleX(-1);
 }
 
 .pip-eye-btn {
@@ -304,8 +312,8 @@ a { color: var(--ios-blue); text-decoration: none; }
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 28px;
+    gap: 12px;
+    padding: 14px 22px;
     background: var(--bg-glass);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -314,6 +322,129 @@ a { color: var(--ios-blue); text-decoration: none; }
     box-shadow: var(--glass-shadow);
     z-index: 5;
 }
+
+/* Chat button active glow */
+.dock-btn--chat.active {
+    background: var(--ios-blue);
+    color: #fff;
+}
+
+/* ── IN-CALL CHAT DRAWER ─────────────────────────────────────────── */
+.call-chat-drawer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65vh;
+    background: rgba(18, 18, 20, 0.88);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border-top: 1px solid rgba(255,255,255,0.10);
+    border-radius: 24px 24px 0 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.38s cubic-bezier(0.25, 1, 0.5, 1);
+    overflow: hidden;
+}
+
+.call-chat-drawer.open {
+    transform: translateY(0);
+}
+
+.call-chat-drawer-handle {
+    width: 36px;
+    height: 5px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 3px;
+    margin: 10px auto 6px;
+    flex-shrink: 0;
+}
+
+.call-chat-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px 8px;
+    flex-shrink: 0;
+    border-bottom: 0.5px solid rgba(255,255,255,0.07);
+}
+
+.call-chat-drawer-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.5px;
+}
+
+.call-chat-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: var(--transition-fast);
+}
+
+.call-chat-close-btn:active { opacity: 0.5; }
+
+/* Messages scroll area */
+.call-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.call-chat-messages::-webkit-scrollbar { display: none; }
+
+/* Input row at bottom of drawer */
+.call-chat-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px max(12px, var(--safe-bottom)) 12px;
+    border-top: 0.5px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+
+.call-chat-input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 0.5px solid rgba(255,255,255,0.10);
+    border-radius: 22px;
+    padding: 10px 16px;
+    color: #fff;
+    font-size: 15px;
+    font-family: var(--font-system);
+    outline: none;
+}
+
+.call-chat-input::placeholder { color: rgba(255,255,255,0.3); }
+
+.call-chat-send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ios-blue);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+}
+
+.call-chat-send-btn:active { transform: scale(0.88); }
 
 /* Dock buttons */
 .dock-btn {
