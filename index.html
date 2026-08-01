@@ -1,126 +1,162 @@
-import { motion } from 'framer-motion';
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thivanka Karunarathna — Strategic Precision & Minimalist Design</title>
+    <meta name="description" content="I help forward-thinking brands and digital products stand out by combining structural design discipline with human-centered UI/UX strategy.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#0a0a0a] text-zinc-100 antialiased selection:bg-white selection:text-black">
 
-export default function HomeSections() {
-  const capabilities = [
-    {
-      num: "01",
-      title: "Digital Product & UI/UX Strategy",
-      desc: "Human-Centered Interfaces, User Experience Architecture, Dynamic Prototyping."
-    },
-    {
-      num: "02",
-      title: "Brand Identity & Visual Systems",
-      desc: "Minimal Visual Systems, Typography Direction, Structural Brand Guidelines."
-    },
-    {
-      num: "03",
-      title: "Design Systems & Scalability",
-      desc: "Scalable UI Kits, Component Libraries, Technical Precision & Layout Grids."
-    },
-    {
-      num: "04",
-      title: "Interactive Experiences",
-      desc: "Motion Design, Micro-Interactions, High-Fidelity Web Prototypes."
-    }
-  ];
+    <!-- FLOATING NAVBAR -->
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 px-4 pointer-events-none" id="navbar-container">
+        <nav id="navbar" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out flex items-center justify-between w-[90%] max-w-6xl bg-transparent px-6 py-4">
+            <a href="#" class="font-medium tracking-tight text-white text-sm hover:opacity-80 transition-opacity">
+                THIVANKA<span class="text-zinc-500">.</span>
+            </a>
+            <ul class="flex items-center space-x-6 text-xs text-zinc-400 font-light">
+                <li><a href="#about" class="hover:text-white transition-colors duration-300">About</a></li>
+                <li><a href="#services" class="hover:text-white transition-colors duration-300">Expertise</a></li>
+                <li><a href="#work" class="hover:text-white transition-colors duration-300">Work</a></li>
+                <li><a href="#contact" class="text-white hover:text-zinc-300 transition-colors duration-300 font-normal">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
 
-  return (
-    <div className="bg-[#0a0a0a] text-zinc-100 min-h-screen px-6 md:px-16 lg:px-24 font-sans selection:bg-white selection:text-black">
-      
-      {/* --- HERO SECTION --- */}
-      <section className="min-h-screen flex flex-col justify-center max-w-5xl pt-20">
-        <motion.p 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-6"
-        >
-          Thivanka Karunarathna — Personal Portfolio
-        </motion.p>
+    <div class="max-w-5xl mx-auto px-6 md:px-12">
 
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[1.1] text-white mb-8"
-        >
-          Architecting Digital Experiences Through <span className="text-zinc-500">Strategic Precision</span> & Minimalist Design.
-        </motion.h1>
-
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-lg md:text-xl text-zinc-400 font-light max-w-2xl leading-relaxed mb-12"
-        >
-          I help forward-thinking brands and digital products stand out by combining structural design discipline with human-centered UI/UX strategy.
-        </motion.p>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-wrap gap-4"
-        >
-          <a href="#work" className="px-7 py-3.5 bg-white text-black text-sm font-medium rounded-full hover:bg-zinc-200 transition-all duration-300">
-            View Selected Works
-          </a>
-          <a href="#contact" className="px-7 py-3.5 border border-zinc-800 text-zinc-300 text-sm font-medium rounded-full hover:bg-zinc-900 hover:text-white transition-all duration-300">
-            Let's Work Together
-          </a>
-        </motion.div>
-      </section>
-
-      {/* --- ABOUT SECTION --- */}
-      <section className="py-32 border-t border-zinc-900 max-w-5xl">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-12">01 / About</h2>
-        
-        <h3 className="text-3xl md:text-5xl font-light tracking-tight text-white mb-10">
-          Strategy First. Design Built to Last.
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-zinc-400 font-light leading-relaxed mb-16 text-base">
-          <p>
-            Design is more than visual aesthetics; it is about clarity, purpose, and structural harmony. Drawing from a disciplined background in spatial design and technical precision, I bridge the gap between complex functionality and effortless user experience.
-          </p>
-          <p>
-            Over the past three years, I’ve refined a minimalist design approach—focusing on radical reduction, geometric integrity, and intentional interaction. Whether building a scalable UI system or shaping a distinct brand identity, my goal is simple: eliminate the unnecessary so the essential can speak.
-          </p>
-        </div>
-
-        {/* Core Philosophy Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-zinc-900/60">
-          <div>
-            <h4 className="text-white font-medium text-sm mb-2">Intentional Minimalism</h4>
-            <p className="text-xs text-zinc-500 leading-relaxed">Every pixel and space serves a specific purpose.</p>
-          </div>
-          <div>
-            <h4 className="text-white font-medium text-sm mb-2">Strategic Depth</h4>
-            <p className="text-xs text-zinc-500 leading-relaxed">Brand positioning grounded in real-world user research.</p>
-          </div>
-          <div>
-            <h4 className="text-white font-medium text-sm mb-2">Precision & Scale</h4>
-            <p className="text-xs text-zinc-500 leading-relaxed">Clean design systems built for seamless implementation.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* --- CORE CAPABILITIES SECTION --- */}
-      <section className="py-32 border-t border-zinc-900 max-w-5xl">
-        <h2 className="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-12">02 / Expertise</h2>
-        <h3 className="text-3xl md:text-4xl font-light tracking-tight text-white mb-16">Core Capabilities</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
-          {capabilities.map((item) => (
-            <div key={item.num} className="border-b border-zinc-900 pb-8">
-              <span className="text-xs text-zinc-600 font-mono block mb-3">{item.num}</span>
-              <h4 className="text-xl text-white font-normal mb-2">{item.title}</h4>
-              <p className="text-sm text-zinc-500 leading-relaxed">{item.desc}</p>
+        <!-- HERO SECTION -->
+        <section class="min-h-screen flex flex-col justify-center pt-20">
+            <p class="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-6">Thivanka Karunarathna — Personal Portfolio</p>
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[1.1] text-white mb-8">
+                Architecting Digital Experiences Through <span class="text-zinc-500">Strategic Precision</span> & Minimalist Design.
+            </h1>
+            <p class="text-lg md:text-xl text-zinc-400 font-light max-w-2xl leading-relaxed mb-12">
+                I help forward-thinking brands and digital products stand out by combining structural design discipline with human-centered UI/UX strategy.
+            </p>
+            <div class="flex flex-wrap gap-4">
+                <a href="#work" class="px-7 py-3.5 bg-white text-black text-sm font-medium rounded-full hover:bg-zinc-200 transition-all duration-300">
+                    View Selected Works
+                </a>
+                <a href="#contact" class="px-7 py-3.5 border border-zinc-800 text-zinc-300 text-sm font-medium rounded-full hover:bg-zinc-900 hover:text-white transition-all duration-300">
+                    Let's Work Together
+                </a>
             </div>
-          ))}
-        </div>
-      </section>
+        </section>
+
+        <!-- ABOUT SECTION -->
+        <section id="about" class="py-32 border-t border-zinc-900">
+            <h2 class="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-12">01 / About</h2>
+            <h3 class="text-3xl md:text-5xl font-light tracking-tight text-white mb-10">Strategy First. Design Built to Last.</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 text-zinc-400 font-light leading-relaxed mb-16 text-base">
+                <p>Design is more than visual aesthetics; it is about clarity, purpose, and structural harmony. Drawing from a disciplined background in spatial design and technical precision, I bridge the gap between complex functionality and effortless user experience.</p>
+                <p>Over the past three years, I’ve refined a minimalist design approach—focusing on radical reduction, geometric integrity, and intentional interaction. Whether building a scalable UI system or shaping a distinct brand identity, my goal is simple: eliminate the unnecessary so the essential can speak.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-zinc-900/60">
+                <div>
+                    <h4 class="text-white font-medium text-sm mb-2">Intentional Minimalism</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed">Every pixel and space serves a specific purpose.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-medium text-sm mb-2">Strategic Depth</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed">Brand positioning grounded in real-world user research.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-medium text-sm mb-2">Precision & Scale</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed">Clean design systems built for seamless implementation.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXPERTISE SECTION -->
+        <section id="services" class="py-32 border-t border-zinc-900">
+            <h2 class="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-12">02 / Expertise</h2>
+            <h3 class="text-3xl md:text-4xl font-light tracking-tight text-white mb-16">Core Capabilities</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="border-b border-zinc-900/80 pb-8">
+                    <span class="text-xs text-zinc-600 font-mono block mb-4">01</span>
+                    <h4 class="text-lg text-white font-medium mb-3">UI/UX & Product Design</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed">Crafting intuitive interface systems, interactive prototypes, and seamless digital user journeys.</p>
+                </div>
+                <div class="border-b border-zinc-900/80 pb-8">
+                    <span class="text-xs text-zinc-600 font-mono block mb-4">02</span>
+                    <h4 class="text-lg text-white font-medium mb-3">Brand Strategy & Visual Identity</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed">Defining brand narratives, visual direction, and digital presence that command attention.</p>
+                </div>
+                <div class="border-b border-zinc-900/80 pb-8">
+                    <span class="text-xs text-zinc-600 font-mono block mb-4">03</span>
+                    <h4 class="text-lg text-white font-medium mb-3">Design Systems & Architecture</h4>
+                    <p class="text-xs text-zinc-500 leading-relaxed">Building scalable, structured component libraries for consistent cross-platform experiences.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- WORK SECTION -->
+        <section id="work" class="py-32 border-t border-zinc-900">
+            <h2 class="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-12">03 / Portfolio</h2>
+            <h3 class="text-3xl md:text-4xl font-light tracking-tight text-white mb-16">Selected Works</h3>
+            <div class="space-y-12">
+                <div class="group p-8 md:p-12 bg-zinc-950 border border-zinc-900 rounded-2xl hover:border-zinc-800 transition-all duration-500">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
+                        <div>
+                            <span class="text-xs font-mono text-zinc-600 mb-1 block">01 — UI/UX Design, Brand Identity & Strategy</span>
+                            <h4 class="text-2xl md:text-3xl text-white font-normal group-hover:text-zinc-300 transition-colors">Oasis</h4>
+                        </div>
+                        <span class="text-xs text-zinc-500 bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800">High-End Minimalist Digital Experience</span>
+                    </div>
+                    <p class="text-sm text-zinc-400 font-light max-w-2xl leading-relaxed mb-8">A strategic redesign focusing on effortless luxury, spatial visual flow, and friction-free user interaction.</p>
+                    <a href="#" class="inline-flex items-center text-xs font-medium text-white group-hover:translate-x-1 transition-transform duration-300">Read Case Study →</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact" class="py-32 border-t border-zinc-900">
+            <h2 class="text-xs uppercase tracking-[0.3em] text-zinc-500 mb-6">04 / Have a project in mind or looking to collaborate?</h2>
+            <h3 class="text-4xl md:text-6xl font-light tracking-tight text-white mb-8">Let’s build something intentional.</h3>
+            <p class="text-base md:text-lg text-zinc-400 font-light max-w-2xl leading-relaxed mb-12">I am always open to discussing new digital products, strategic brand design, or creative partnerships. Reach out and let's turn your vision into a refined digital reality.</p>
+            <div class="pt-8 border-t border-zinc-900/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                <div>
+                    <span class="text-xs text-zinc-600 uppercase tracking-widest block mb-2">Direct Contact</span>
+                    <a href="mailto:hello@thivanka.com" class="text-xl md:text-2xl text-white hover:text-zinc-400 transition-colors font-light">hello@thivanka.com</a>
+                    <p class="text-xs text-zinc-500 mt-2">Location: International / Remote</p>
+                </div>
+                <div>
+                    <span class="text-xs text-zinc-600 uppercase tracking-widest block mb-3">Connect</span>
+                    <div class="flex space-x-6 text-sm text-zinc-400">
+                        <a href="#" class="hover:text-white transition-colors">LinkedIn</a>
+                        <a href="#" class="hover:text-white transition-colors">Figma</a>
+                        <a href="#" class="hover:text-white transition-colors">Behance</a>
+                        <a href="#" class="hover:text-white transition-colors">X (Twitter)</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="py-8 border-t border-zinc-900/60 flex justify-between items-center text-xs text-zinc-600">
+            <p>© 2026 Thivanka Karunarathna. All rights reserved.</p>
+            <p>Minimal Alone Concept</p>
+        </footer>
 
     </div>
-  );
-}
+
+    <!-- FLOATING NAVBAR INTERACTION SCRIPT -->
+    <script>
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 40) {
+                navbar.className = "fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out flex items-center justify-between w-[92%] max-w-xl bg-zinc-950/80 backdrop-blur-xl border border-zinc-800/80 rounded-full px-6 py-3 shadow-2xl";
+            } else {
+                navbar.className = "fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out flex items-center justify-between w-[90%] max-w-6xl bg-transparent px-6 py-4";
+            }
+        });
+    </script>
+</body>
+</html>
