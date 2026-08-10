@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floor Plan Jobs Tracker — Shadcn Dark Density</title>
+    <title>Floor Plan Jobs Tracker — Material 3 + Apple Minimalist</title>
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,18 +31,15 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        background: '#090d16',
-                        card: '#0f172a',
-                        cardBorder: '#1e293b',
-                        accentBlue: '#3b82f6',
-                        accentEmerald: '#10b981',
-                        accentRose: '#f43f5e',
-                        accentAmber: '#f59e0b',
-                        mutedText: '#94a3b8',
+                        background: '#000000',
+                        card: '#1c1c1e',
+                        inputBg: '#2c2c2e',
+                        accentBlue: '#0a84ff',
+                        mutedText: '#8e8e93',
                     }
                 }
             }
@@ -53,15 +50,15 @@
         body {
             background-color: #000000;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #000000; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        ::-webkit-scrollbar-thumb { background: #2c2c2e; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3a3c; }
 
         /* Toast Notification Animation */
         #toast {
@@ -74,13 +71,13 @@
             opacity: 1;
         }
 
-        /* Custom Input styling for Shadcn look */
+        /* Custom Input styling for Material 3 + Apple Minimalist look */
         .shadcn-input {
             background-color: #2c2c2e;
             border: 1px solid transparent;
             color: #ffffff;
             transition: all 0.15s ease-in-out;
-            border-radius: 1rem;
+            border-radius: 1rem; /* rounded-2xl */
         }
         .shadcn-input:focus {
             outline: none;
@@ -89,11 +86,11 @@
         }
         
         .tab-btn.active {
-            background-color: #48484a;
+            background-color: #2c2c2e;
             color: #ffffff;
             border-color: transparent;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            border-radius: 9999px;
         }
     </style>
 </head>
@@ -105,45 +102,45 @@
             
             <!-- Brand & Live Clock -->
             <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2">
-                    <div class="p-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg text-blue-400">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-[#0a84ff]/10 border border-[#0a84ff]/20 rounded-2xl text-[#0a84ff]">
                         <i data-lucide="layers" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h1 class="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
+                        <h1 class="text-sm font-semibold tracking-tight text-white flex items-center gap-2">
                             Floor Plan Jobs Tracker
-                            <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-medium">SPA v2.5</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-[#0a84ff]/10 border border-[#0a84ff]/20 text-[#0a84ff] font-medium">v2.5</span>
                         </h1>
                     </div>
                 </div>
 
                 <!-- Live Sri Lanka Clock Badge -->
-                <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#2c2c2e] border border-transparent rounded-md text-xs font-mono text-[#8e8e93]">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-400"></i>
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#1c1c1e] border border-white/5 rounded-full text-xs font-mono text-[#8e8e93]">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-[#0a84ff]"></i>
                     <span id="header_live_clock">--:--:--</span>
-                    <span class="text-xs text-slate-500 uppercase">SLST</span>
+                    <span class="text-xs text-[#8e8e93] uppercase">SLST</span>
                 </div>
             </div>
 
             <!-- SPA Tab Controls -->
-            <nav class="flex items-center p-1 bg-[#2c2c2e] rounded-full gap-1 overflow-x-auto max-w-full">
-                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+            <nav class="flex items-center p-1 bg-[#1c1c1e] border border-white/5 rounded-full gap-1 overflow-x-auto max-w-full">
+                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active px-4 py-2 rounded-full text-sm font-medium text-[#8e8e93] hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                     Home & Entry
                 </button>
-                <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#8e8e93] hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
                     Analytics
                 </button>
-                <button onclick="switchTab('tab-jobsheet')" id="btn-tab-jobsheet" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-jobsheet')" id="btn-tab-jobsheet" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#8e8e93] hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="table" class="w-3.5 h-3.5"></i>
                     Job Sheet
                 </button>
-                <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#8e8e93] hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     Reports & Export
                 </button>
-                <button onclick="switchTab('tab-salary')" id="btn-tab-salary" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-salary')" id="btn-tab-salary" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#8e8e93] hover:text-white transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
                     Salary
                     <i data-lucide="lock" id="salary_lock_icon" class="w-3 h-3 text-amber-400 ml-0.5"></i>
@@ -153,16 +150,16 @@
             <!-- Global Filter & Status -->
             <div class="flex items-center gap-6">
                 <div class="flex items-center gap-2">
-                    <label for="globalMonthFilter" class="text-xs font-medium text-slate-400 flex items-center gap-1">
-                        <i data-lucide="filter" class="w-3 h-3 text-slate-500"></i>
+                    <label for="globalMonthFilter" class="text-xs font-medium text-[#8e8e93] flex items-center gap-1">
+                        <i data-lucide="filter" class="w-3 h-3 text-[#8e8e93]"></i>
                         Filter:
                     </label>
-                    <select id="globalMonthFilter" class="shadcn-input px-4 py-2 rounded-lg text-sm font-medium text-slate-200 min-w-[130px]" onchange="onGlobalFilterChange()">
+                    <select id="globalMonthFilter" class="shadcn-input px-4 py-2 rounded-2xl text-sm font-medium text-white min-w-[140px]" onchange="onGlobalFilterChange()">
                         <option value="all">All Time</option>
                     </select>
                 </div>
 
-                <div class="hidden md:flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-md text-sm font-medium">
+                <div class="hidden md:flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium">
                     <span class="relative flex h-1.5 w-1.5">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
@@ -186,50 +183,50 @@
                 <!-- Quick Add Form Card (7 Cols) -->
                 <div class="lg:col-span-7 bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
                     <div>
-                        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="file-plus-2" class="w-4 h-4 text-blue-400"></i>
+                        <div class="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <i data-lucide="file-plus-2" class="w-4 h-4 text-[#0a84ff]"></i>
                                 <h2 class="text-sm font-semibold text-white">Job Entry Form</h2>
                             </div>
-                            <span class="text-sm text-slate-400 font-mono">Auto-calculates pricing & allowances</span>
+                            <span class="text-xs text-[#8e8e93] font-mono">Auto-calculates pricing & allowances</span>
                         </div>
 
-                        <form id="addJobForm" class="space-y-3">
+                        <form id="addJobForm" class="space-y-4">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="date">Date</label>
-                                    <input type="date" id="date" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
+                                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="date">Date</label>
+                                    <input type="date" id="date" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="job_time">Time (SL Time)</label>
-                                    <input type="time" id="job_time" step="1" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
+                                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="job_time">Time (SL Time)</label>
+                                    <input type="time" id="job_time" step="1" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm font-mono" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
                                 </div>
                             </div>
                             
                             <!-- Quick Client Selection -->
                             <div class="mt-4">
                                 <div class="flex items-center justify-between mb-2">
-                                    <label class="block text-sm font-medium text-slate-400">Select Client</label>
-                                    <button type="button" onclick="toggleCustomClientForm()" class="text-xs font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                                    <label class="block text-sm font-medium text-[#8e8e93]">Select Client</label>
+                                    <button type="button" onclick="toggleCustomClientForm()" class="text-xs font-medium text-[#0a84ff] hover:text-blue-300 flex items-center gap-1">
                                         <i data-lucide="plus" class="w-3 h-3"></i> Add New Client
                                     </button>
                                 </div>
                                 <input type="hidden" id="client_name">
                                 
-                                <div id="custom_client_form" class="hidden mb-3 p-3 bg-[#2c2c2e] border border-transparent rounded-xl flex flex-col sm:flex-row gap-3 items-end">
+                                <div id="custom_client_form" class="hidden mb-3 p-4 bg-[#2c2c2e]/50 border border-white/5 rounded-2xl flex flex-col sm:flex-row gap-3 items-end">
                                     <div class="flex-1 w-full">
-                                        <label class="block text-xs font-medium text-slate-400 mb-1">Custom Client Name</label>
-                                        <input type="text" id="custom_client_input" class="shadcn-input w-full px-3 py-2 rounded-lg text-sm" placeholder="e.g. Acme Corp">
+                                        <label class="block text-xs font-medium text-[#8e8e93] mb-1">Custom Client Name</label>
+                                        <input type="text" id="custom_client_input" class="shadcn-input w-full px-3 py-2 rounded-2xl text-sm" placeholder="e.g. Acme Corp">
                                     </div>
                                     <div class="flex-1 w-full">
-                                        <label class="block text-xs font-medium text-slate-400 mb-1">Region</label>
-                                        <select id="custom_client_region" class="shadcn-input w-full px-3 py-2 rounded-lg text-sm">
+                                        <label class="block text-xs font-medium text-[#8e8e93] mb-1">Region</label>
+                                        <select id="custom_client_region" class="shadcn-input w-full px-3 py-2 rounded-2xl text-sm">
                                             <option value="UK">UK Tier</option>
                                             <option value="AUS">AUS Tier</option>
                                             <option value="Standard">Standard Tier</option>
                                         </select>
                                     </div>
-                                    <button type="button" onclick="saveCustomClient()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto h-10">
+                                    <button type="button" onclick="saveCustomClient()" class="bg-[#0a84ff] hover:bg-blue-500 text-white px-5 py-2 rounded-full text-sm font-semibold transition-colors w-full sm:w-auto h-10">
                                         Add
                                     </button>
                                 </div>
@@ -241,27 +238,27 @@
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                                 <div class="sm:col-span-2">
-                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="address_title">Address / Title</label>
-                                    <input type="text" id="address_title" required placeholder="e.g. Flat 12, 45 Oakfield Road, London" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onblur="autoFormatAddressInput(this)">
+                                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="address_title">Address / Title</label>
+                                    <input type="text" id="address_title" required placeholder="e.g. Flat 12, 45 Oakfield Road, London" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm" onblur="autoFormatAddressInput(this)">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="area_sqft">Area (Sq.ft)</label>
-                                    <input type="number" id="area_sqft" required min="0" step="0.01" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono">
+                                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="area_sqft">Area (Sq.ft)</label>
+                                    <input type="number" id="area_sqft" required min="0" step="0.01" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm font-mono">
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="region">Region Tier</label>
-                                    <select id="region" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="region">Region Tier</label>
+                                    <select id="region" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm">
                                         <option value="Standard">Standard Tier</option>
                                         <option value="UK">UK Tier</option>
                                         <option value="AUS">AUS Tier</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="mistake_type">Mistake Type</label>
-                                    <select id="mistake_type" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="mistake_type">Mistake Type</label>
+                                    <select id="mistake_type" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm">
                                         <option value="None">None (No Deduction)</option>
                                         <option value="Address">Address (-300 LKR)</option>
                                         <option value="North Point">North Point (-300 LKR)</option>
@@ -279,20 +276,21 @@
                                 </div>
                             </div>
 
-                            <!-- Options Checkboxes -->
-                            <div class="bg-[#2c2c2e]/50 p-4 mb-4 mt-2 rounded-2xl flex flex-wrap items-center gap-6">
-                                <label for="is_color" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300 hover:text-white">
+                            <!-- Options Checkboxes Container (Form Layout Fix) -->
+                            <div class="bg-[#2c2c2e]/50 p-4 mb-4 rounded-2xl flex flex-wrap items-center gap-6 border border-white/5">
+                                <label for="is_color" class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-white hover:text-blue-300">
                                     <input id="is_color" type="checkbox" class="w-4 h-4 text-[#0a84ff] bg-[#1c1c1e] border-white/10 rounded focus:ring-[#0a84ff] focus:ring-offset-black cursor-pointer">
                                     <span>Color Plan (Tiered Fee)</span>
                                 </label>
-                                <label for="is_night_or_weekend" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-amber-400 hover:text-amber-300">
+                                <label for="is_night_or_weekend" class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-amber-400 hover:text-amber-300">
                                     <input id="is_night_or_weekend" type="checkbox" onchange="isUserNightWeekendOverridden = true" class="w-4 h-4 text-amber-500 bg-[#1c1c1e] border-white/10 rounded focus:ring-amber-500 focus:ring-offset-black cursor-pointer">
                                     <span>Night / Weekend Job</span>
                                 </label>
                             </div>
 
-                            <button type="submit" id="submitBtn" class="w-full mt-2 bg-[#0a84ff] hover:bg-blue-500 text-white font-medium py-4 px-6 rounded-full text-base font-semibold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
-                                <i data-lucide="check" class="w-4 h-4"></i>
+                            <!-- Save Button (Material 3 Pill Shape) -->
+                            <button type="submit" id="submitBtn" class="w-full bg-[#0a84ff] hover:bg-blue-500 text-white py-4 px-6 rounded-full text-base font-semibold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+                                <i data-lucide="check" class="w-5 h-5"></i>
                                 <span>Save Job Record</span>
                             </button>
                         </form>
@@ -304,26 +302,26 @@
                     
                     <!-- Tool 1: Exact Area Converter -->
                     <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
-                            <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+                            <div class="flex items-center gap-2.5">
                                 <i data-lucide="calculator" class="w-4 h-4 text-emerald-400"></i>
                                 <h3 class="text-xs font-semibold text-white">Exact Windows Area Converter</h3>
                             </div>
-                            <span class="text-xs font-mono text-slate-500">1 m² = 10.7639 ft²</span>
+                            <span class="text-xs font-mono text-[#8e8e93]">1 m² = 10.7639 ft²</span>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-400 mb-2" for="tool_sqm">Sq. Meters (Sq.m)</label>
-                                <input type="number" id="tool_sqm" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono" oninput="convertArea('sqm')">
+                                <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="tool_sqm">Sq. Meters (Sq.m)</label>
+                                <input type="number" id="tool_sqm" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm font-mono" oninput="convertArea('sqm')">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-400 mb-2" for="tool_sqft">Sq. Feet (Sq.ft)</label>
-                                <input type="number" id="tool_sqft" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono text-emerald-400" oninput="convertArea('sqft')">
+                                <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="tool_sqft">Sq. Feet (Sq.ft)</label>
+                                <input type="number" id="tool_sqft" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm font-mono text-emerald-400" oninput="convertArea('sqft')">
                             </div>
                         </div>
 
-                        <button type="button" onclick="useAreaInForm()" class="mt-3 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 font-medium py-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="useAreaInForm()" class="mt-4 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-medium py-2.5 px-4 rounded-full text-xs transition-all flex items-center justify-center gap-1.5">
                             <i data-lucide="arrow-left-to-line" class="w-3.5 h-3.5"></i>
                             Apply Area to Job Form
                         </button>
@@ -331,28 +329,28 @@
 
                     <!-- Tool 2: UK Smart Address Formatter -->
                     <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
-                            <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+                            <div class="flex items-center gap-2.5">
                                 <i data-lucide="wand-2" class="w-4 h-4 text-purple-400"></i>
                                 <h3 class="text-xs font-semibold text-white">UK Smart Address Reformatter</h3>
                             </div>
-                            <span class="text-xs text-slate-400">Fixes capitalization & UK postcodes</span>
+                            <span class="text-xs text-[#8e8e93]">Fixes capitalization & UK postcodes</span>
                         </div>
 
                         <div>
-                            <textarea id="tool_address" rows="2" placeholder="e.g. flat 27 12 oakfield rd croydon cr0 4qa" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm resize-none font-mono"></textarea>
+                            <textarea id="tool_address" rows="2" placeholder="e.g. flat 27 12 oakfield rd croydon cr0 4qa" class="shadcn-input w-full px-4 py-3 h-20 rounded-2xl text-sm resize-none font-mono"></textarea>
                         </div>
 
-                        <div class="flex gap-2 mt-3">
-                            <button type="button" onclick="formatAddress()" class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 font-medium py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1">
+                        <div class="flex gap-2 mt-4">
+                            <button type="button" onclick="formatAddress()" class="flex-1 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-300 font-medium py-2 px-3 rounded-full text-xs transition-all flex items-center justify-center gap-1">
                                 <i data-lucide="sparkles" class="w-3 h-3"></i>
                                 Clean Address
                             </button>
-                            <button type="button" onclick="useAddressInForm()" class="flex-1 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-medium py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1">
+                            <button type="button" onclick="useAddressInForm()" class="flex-1 bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 border border-[#0a84ff]/20 text-[#0a84ff] font-medium py-2 px-3 rounded-full text-xs transition-all flex items-center justify-center gap-1">
                                 <i data-lucide="check" class="w-3 h-3"></i>
                                 Apply to Form
                             </button>
-                            <button type="button" onclick="searchAddressOnGoogle()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-3 h-12 rounded-xl text-sm flex items-center justify-center transition-all border border-slate-700" title="Search Google Maps">
+                            <button type="button" onclick="searchAddressOnGoogle()" class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#8e8e93] hover:text-white px-4 py-2 rounded-full text-xs flex items-center justify-center transition-all" title="Search Google Maps">
                                 <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i>
                             </button>
                         </div>
@@ -360,20 +358,20 @@
                     
                     <!-- HOLIDAY MARKING SYSTEM -->
                     <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
-                            <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+                            <div class="flex items-center gap-2.5">
                                 <i data-lucide="calendar-heart" class="w-4 h-4 text-rose-400"></i>
                                 <h3 class="text-xs font-semibold text-white">Holiday Marking System</h3>
                             </div>
-                            <span class="text-xs text-slate-400">Auto-calc in Salary</span>
+                            <span class="text-xs text-[#8e8e93]">Auto-calc in Salary</span>
                         </div>
                         <div class="flex gap-4">
-                            <input type="date" id="holiday_date_input" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm flex-1">
-                            <button type="button" onclick="markHoliday()" class="bg-rose-600/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-6 h-12 rounded-xl text-sm font-semibold transition-colors shrink-0">
+                            <input type="date" id="holiday_date_input" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm flex-1">
+                            <button type="button" onclick="markHoliday()" class="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-6 h-12 rounded-full text-sm font-semibold transition-colors shrink-0">
                                 Mark Holiday
                             </button>
                         </div>
-                        <div id="holiday_list_container" class="flex flex-wrap gap-2 mt-3"></div>
+                        <div id="holiday_list_container" class="flex flex-wrap gap-2 mt-4"></div>
                     </div>
 
                 </div>
@@ -388,44 +386,44 @@
             <!-- 8 Stat Cards Grid -->
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Total Jobs</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Total Jobs</p>
                     <h3 class="text-xl font-bold text-white font-mono" id="stat_total_jobs">-</h3>
                 </div>
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Total Earnings</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Total Earnings</p>
                     <h3 class="text-xl font-bold text-emerald-400 font-mono" id="stat_total_earnings">-</h3>
                 </div>
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Total Mistakes</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Total Mistakes</p>
                     <h3 class="text-xl font-bold text-rose-400 font-mono" id="stat_total_mistakes">-</h3>
                 </div>
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Total Penalties</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Total Penalties</p>
                     <h3 class="text-xl font-bold text-rose-400 font-mono" id="stat_total_deductions">-</h3>
                 </div>
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Top Client</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Top Client</p>
                     <h3 class="text-lg font-bold text-indigo-400 truncate" id="stat_top_client">-</h3>
                 </div>
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Accuracy / Error</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Accuracy / Error</p>
                     <div>
                         <h3 class="text-lg font-bold text-emerald-400 font-mono" id="stat_accuracy">0%</h3>
                         <p class="text-[10px] text-rose-400 truncate mt-0.5" id="stat_freq_mistake">No Data</p>
                     </div>
                 </div>
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
-                    <p class="text-sm font-medium text-slate-400 mb-1">Night / Weekend</p>
+                    <p class="text-xs font-medium text-[#8e8e93] mb-1">Night / Weekend</p>
                     <h3 class="text-xl font-bold text-amber-400 font-mono" id="stat_night_jobs">-</h3>
                 </div>
                 
                 <!-- Monthly Target Progress Card -->
                 <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between relative overflow-hidden">
                     <div>
-                        <p class="text-sm font-medium text-slate-400 mb-1">Monthly Target</p>
+                        <p class="text-xs font-medium text-[#8e8e93] mb-1">Monthly Target</p>
                         <h3 class="text-lg font-bold text-emerald-400 font-mono" id="stat_target_progress">0 / 170</h3>
                     </div>
-                    <div id="target_badge" class="hidden mt-1 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded self-start">
+                    <div id="target_badge" class="hidden mt-1 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded-full self-start">
                         Unlocked! (+Rs.50/job)
                     </div>
                 </div>
@@ -437,8 +435,8 @@
                 <!-- Charts Section (7 cols) -->
                 <div class="lg:col-span-7 space-y-4">
                     <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
-                        <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
-                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+                        <h3 class="text-xs font-semibold text-white mb-4 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-[#0a84ff]"></i>
                             Weekly Peak Working Days
                         </h3>
                         <div class="relative h-48 w-full">
@@ -448,7 +446,7 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
-                            <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
+                            <h3 class="text-xs font-semibold text-white mb-4 flex items-center gap-2">
                                 <i data-lucide="bar-chart" class="w-4 h-4 text-indigo-400"></i>
                                 Monthly Timeline (Days 1-10, 11-20, 21-31)
                             </h3>
@@ -458,7 +456,7 @@
                         </div>
 
                         <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
-                            <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
+                            <h3 class="text-xs font-semibold text-white mb-4 flex items-center gap-2">
                                 <i data-lucide="sun-moon" class="w-4 h-4 text-amber-400"></i>
                                 Day vs Night/Weekend Ratio
                             </h3>
@@ -473,11 +471,11 @@
                 <div class="lg:col-span-5 flex flex-col">
                     <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-lg backdrop-blur-sm flex-1 flex flex-col overflow-hidden max-h-[570px]">
                         <div class="p-6 border-b border-white/5 flex items-center justify-between">
-                            <h3 class="text-xs font-semibold text-white flex items-center gap-1.5">
+                            <h3 class="text-xs font-semibold text-white flex items-center gap-2">
                                 <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
                                 Client Performance Breakdown
                             </h3>
-                            <span class="text-xs text-slate-500 font-mono" id="client_summary_count">0 Clients</span>
+                            <span class="text-xs text-[#8e8e93] font-mono" id="client_summary_count">0 Clients</span>
                         </div>
                         <div class="overflow-y-auto flex-1">
                             <table class="w-full text-left text-xs border-collapse">
@@ -487,8 +485,8 @@
                                         <th class="px-6 py-4 text-right">Total Jobs</th>
                                     </tr>
                                 </thead>
-                                <tbody id="client_summary_body" class="divide-y divide-slate-800/60 font-mono">
-                                    <tr><td colspan="2" class="p-4 text-center text-slate-500">Loading client summary...</td></tr>
+                                <tbody id="client_summary_body" class="divide-y divide-white/5 font-mono">
+                                    <tr><td colspan="2" class="p-4 text-center text-[#8e8e93]">Loading client summary...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -504,18 +502,24 @@
         <section id="tab-jobsheet" class="hidden space-y-3">
             <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-lg backdrop-blur-sm overflow-hidden flex flex-col">
                 
-                <div class="p-6 border-b border-white/5 flex flex-wrap justify-between items-center gap-6 bg-[#1c1c1e]">
+                <div class="p-6 border-b border-white/5 flex flex-wrap justify-between items-center gap-4 bg-[#1c1c1e]">
                     <div>
                         <h2 class="text-sm font-semibold text-white flex items-center gap-2">
-                            <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+                            <i data-lucide="database" class="w-4 h-4 text-[#0a84ff]"></i>
                             Job Management Sheet
                         </h2>
-                        <p class="text-sm text-slate-400">Interactive live table with auto-indexing and actions.</p>
+                        <p class="text-xs text-[#8e8e93]">Interactive live table with auto-indexing and advance search.</p>
+                    </div>
+
+                    <!-- Advance Search Input -->
+                    <div class="relative flex-1 min-w-[240px] max-w-md">
+                        <i data-lucide="search" class="w-4 h-4 text-[#8e8e93] absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="jobsheet_search" placeholder="Search address, client, region..." oninput="renderJobSheet()" class="shadcn-input w-full pl-10 pr-4 py-2 rounded-full text-xs text-white placeholder-[#8e8e93] bg-[#2c2c2e] border-transparent focus:ring-2 focus:ring-[#0a84ff]">
                     </div>
                     
                     <div class="flex items-center gap-2">
                         <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
-                        <button onclick="document.getElementById('excelUpload').click()" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 px-4 py-2 rounded-xl text-sm font-medium shadow-sm flex items-center gap-1.5 transition-all">
+                        <button onclick="document.getElementById('excelUpload').click()" class="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-all">
                             <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
                             Import Excel / CSV
                         </button>
@@ -526,22 +530,22 @@
                     <table class="w-full text-left text-xs border-collapse min-w-[1100px]">
                         <thead class="sticky top-0 bg-[#1c1c1e] text-[#8e8e93] border-b border-white/5 uppercase text-xs tracking-wider font-semibold z-10">
                             <tr>
-                                <th class="px-4 py-3 w-12 text-center">#</th>
-                                <th class="px-4 py-3">Date</th>
-                                <th class="px-4 py-3">Client</th>
-                                <th class="px-4 py-3">Address / Title</th>
-                                <th class="px-4 py-3 text-right">Area (sqft)</th>
-                                <th class="px-4 py-3 text-center">Region</th>
-                                <th class="px-4 py-3 text-center">Color</th>
-                                <th class="px-4 py-3">Mistake</th>
-                                <th class="px-4 py-3 text-right">Base Price</th>
-                                <th class="px-4 py-3 text-right">Allowance</th>
-                                <th class="px-4 py-3 text-right">Deduction</th>
-                                <th class="px-4 py-3 text-right bg-slate-950/80 font-bold text-white">Total LKR</th>
-                                <th class="px-4 py-3 text-center w-20">Actions</th>
+                                <th class="px-4 py-3.5 w-12 text-center">#</th>
+                                <th class="px-4 py-3.5">Date</th>
+                                <th class="px-4 py-3.5">Client</th>
+                                <th class="px-4 py-3.5">Address / Title</th>
+                                <th class="px-4 py-3.5 text-right">Area (sqft)</th>
+                                <th class="px-4 py-3.5 text-center">Region</th>
+                                <th class="px-4 py-3.5 text-center">Color</th>
+                                <th class="px-4 py-3.5 text-center">Mistake</th>
+                                <th class="px-4 py-3.5 text-right">Base Price</th>
+                                <th class="px-4 py-3.5 text-right">Allowance</th>
+                                <th class="px-4 py-3.5 text-right">Deduction</th>
+                                <th class="px-4 py-3.5 text-right font-bold text-white">Total LKR</th>
+                                <th class="px-4 py-3.5 text-center w-24">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="management_table_body" class="divide-y divide-slate-800/60 font-mono text-slate-300">
+                        <tbody id="management_table_body" class="divide-y divide-white/5 font-mono text-slate-300">
                             <!-- JS Injected Rows -->
                         </tbody>
                     </table>
@@ -561,9 +565,9 @@
                         <i data-lucide="file-spreadsheets" class="w-4 h-4 text-emerald-400"></i>
                         Excel Copy & Export Table
                     </h2>
-                    <p class="text-sm text-slate-400">Clean tab-separated table formatted for 1-click Ctrl+V pasting into Excel.</p>
+                    <p class="text-sm text-[#8e8e93]">Clean tab-separated table formatted for 1-click Ctrl+V pasting into Excel.</p>
                 </div>
-                <button onclick="copyReportsTable()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
+                <button onclick="copyReportsTable()" class="bg-[#0a84ff] hover:bg-blue-500 text-white text-xs font-semibold py-2.5 px-5 rounded-full flex items-center gap-1.5 shadow-sm transition-all">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     Copy Table for Excel
                 </button>
@@ -574,21 +578,21 @@
                     <table id="reports_table" class="w-full text-left text-xs border-collapse min-w-[1000px]">
                         <thead class="sticky top-0 bg-[#1c1c1e] text-[#8e8e93] border-b border-white/5 uppercase text-xs tracking-wider font-semibold">
                             <tr>
-                                <th class="px-4 py-3">No</th>
-                                <th class="px-4 py-3">Date</th>
-                                <th class="px-4 py-3">Client Name</th>
-                                <th class="px-4 py-3">Address / Title</th>
-                                <th class="px-4 py-3 text-right">Area</th>
-                                <th class="px-4 py-3">Region</th>
-                                <th class="px-4 py-3">Color</th>
-                                <th class="px-4 py-3">Mistake</th>
-                                <th class="px-4 py-3 text-right">Price</th>
-                                <th class="px-4 py-3 text-right">Allowance</th>
-                                <th class="px-4 py-3 text-right">Deduction</th>
-                                <th class="px-4 py-3 text-right font-bold text-white">Total</th>
+                                <th class="px-4 py-3.5">No</th>
+                                <th class="px-4 py-3.5">Date</th>
+                                <th class="px-4 py-3.5">Client Name</th>
+                                <th class="px-4 py-3.5">Address / Title</th>
+                                <th class="px-4 py-3.5 text-right">Area</th>
+                                <th class="px-4 py-3.5 text-center">Region</th>
+                                <th class="px-4 py-3.5 text-center">Color</th>
+                                <th class="px-4 py-3.5 text-center">Mistake</th>
+                                <th class="px-4 py-3.5 text-right">Price</th>
+                                <th class="px-4 py-3.5 text-right">Allowance</th>
+                                <th class="px-4 py-3.5 text-right">Deduction</th>
+                                <th class="px-4 py-3.5 text-right font-bold text-white">Total</th>
                             </tr>
                         </thead>
-                        <tbody id="reports_table_body" class="divide-y divide-slate-800/60 font-mono text-slate-300">
+                        <tbody id="reports_table_body" class="divide-y divide-white/5 font-mono text-[#8e8e93]">
                             <!-- JS Injected Rows -->
                         </tbody>
                     </table>
@@ -604,51 +608,51 @@
             
             <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
                 
-                <div class="p-4 border-b border-white/5 bg-[#1c1c1e] flex items-center justify-between">
+                <div class="p-6 border-b border-white/5 bg-[#1c1c1e] flex items-center justify-between">
                     <div>
                         <h2 class="text-sm font-semibold text-white flex items-center gap-2">
                             <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-400"></i>
                             Monthly Salary Breakdown
                         </h2>
-                        <p class="text-sm text-slate-400">Automated payroll computation based on monthly jobs completed.</p>
+                        <p class="text-sm text-[#8e8e93]">Automated payroll computation based on monthly jobs completed.</p>
                     </div>
                 </div>
 
                 <div class="p-6 space-y-3 font-mono text-xs">
                     
-                    <div class="flex justify-between py-1.5 border-b border-white/5">
-                        <span class="text-slate-400 font-sans">Basic Salary (Fixed)</span>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Basic Salary (Fixed)</span>
                         <span class="font-semibold text-white">Rs. 35,453.00</span>
                     </div>
                     
-                    <div class="flex justify-between py-1.5 border-b border-white/5">
-                        <span class="text-slate-400 font-sans">ETF Statutory Deduction (8% of Basic)</span>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">ETF Statutory Deduction (8% of Basic)</span>
                         <span class="font-semibold text-rose-400">- Rs. 2,836.24</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-white/5">
-                        <span class="text-slate-400 font-sans">Special Allowance (Earnings above Basic)</span>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Special Allowance (Earnings above Basic)</span>
                         <span class="font-semibold text-emerald-400" id="sal_special">Rs. 0.00</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-white/5">
-                        <span class="text-slate-400 font-sans">Monthly Target Bonus (170+ Jobs @ Rs. 50/job)</span>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Monthly Target Bonus (170+ Jobs @ Rs. 50/job)</span>
                         <span class="font-semibold text-emerald-400" id="sal_target_bonus">Rs. 0.00</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-white/5">
-                        <span class="text-slate-400 font-sans">Holiday Allowance (Days × Rs. 1,772.65)</span>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Holiday Allowance (Days × Rs. 1,772.65)</span>
                         <span class="font-semibold text-emerald-400" id="sal_holiday">Rs. 0.00</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-white/5">
-                        <span class="text-slate-400 font-sans">Total Deductions & Penalties</span>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Total Deductions & Penalties</span>
                         <span class="font-semibold text-rose-400" id="sal_penalties">- Rs. 0.00</span>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-700/80 flex justify-between items-center font-sans">
+                    <div class="pt-4 border-t border-white/10 flex justify-between items-center font-sans">
                         <span class="text-sm font-semibold text-white">Net Total Salary Payable</span>
-                        <span class="text-xl font-bold font-mono text-blue-400" id="sal_net">Rs. 0.00</span>
+                        <span class="text-xl font-bold font-mono text-[#0a84ff]" id="sal_net">Rs. 0.00</span>
                     </div>
 
                 </div>
@@ -660,27 +664,27 @@
     </main>
 
     <!-- PIN SECURITY MODAL FOR SALARY TAB -->
-    <div id="pinModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-[#2c2c2e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-5 space-y-4">
+    <div id="pinModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-6 space-y-4">
             <div class="text-center space-y-1">
-                <div class="mx-auto w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                <div class="mx-auto w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
                     <i data-lucide="lock" class="w-5 h-5"></i>
                 </div>
-                <h3 class="text-sm font-semibold text-white">Salary Breakdown Security</h3>
-                <p class="text-xs text-slate-400">Enter security PIN to unlock financial data.</p>
+                <h3 class="text-sm font-semibold text-white mt-2">Salary Breakdown Security</h3>
+                <p class="text-xs text-[#8e8e93]">Enter security PIN to unlock financial data.</p>
             </div>
             
-            <form id="pinForm" onsubmit="verifyPin(event)" class="space-y-3">
+            <form id="pinForm" onsubmit="verifyPin(event)" class="space-y-4">
                 <div>
-                    <input type="password" id="pin_input" maxlength="8" required placeholder="Enter PIN..." class="shadcn-input w-full px-3 py-2 rounded-lg text-center font-mono text-base tracking-widest text-white">
-                    <p id="pin_error" class="hidden text-sm text-rose-400 text-center mt-1">Incorrect PIN. Access Denied.</p>
+                    <input type="password" id="pin_input" maxlength="8" required placeholder="Enter PIN..." class="shadcn-input w-full px-4 py-3 rounded-2xl text-center font-mono text-base tracking-widest text-white">
+                    <p id="pin_error" class="hidden text-xs text-rose-400 text-center mt-2">Incorrect PIN. Access Denied.</p>
                 </div>
 
                 <div class="flex gap-2 pt-1">
-                    <button type="button" onclick="closePinModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-1.5 px-3 rounded-lg text-xs border border-slate-700 transition-all">
+                    <button type="button" onclick="closePinModal()" class="flex-1 bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#8e8e93] font-medium py-2.5 px-4 rounded-full text-xs transition-all">
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium py-1.5 px-3 rounded-lg text-xs shadow-sm transition-all">
+                    <button type="submit" class="flex-1 bg-[#0a84ff] hover:bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-full text-xs shadow-sm transition-all">
                         Unlock
                     </button>
                 </div>
@@ -688,36 +692,63 @@
         </div>
     </div>
 
-    <!-- EDIT JOB MODAL -->
-    <div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-[#2c2c2e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden p-4 space-y-3">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
-                <h3 class="text-xs font-semibold text-white flex items-center gap-1.5">
-                    <i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i>
-                    Edit Job Record
+    <!-- VIEW JOB DETAILS MODAL -->
+    <div id="viewModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i data-lucide="eye" class="w-4 h-4 text-[#0a84ff]"></i>
+                    Job Details View
                 </h3>
-                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-white">
+                <button type="button" onclick="closeViewModal()" class="text-[#8e8e93] hover:text-white transition-colors">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <form id="editJobForm" class="space-y-2.5">
+            <div id="view_modal_content" class="space-y-4 text-xs font-sans">
+                <!-- Dynamically filled by openViewModal(id) -->
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-white/5">
+                <button type="button" onclick="closeViewModal()" class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#8e8e93] px-5 py-2.5 rounded-full text-xs font-medium transition-all">Close</button>
+                <button type="button" id="view_modal_edit_btn" class="bg-[#0a84ff] hover:bg-blue-500 text-white px-5 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    Edit Record
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT JOB MODAL -->
+    <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-[#0a84ff]"></i>
+                    Edit Job Record
+                </h3>
+                <button type="button" onclick="closeEditModal()" class="text-[#8e8e93] hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="editJobForm" class="space-y-3">
                 <input type="hidden" id="edit_id">
                 
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_date">Date</label>
-                        <input type="date" id="edit_date" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
+                        <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_date">Date</label>
+                        <input type="date" id="edit_date" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_job_time">Time</label>
-                        <input type="time" id="edit_job_time" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
+                        <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_job_time">Time</label>
+                        <input type="time" id="edit_job_time" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm font-mono" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_client_name">Client Name</label>
-                    <select id="edit_client_name" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onchange="autoSelectRegion('edit_client_name', 'edit_region')">
+                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_client_name">Client Name</label>
+                    <select id="edit_client_name" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm" onchange="autoSelectRegion('edit_client_name', 'edit_region')">
                         <option value="" disabled selected>Select Client</option>
                         <optgroup label="UK Region">
                             <option value="Criss">Criss</option>
@@ -742,18 +773,18 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_address_title">Address / Title</label>
-                    <input type="text" id="edit_address_title" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onblur="autoFormatAddressInput(this)">
+                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_address_title">Address / Title</label>
+                    <input type="text" id="edit_address_title" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm" onblur="autoFormatAddressInput(this)">
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_area_sqft">Area (sqft)</label>
-                        <input type="number" id="edit_area_sqft" required min="0" step="0.01" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono">
+                        <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_area_sqft">Area (sqft)</label>
+                        <input type="number" id="edit_area_sqft" required min="0" step="0.01" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm font-mono">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_region">Region</label>
-                        <select id="edit_region" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                        <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_region">Region</label>
+                        <select id="edit_region" required class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm">
                             <option value="Standard">Standard Tier</option>
                             <option value="UK">UK Tier</option>
                             <option value="AUS">AUS Tier</option>
@@ -762,8 +793,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_mistake_type">Mistake Type</label>
-                    <select id="edit_mistake_type" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                    <label class="block text-sm font-medium text-[#8e8e93] mb-2" for="edit_mistake_type">Mistake Type</label>
+                    <select id="edit_mistake_type" class="shadcn-input w-full px-4 py-3 h-12 rounded-2xl text-sm">
                         <option value="None">None</option>
                         <option value="Address">Address (-300 LKR)</option>
                         <option value="North Point">North Point (-300 LKR)</option>
@@ -780,27 +811,27 @@
                     </select>
                 </div>
 
-                <div class="flex items-center gap-6 pt-1">
-                    <label for="edit_is_color" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300">
-                        <input id="edit_is_color" type="checkbox" class="w-4 h-4 text-blue-600 bg-slate-950 border-slate-700 rounded focus:ring-blue-500 cursor-pointer">
+                <div class="bg-[#2c2c2e]/50 p-4 rounded-2xl flex items-center gap-6 border border-white/5 my-3">
+                    <label for="edit_is_color" class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-white hover:text-blue-300">
+                        <input id="edit_is_color" type="checkbox" class="w-4 h-4 text-[#0a84ff] bg-[#1c1c1e] border-white/10 rounded focus:ring-[#0a84ff] focus:ring-offset-black cursor-pointer">
                         <span>Color Plan</span>
                     </label>
-                    <label for="edit_is_night_or_weekend" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-amber-400">
-                        <input id="edit_is_night_or_weekend" type="checkbox" class="w-4 h-4 text-amber-500 bg-slate-950 border-slate-700 rounded focus:ring-amber-500 cursor-pointer">
+                    <label for="edit_is_night_or_weekend" class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-amber-400 hover:text-amber-300">
+                        <input id="edit_is_night_or_weekend" type="checkbox" class="w-4 h-4 text-amber-500 bg-[#1c1c1e] border-white/10 rounded focus:ring-amber-500 focus:ring-offset-black cursor-pointer">
                         <span>Night / Weekend Job</span>
                     </label>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                    <button type="button" onclick="closeEditModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm font-medium border border-slate-700 transition-all">Cancel</button>
-                    <button type="submit" id="editSubmitBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all">Save Changes</button>
+                <div class="flex justify-end gap-2 pt-3 border-t border-white/5">
+                    <button type="button" onclick="closeEditModal()" class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-[#8e8e93] px-5 py-2.5 rounded-full text-xs font-medium transition-all">Cancel</button>
+                    <button type="submit" id="editSubmitBtn" class="bg-[#0a84ff] hover:bg-blue-500 text-white px-5 py-2.5 rounded-full text-xs font-semibold shadow-sm transition-all">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- SHADCN TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-[#2c2c2e] border border-white/5 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md">
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-[#2c2c2e] border border-white/5 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md">
         <i data-lucide="check-circle-2" id="toast_icon" class="w-4 h-4 text-emerald-400"></i>
         <span id="toast_msg">Action successful</span>
     </div>
@@ -819,6 +850,49 @@
         let weeklyChartInstance = null;
         let monthlyTimelineChartInstance = null;
         let dayNightChartInstance = null;
+
+        // --- ADVANCE FUZZY SEARCH HELPER ---
+        function getLevenshteinDistance(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        function fuzzyMatch(query, targetText) {
+            const qTokens = query.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(Boolean);
+            if (qTokens.length === 0) return true;
+            const targetLower = targetText.toLowerCase();
+            const targetTokens = targetLower.replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(Boolean);
+
+            return qTokens.every(qToken => {
+                // 1. Direct substring match in target text
+                if (targetLower.includes(qToken)) return true;
+                // 2. Token-level fuzzy match
+                return targetTokens.some(tToken => {
+                    if (tToken.includes(qToken) || qToken.includes(tToken)) return true;
+                    if (qToken.length > 3 && tToken.length > 3) {
+                        return getLevenshteinDistance(qToken, tToken) <= 2;
+                    }
+                    return false;
+                });
+            });
+        }
 
         // --- QUICK CLIENT MANAGEMENT ---
         const predefinedClients = [
@@ -840,7 +914,7 @@
             
             grid.innerHTML = allClients.map(c => 
                 `<button type="button" onclick="selectClient('${c.name}', '${c.region}', this)" data-client="${c.name}" 
-                   class="client-btn px-2 py-2 text-xs font-medium rounded-full border border-transparent bg-[#2c2c2e] text-[#8e8e93] hover:bg-[#3a3a3c] transition-colors w-full truncate">
+                   class="client-btn px-3 py-2 text-xs font-medium rounded-full border border-transparent bg-[#2c2c2e] text-[#8e8e93] hover:bg-[#3a3a3c] hover:text-white transition-all w-full truncate">
                     ${c.name}
                 </button>`
             ).join('');
@@ -893,11 +967,11 @@
             msgEl.textContent = message;
             
             if (isError) {
-                toast.className = "fixed bottom-5 right-5 bg-rose-950/90 border border-rose-800/80 text-rose-200 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
+                toast.className = "fixed bottom-5 right-5 bg-rose-950/90 border border-rose-800/80 text-rose-200 px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
                 icon.setAttribute('data-lucide', 'alert-circle');
                 icon.className = 'w-4 h-4 text-rose-400';
             } else {
-                toast.className = "fixed bottom-5 right-5 bg-[#2c2c2e] border border-white/5 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
+                toast.className = "fixed bottom-5 right-5 bg-[#2c2c2e] border border-white/5 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
                 icon.setAttribute('data-lucide', 'check-circle-2');
                 icon.className = 'w-4 h-4 text-emerald-400';
             }
@@ -958,6 +1032,89 @@
             } else {
                 document.getElementById('pin_error').classList.remove('hidden');
             }
+        }
+
+        // --- VIEW JOB MODAL ---
+        function openViewModal(id) {
+            const job = allJobs.find(j => j.id === id);
+            if (!job) return;
+
+            const monthCounts = getMonthJobCounts();
+            const ym = job.date ? job.date.substring(0, 7) : '';
+            const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
+            const finalTotal = Number(job.total) + bonus;
+            const dateFormatted = new Date(job.date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+            const contentEl = document.getElementById('view_modal_content');
+            contentEl.innerHTML = `
+                <div class="bg-[#2c2c2e]/50 p-4 rounded-2xl border border-white/5 space-y-2">
+                    <div class="text-[#8e8e93] text-[11px] font-mono">Job ID: #${job.id}</div>
+                    <div class="text-white text-base font-semibold">${job.address_title}</div>
+                    <div class="flex items-center gap-2 text-xs text-[#8e8e93]">
+                        <span class="text-white font-medium">${job.client_name}</span>
+                        <span>•</span>
+                        <span>${dateFormatted} ${job.job_time ? 'at ' + job.job_time : ''}</span>
+                        <span>•</span>
+                        <span class="px-2 py-0.5 rounded-full bg-[#2c2c2e] text-[#8e8e93] font-mono">${job.region} Tier</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-[#2c2c2e]/50 p-3.5 rounded-2xl border border-white/5">
+                        <span class="text-[#8e8e93] block text-[11px]">Area (Sq.ft)</span>
+                        <span class="text-white font-mono text-lg font-bold">${Number(job.area_sqft).toLocaleString()} sqft</span>
+                        <span class="text-[#8e8e93] block text-[10px] font-mono">${(job.area_sqft * 0.09290304).toFixed(2)} m²</span>
+                    </div>
+                    <div class="bg-[#2c2c2e]/50 p-3.5 rounded-2xl border border-white/5">
+                        <span class="text-[#8e8e93] block text-[11px]">Job Flags</span>
+                        <div class="flex flex-wrap gap-1.5 mt-1">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${job.is_color ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-[#1c1c1e] text-[#8e8e93]'}">
+                                ${job.is_color ? 'Color Plan' : 'Standard B/W'}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium ${job.is_night_or_weekend ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-[#1c1c1e] text-[#8e8e93]'}">
+                                ${job.is_night_or_weekend ? 'Night/Weekend' : 'Day Shift'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#2c2c2e]/50 p-4 rounded-2xl border border-white/5 space-y-2 font-mono text-xs">
+                    <div class="flex justify-between py-1 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Base Price</span>
+                        <span class="text-white">${formatCurrency(job.price)} LKR</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">No Mistake Allowance</span>
+                        <span class="text-[#30d158]">+ ${formatCurrency(job.no_mistake_amount)} LKR</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Mistake (${job.mistake_type || 'None'})</span>
+                        <span class="text-[#ff9f0a]">${job.ddt_amount > 0 ? '-' + formatCurrency(job.ddt_amount) : '0.00'} LKR</span>
+                    </div>
+                    ${bonus > 0 ? `
+                    <div class="flex justify-between py-1 border-b border-white/5">
+                        <span class="text-[#8e8e93] font-sans">Target Unlocked Bonus</span>
+                        <span class="text-[#30d158]">+ ${formatCurrency(bonus)} LKR</span>
+                    </div>
+                    ` : ''}
+                    <div class="flex justify-between pt-2 text-sm font-bold font-sans">
+                        <span class="text-white">Net Earnings</span>
+                        <span class="text-[#0a84ff]">${formatCurrency(finalTotal)} LKR</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('view_modal_edit_btn').onclick = () => {
+                closeViewModal();
+                openEditModal(job.id);
+            };
+
+            document.getElementById('viewModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.add('hidden');
         }
 
         // --- BUSINESS PRICING ENGINE ---
@@ -1117,9 +1274,15 @@
             calculateSalary();
         }
 
+        // REQUIREMENT 4: FIX DATA SORTING (Chronological Order: date ascending, then job_time ascending)
         async function fetchAllData() {
             try {
-                const { data, error } = await _supabase.from('jobs').select('*').order('id', { ascending: true });
+                const { data, error } = await _supabase
+                    .from('jobs')
+                    .select('*')
+                    .order('date', { ascending: true })
+                    .order('job_time', { ascending: true });
+                    
                 if (error) throw error;
                 
                 allJobs = data || [];
@@ -1181,11 +1344,11 @@
 
             if (tbody) {
                 if (sortedClients.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">No jobs in selected period.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-[#8e8e93]">No jobs in selected period.</td></tr>`;
                 } else {
                     tbody.innerHTML = sortedClients.map(([name, count]) => `
-                        <tr class="hover:bg-slate-800/40">
-                            <td class="px-6 py-4 text-slate-200 text-sm font-sans font-medium">${name}</td>
+                        <tr class="hover:bg-white/5 border-b border-white/5">
+                            <td class="px-6 py-4 text-white text-sm font-sans font-medium">${name}</td>
                             <td class="px-6 py-4 text-right text-sm text-emerald-400 font-bold">${count}</td>
                         </tr>
                     `).join('');
@@ -1230,14 +1393,14 @@
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const weekCounts = [0,0,0,0,0,0,0];
             jobs.forEach(j => {
-                const d = new Date(j.date);
+                const d = new Date(j.date + 'T00:00:00');
                 if(!isNaN(d)) weekCounts[d.getDay()]++;
             });
 
             // Monthly Distribution (1-10, 11-20, 21-31)
             let m1=0, m2=0, m3=0;
             jobs.forEach(j => {
-                const d = new Date(j.date);
+                const d = new Date(j.date + 'T00:00:00');
                 if(!isNaN(d)) {
                     const day = d.getDate();
                     if(day <= 10) m1++;
@@ -1259,7 +1422,7 @@
             if(wCtx) {
                 weeklyChartInstance = new Chart(wCtx, {
                     type: 'bar',
-                    data: { labels: days, datasets: [{ label: 'Jobs Completed', data: weekCounts, backgroundColor: '#0a84ff', borderRadius: 6 }] },
+                    data: { labels: days, datasets: [{ label: 'Jobs Completed', data: weekCounts, backgroundColor: '#0a84ff', borderRadius: 8 }] },
                     options: commonOptions
                 });
             }
@@ -1293,11 +1456,11 @@
             if (!container) return;
             const holidays = getHolidays();
             if (holidays.length === 0) {
-                container.innerHTML = '<span class="text-xs text-slate-500 italic">No marked holidays</span>';
+                container.innerHTML = '<span class="text-xs text-[#8e8e93] italic">No marked holidays</span>';
                 return;
             }
             container.innerHTML = holidays.map(h => `
-                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-lg text-xs font-mono">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-full text-xs font-mono">
                     <span>${h}</span>
                     <button type="button" onclick="removeHoliday('${h}')" class="text-rose-400 hover:text-rose-200 transition-colors p-0.5" title="Remove Holiday">
                         <i data-lucide="x" class="w-3 h-3"></i>
@@ -1373,55 +1536,58 @@
             document.getElementById('sal_net').textContent = `Rs. ${formatCurrency(netSalary)}`;
         }
 
-        // --- JOB SHEET & REPORTS HTML GENERATOR ---
+        // JOB SHEET & REPORTS HTML GENERATOR
         function getJobRowHTML(job, isReport = false, seqNo = 1, bonus = 0) {
-            const dateFormatted = new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const dateFormatted = new Date(job.date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
             const finalTotal = Number(job.total) + bonus;
             
             if (isReport) {
                 return `
-                    <tr class="hover:bg-white/5">
-                        <td class="px-3 py-2 border-b border-white/5 text-[#8e8e93]">${seqNo}</td>
-                        <td class="px-3 py-2 border-b border-white/5">${dateFormatted}</td>
-                        <td class="px-3 py-2 border-b border-white/5 font-sans font-semibold text-white">${job.client_name}</td>
-                        <td class="px-3 py-2 border-b border-white/5 font-sans">${job.address_title}</td>
-                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.area_sqft}</td>
-                        <td class="px-3 py-2 border-b border-white/5 font-mono text-white">${job.region}</td>
-                        <td class="px-3 py-2 border-b border-white/5">${job.is_color ? 'Yes' : 'No'}</td>
-                        <td class="px-3 py-2 border-b border-white/5">${job.mistake_type === 'None' ? '' : job.mistake_type}</td>
-                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.price}</td>
-                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.no_mistake_amount}</td>
-                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.ddt_amount}</td>
-                        <td class="px-3 py-2 border-b border-white/5 text-right font-bold text-white">${finalTotal}</td>
+                    <tr class="hover:bg-white/5 transition-colors border-b border-white/5">
+                        <td class="px-4 py-2.5 text-[#8e8e93] font-mono text-xs">${seqNo}</td>
+                        <td class="px-4 py-2.5 text-[#8e8e93] text-xs font-mono">${dateFormatted}</td>
+                        <td class="px-4 py-2.5 font-sans font-semibold text-white text-xs">${job.client_name}</td>
+                        <td class="px-4 py-2.5 font-sans text-white text-xs">${job.address_title}</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-xs text-white">${Number(job.area_sqft).toLocaleString()}</td>
+                        <td class="px-4 py-2.5 font-mono text-[#8e8e93] text-xs text-center">${job.region}</td>
+                        <td class="px-4 py-2.5 text-center text-xs text-[#8e8e93]">${job.is_color ? 'Yes' : 'No'}</td>
+                        <td class="px-4 py-2.5 text-center text-xs text-[#8e8e93]">${job.mistake_type === 'None' ? '' : job.mistake_type}</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-xs text-[#8e8e93]">${formatCurrency(job.price)}</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-xs text-[#30d158]">${formatCurrency(job.no_mistake_amount)}</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-xs text-[#ff9f0a]">${job.ddt_amount > 0 ? '-'+formatCurrency(job.ddt_amount) : '0.00'}</td>
+                        <td class="px-4 py-2.5 text-right font-mono text-xs font-bold text-white">${formatCurrency(finalTotal)}</td>
                     </tr>
                 `;
             }
 
             return `
                 <tr class="hover:bg-white/5 transition-colors border-b border-white/5">
-                    <td class="px-4 py-3 text-center text-[#8e8e93]">${seqNo}</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-[#8e8e93] text-sm">${dateFormatted}</td>
-                    <td class="px-4 py-3 font-sans text-xs text-[#8e8e93]">${job.client_name}</td>
-                    <td class="px-4 py-3 font-sans text-base font-medium text-white truncate max-w-[180px]" title="${job.address_title}">${job.address_title}</td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3.5 text-center text-[#8e8e93] font-mono text-xs">${seqNo}</td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-[#8e8e93] text-xs font-mono">${dateFormatted}</td>
+                    <td class="px-4 py-3.5 font-sans text-xs text-[#8e8e93]">${job.client_name}</td>
+                    <td class="px-4 py-3.5 font-sans text-base font-medium text-white truncate max-w-[220px]" title="${job.address_title}">${job.address_title}</td>
+                    <td class="px-4 py-3.5 text-right">
                         <div class="font-mono text-white text-lg font-bold">${Number(job.area_sqft).toLocaleString()}</div>
-                        <div class="w-full bg-[#2c2c2e] h-[2px] mt-1.5 rounded-full overflow-hidden">
+                        <div class="w-full bg-[#2c2c2e] h-1 mt-1.5 rounded-full overflow-hidden">
                             <div class="bg-[#0a84ff] h-full rounded-full" style="width: ${Math.min((job.area_sqft / 5000) * 100, 100)}%"></div>
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-center text-sm font-sans text-[#8e8e93]">${job.region}</td>
-                    <td class="px-4 py-3 text-center">${job.is_color ? '<span class="w-2 h-2 rounded-full bg-[#bf5af2] inline-block"></span>' : '-'}</td>
-                    <td class="px-4 py-3 font-sans text-xs text-center">${job.mistake_type === 'None' ? '-' : `<span class="w-2 h-2 rounded-full bg-[#ff9f0a] inline-block" title="${job.mistake_type}"></span>`}</td>
-                    <td class="px-4 py-3 text-right font-mono text-[#8e8e93]">${formatCurrency(job.price)}</td>
-                    <td class="px-4 py-3 text-right font-mono text-[#30d158]">${formatCurrency(job.no_mistake_amount)}</td>
-                    <td class="px-4 py-3 text-right font-mono text-[#ff9f0a]">${job.ddt_amount > 0 ? '-'+formatCurrency(job.ddt_amount) : '0.00'}</td>
-                    <td class="px-4 py-3 text-right font-mono font-bold text-white bg-transparent">${formatCurrency(finalTotal)}</td>
-                    <td class="px-4 py-3 text-center">
-                        <div class="flex items-center justify-center gap-2">
+                    <td class="px-4 py-3.5 text-center text-xs font-sans text-[#8e8e93]">${job.region}</td>
+                    <td class="px-4 py-3.5 text-center">${job.is_color ? '<span class="w-2 h-2 rounded-full bg-[#bf5af2] inline-block"></span>' : '<span class="text-[#8e8e93]">-</span>'}</td>
+                    <td class="px-4 py-3.5 font-sans text-xs text-center">${job.mistake_type === 'None' ? '<span class="text-[#8e8e93]">-</span>' : `<span class="w-2 h-2 rounded-full bg-[#ff9f0a] inline-block" title="${job.mistake_type}"></span>`}</td>
+                    <td class="px-4 py-3.5 text-right font-mono text-xs text-[#8e8e93]">${formatCurrency(job.price)}</td>
+                    <td class="px-4 py-3.5 text-right font-mono text-xs text-[#30d158]">${formatCurrency(job.no_mistake_amount)}</td>
+                    <td class="px-4 py-3.5 text-right font-mono text-xs text-[#ff9f0a]">${job.ddt_amount > 0 ? '-'+formatCurrency(job.ddt_amount) : '0.00'}</td>
+                    <td class="px-4 py-3.5 text-right font-mono text-sm font-bold text-white bg-transparent">${formatCurrency(finalTotal)}</td>
+                    <td class="px-4 py-3.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openViewModal(${job.id})" class="text-[#8e8e93] hover:text-[#0a84ff] p-1 transition-colors" title="View All Info">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </button>
                             <button onclick="openEditModal(${job.id})" class="text-[#8e8e93] hover:text-[#0a84ff] p-1 transition-colors" title="Edit Job">
                                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                             </button>
-                            <button onclick="deleteJob(${job.id})" class="text-[#8e8e93] hover:text-[#ff9f0a] p-1 transition-colors" title="Delete Job">
+                            <button onclick="deleteJob(${job.id})" class="text-rose-500 hover:text-rose-400 p-1 transition-colors" title="Delete Job">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -1435,12 +1601,24 @@
             const monthCounts = getMonthJobCounts();
             const tbody = document.getElementById('management_table_body');
             
-            if (filteredJobs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" class="px-4 py-12 text-center text-slate-500">No jobs found for selected filter period.</td></tr>`;
+            if (!tbody) return;
+
+            const searchVal = (document.getElementById('jobsheet_search')?.value || '').trim();
+
+            let displayJobs = filteredJobs;
+            if (searchVal) {
+                displayJobs = filteredJobs.filter(job => {
+                    const combinedTarget = `${job.address_title || ''} ${job.client_name || ''} ${job.region || ''} ${job.mistake_type || ''} ${job.date || ''} ${job.area_sqft || ''}`;
+                    return fuzzyMatch(searchVal, combinedTarget);
+                });
+            }
+
+            if (displayJobs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="px-4 py-12 text-center text-[#8e8e93]">No jobs found matching search criteria.</td></tr>`;
                 return;
             }
             
-            tbody.innerHTML = filteredJobs.map((job, idx) => {
+            tbody.innerHTML = displayJobs.map((job, idx) => {
                 const ym = job.date ? job.date.substring(0, 7) : '';
                 const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
                 return getJobRowHTML(job, false, idx + 1, bonus);
@@ -1449,17 +1627,25 @@
             lucide.createIcons();
         }
 
+        // REPORTS EXPORT GROUPING
         function renderReportsTable() {
             const filteredJobs = getFilteredJobs();
             const monthCounts = getMonthJobCounts();
             const tbody = document.getElementById('reports_table_body');
             
+            if (!tbody) return;
+
             if (filteredJobs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" class="px-4 py-8 text-center text-slate-500">No jobs in selected period.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="px-4 py-8 text-center text-[#8e8e93]">No jobs in selected period.</td></tr>`;
                 return;
             }
             
-            const sortedByDate = [...filteredJobs].sort((a,b) => new Date(a.date) - new Date(b.date));
+            // Sort by date ascending, then job_time ascending
+            const sortedByDate = [...filteredJobs].sort((a,b) => {
+                const dateDiff = new Date(a.date + 'T00:00:00') - new Date(b.date + 'T00:00:00');
+                if (dateDiff !== 0) return dateDiff;
+                return (a.job_time || '').localeCompare(b.job_time || '');
+            });
 
             const grouped = {};
             sortedByDate.forEach(job => {
@@ -1475,10 +1661,10 @@
             Object.keys(grouped).forEach(dateStr => {
                 const dayGroup = grouped[dateStr].day;
                 const nightGroup = grouped[dateStr].night;
-                const dateDisplay = new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                const dateDisplay = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 if (dayGroup.length > 0) {
-                    finalHTML += `<tr class="bg-[#2c2c2e]"><td colspan="12" class="font-bold text-white py-2 px-4 uppercase text-xs">${dateDisplay} - Day Jobs</td></tr>`;
+                    finalHTML += `<tr class="bg-[#2c2c2e] border-b border-white/5"><td colspan="12" class="font-bold text-white py-2.5 px-4 uppercase text-xs tracking-wider">${dateDisplay} - Day Jobs</td></tr>`;
                     dayGroup.forEach(job => {
                         const ym = job.date ? job.date.substring(0, 7) : '';
                         const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
@@ -1487,7 +1673,7 @@
                 }
                 
                 if (nightGroup.length > 0) {
-                    finalHTML += `<tr class="bg-[#2c2c2e]"><td colspan="12" class="font-bold text-white py-2 px-4 uppercase text-xs">${dateDisplay} - Night & Weekend Jobs</td></tr>`;
+                    finalHTML += `<tr class="bg-[#2c2c2e] border-b border-white/5"><td colspan="12" class="font-bold text-white py-2.5 px-4 uppercase text-xs tracking-wider">${dateDisplay} - Night & Weekend Jobs</td></tr>`;
                     nightGroup.forEach(job => {
                         const ym = job.date ? job.date.substring(0, 7) : '';
                         const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
@@ -1647,8 +1833,8 @@
                 document.getElementById('addJobForm').reset();
                 document.getElementById('client_name').value = '';
                 document.querySelectorAll('.client-btn').forEach(btn => {
-                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-500');
-                    btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                    btn.classList.remove('bg-[#0a84ff]', 'text-white');
+                    btn.classList.add('bg-[#2c2c2e]', 'text-[#8e8e93]');
                 });
                 
                 const now2 = new Date();
