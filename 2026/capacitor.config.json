@@ -1,9 +1,0 @@
-{
-  "appId": "com.oasis.chat",
-  "appName": "Oasis",
-  "webDir": "www",
-  "server": {
-    "url": "https://thivanka-com.vercel.app",
-    "cleartext": true
-  }
-}
