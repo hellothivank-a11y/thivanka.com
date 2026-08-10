@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lavientra - Job Sheet Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-4 text-gray-800">Job Sheet Tracker</h1>
+    
+    <!-- Job Entry Form -->
+    <form id="jobForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded border">
+      <div>
+        <label class="block text-sm font-semibold mb-1">Date</label>
+        <input type="date" id="jobDate" class="w-full p-2 border rounded" required />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Client Name</label>
+        <input type="text" id="clientName" placeholder="Client Name" class="w-full p-2 border rounded" required />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Address / Plan Title</label>
+        <input type="text" id="addressTitle" placeholder="Address / Title" class="w-full p-2 border rounded" required />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Area (Sq.ft)</label>
+        <input type="number" id="areaSqft" placeholder="e.g. 1200" class="w-full p-2 border rounded" required />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Region</label>
+        <select id="region" class="w-full p-2 border rounded">
+          <option value="Standard">Standard</option>
+          <option value="UK">UK</option>
+          <option value="AUS">AUS</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1">Mistake Type (Optional)</label>
+        <select id="mistakeType" class="w-full p-2 border rounded">
+          <option value="">None</option>
+          <option value="Address">Address (Rs. 300)</option>
+          <option value="North Point">North Point (Rs. 300)</option>
+          <option value="Floor Label">Floor Label (Rs. 300)</option>
+          <option value="Label">Label (Rs. 100)</option>
+        </select>
+      </div>
+      <div class="flex items-center mt-6">
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="isColor" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          <span class="ml-3 text-sm font-semibold">Color Plan</span>
+        </label>
+      </div>
+      <div class="flex items-end">
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">Save Job</button>
+      </div>
+    </form>
+
+    <!-- Export Button -->
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">Saved Jobs</h2>
+      <button onclick="copyToExcel()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+        📋 Copy Table for Excel
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table id="jobsTable" class="w-full text-left border-collapse border border-gray-200 text-sm">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="p-2 border">Date</th>
+            <th class="p-2 border">Client</th>
+            <th class="p-2 border">Address / Title</th>
+            <th class="p-2 border">Area</th>
+            <th class="p-2 border">Region</th>
+            <th class="p-2 border">Color</th>
+            <th class="p-2 border">Mistake</th>
+            <th class="p-2 border">Price</th>
+            <th class="p-2 border">Allowance</th>
+            <th class="p-2 border">Deduction</th>
+            <th class="p-2 border">Total</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Supabase Credentials
+    const SUPABASE_URL = "https://jaxzghosalfjmconowgm.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_eQQaWNyP0wswrsy98OD_uw_2nlFz4-e";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Rate Calculator Logic
+    function calculatePrices(area, region, isColor, mistake) {
+      let price = 0;
+      let allowance = 25;
+      let ddt = 0;
+
+      // Base Rates
+      if (region === 'UK' || region === 'AUS') {
+        if (area <= 1000) price = 300;
+        else if (area <= 2000) price = 350;
+        else if (area <= 3000) price = 400;
+        else price = 450;
+      } else {
+        if (area <= 1000) price = 200;
+        else if (area <= 2000) price = 250;
+        else if (area <= 3000) price = 300;
+        else price = 350;
+      }
+
+      if (isColor) price += 25;
+
+      // Deductions for Mistakes
+      if (mistake === 'Address' || mistake === 'North Point' || mistake === 'Floor Label') {
+        ddt = 300;
+        allowance = 0;
+      } else if (mistake === 'Label') {
+        ddt = 100;
+        allowance = 0;
+      }
+
+      const total = price + allowance - ddt;
+      return { price, allowance, ddt, total };
+    }
+
+    // Load Data
+    async function fetchJobs() {
+      const { data, error } = await _supabase.from('jobs').select('*').order('id', { ascending: false });
+      if (error) console.error(error);
+      else renderTable(data);
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      data.forEach(job => {
+        tbody.innerHTML += `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-2 border">${job.date || ''}</td>
+            <td class="p-2 border">${job.client_name || ''}</td>
+            <td class="p-2 border">${job.address_title || ''}</td>
+            <td class="p-2 border">${job.area_sqft || 0}</td>
+            <td class="p-2 border">${job.region || ''}</td>
+            <td class="p-2 border">${job.is_color ? 'Color' : ''}</td>
+            <td class="p-2 border">${job.mistake_type || ''}</td>
+            <td class="p-2 border">${job.price || 0}</td>
+            <td class="p-2 border">${job.no_mistake_amount || 0}</td>
+            <td class="p-2 border">${job.ddt_amount || 0}</td>
+            <td class="p-2 border font-bold">${job.total || 0}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // Save Data
+    document.getElementById('jobForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const date = document.getElementById('jobDate').value;
+      const client_name = document.getElementById('clientName').value;
+      const address_title = document.getElementById('addressTitle').value;
+      const area_sqft = parseFloat(document.getElementById('areaSqft').value);
+      const region = document.getElementById('region').value;
+      const mistake_type = document.getElementById('mistakeType').value;
+      const is_color = document.getElementById('isColor').checked;
+
+      const calc = calculatePrices(area_sqft, region, is_color, mistake_type);
+
+      const { error } = await _supabase.from('jobs').insert([{
+        date, client_name, address_title, area_sqft, region, is_color,
+        mistake_type, price: calc.price, no_mistake_amount: calc.allowance,
+        ddt_amount: calc.ddt, total: calc.total
+      }]);
+
+      if (error) alert("Error saving job!");
+      else {
+        document.getElementById('jobForm').reset();
+        fetchJobs();
+      }
+    });
+
+    // Copy Table to Clipboard for Excel Paste
+    function copyToExcel() {
+      const el = document.getElementById('jobsTable');
+      let body = document.body, range, sel;
+      if (document.createRange && window.getSelection) {
+        range = document.createRange();
+        sel = window.getSelection();
+        sel.removeAllRanges();
+        try {
+          range.selectNodeContents(el);
+          sel.addRange(range);
+        } catch (e) {
+          range.selectNode(el);
+          sel.addRange(range);
+        }
+        document.execCommand('copy');
+        sel.removeAllRanges();
+        alert("Table copied! Now paste (Ctrl+V) directly into Excel.");
+      }
+    }
+
+    fetchJobs();
+  </script>
+</body>
+</html>
