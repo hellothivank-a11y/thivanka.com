@@ -51,15 +51,15 @@
 
     <style>
         body {
-            background-color: #090d16;
-            color: #f8fafc;
-            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-track { background: #000000; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
@@ -76,29 +76,31 @@
 
         /* Custom Input styling for Shadcn look */
         .shadcn-input {
-            background-color: rgba(15, 23, 42, 0.8);
-            border: 1px solid #1e293b;
-            color: #f8fafc;
+            background-color: #2c2c2e;
+            border: 1px solid transparent;
+            color: #ffffff;
             transition: all 0.15s ease-in-out;
+            border-radius: 1rem;
         }
         .shadcn-input:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 1px #3b82f6;
+            border-color: #0a84ff;
+            box-shadow: 0 0 0 2px #0a84ff;
         }
         
         .tab-btn.active {
-            background-color: #1e293b;
+            background-color: #48484a;
             color: #ffffff;
-            border-color: #334155;
+            border-color: transparent;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border-radius: 0.5rem;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-slate-200">
+<body class="min-h-screen flex flex-col text-white bg-black">
 
     <!-- HEADER / TOP NAV -->
-    <header class="border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-md sticky top-0 z-40">
+    <header class="border-b border-white/5 bg-black/90 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-6">
             
             <!-- Brand & Live Clock -->
@@ -116,7 +118,7 @@
                 </div>
 
                 <!-- Live Sri Lanka Clock Badge -->
-                <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-md text-xs font-mono text-slate-300">
+                <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-[#2c2c2e] border border-transparent rounded-md text-xs font-mono text-[#8e8e93]">
                     <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-400"></i>
                     <span id="header_live_clock">--:--:--</span>
                     <span class="text-xs text-slate-500 uppercase">SLST</span>
@@ -124,24 +126,24 @@
             </div>
 
             <!-- SPA Tab Controls -->
-            <nav class="flex items-center p-1 bg-slate-900/90 border border-slate-800/80 rounded-2xl gap-1 overflow-x-auto max-w-full">
-                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+            <nav class="flex items-center p-1 bg-[#2c2c2e] rounded-full gap-1 overflow-x-auto max-w-full">
+                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                     Home & Entry
                 </button>
-                <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
                     Analytics
                 </button>
-                <button onclick="switchTab('tab-jobsheet')" id="btn-tab-jobsheet" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-jobsheet')" id="btn-tab-jobsheet" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="table" class="w-3.5 h-3.5"></i>
                     Job Sheet
                 </button>
-                <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
                     Reports & Export
                 </button>
-                <button onclick="switchTab('tab-salary')" id="btn-tab-salary" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <button onclick="switchTab('tab-salary')" id="btn-tab-salary" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
                     Salary
                     <i data-lucide="lock" id="salary_lock_icon" class="w-3 h-3 text-amber-400 ml-0.5"></i>
@@ -182,9 +184,9 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 <!-- Quick Add Form Card (7 Cols) -->
-                <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                <div class="lg:col-span-7 bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
                     <div>
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="file-plus-2" class="w-4 h-4 text-blue-400"></i>
                                 <h2 class="text-sm font-semibold text-white">Job Entry Form</h2>
@@ -214,7 +216,7 @@
                                 </div>
                                 <input type="hidden" id="client_name">
                                 
-                                <div id="custom_client_form" class="hidden mb-3 p-3 bg-slate-900 border border-slate-700 rounded-xl flex flex-col sm:flex-row gap-3 items-end">
+                                <div id="custom_client_form" class="hidden mb-3 p-3 bg-[#2c2c2e] border border-transparent rounded-xl flex flex-col sm:flex-row gap-3 items-end">
                                     <div class="flex-1 w-full">
                                         <label class="block text-xs font-medium text-slate-400 mb-1">Custom Client Name</label>
                                         <input type="text" id="custom_client_input" class="shadcn-input w-full px-3 py-2 rounded-lg text-sm" placeholder="e.g. Acme Corp">
@@ -240,7 +242,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                                 <div class="sm:col-span-2">
                                     <label class="block text-sm font-medium text-slate-400 mb-2" for="address_title">Address / Title</label>
-                                    <input type="text" id="address_title" required placeholder="e.g. Flat 12, 45 Oakfield Road, London" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                                    <input type="text" id="address_title" required placeholder="e.g. Flat 12, 45 Oakfield Road, London" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onblur="autoFormatAddressInput(this)">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-slate-400 mb-2" for="area_sqft">Area (Sq.ft)</label>
@@ -278,18 +280,18 @@
                             </div>
 
                             <!-- Options Checkboxes -->
-                            <div class="flex items-center gap-6 pt-1">
+                            <div class="bg-[#2c2c2e]/50 p-4 mb-4 mt-2 rounded-2xl flex flex-wrap items-center gap-6">
                                 <label for="is_color" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300 hover:text-white">
-                                    <input id="is_color" type="checkbox" class="w-4 h-4 text-blue-600 bg-slate-950 border-slate-700 rounded focus:ring-blue-500 focus:ring-offset-slate-900 cursor-pointer">
+                                    <input id="is_color" type="checkbox" class="w-4 h-4 text-[#0a84ff] bg-[#1c1c1e] border-white/10 rounded focus:ring-[#0a84ff] focus:ring-offset-black cursor-pointer">
                                     <span>Color Plan (Tiered Fee)</span>
                                 </label>
                                 <label for="is_night_or_weekend" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-amber-400 hover:text-amber-300">
-                                    <input id="is_night_or_weekend" type="checkbox" onchange="isUserNightWeekendOverridden = true" class="w-4 h-4 text-amber-500 bg-slate-950 border-slate-700 rounded focus:ring-amber-500 focus:ring-offset-slate-900 cursor-pointer">
+                                    <input id="is_night_or_weekend" type="checkbox" onchange="isUserNightWeekendOverridden = true" class="w-4 h-4 text-amber-500 bg-[#1c1c1e] border-white/10 rounded focus:ring-amber-500 focus:ring-offset-black cursor-pointer">
                                     <span>Night / Weekend Job</span>
                                 </label>
                             </div>
 
-                            <button type="submit" id="submitBtn" class="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-6 rounded-xl text-base font-semibold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+                            <button type="submit" id="submitBtn" class="w-full mt-2 bg-[#0a84ff] hover:bg-blue-500 text-white font-medium py-4 px-6 rounded-full text-base font-semibold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
                                 <i data-lucide="check" class="w-4 h-4"></i>
                                 <span>Save Job Record</span>
                             </button>
@@ -301,8 +303,8 @@
                 <div class="lg:col-span-5 flex flex-col gap-6">
                     
                     <!-- Tool 1: Exact Area Converter -->
-                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+                    <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="calculator" class="w-4 h-4 text-emerald-400"></i>
                                 <h3 class="text-xs font-semibold text-white">Exact Windows Area Converter</h3>
@@ -328,8 +330,8 @@
                     </div>
 
                     <!-- Tool 2: UK Smart Address Formatter -->
-                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+                    <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="wand-2" class="w-4 h-4 text-purple-400"></i>
                                 <h3 class="text-xs font-semibold text-white">UK Smart Address Reformatter</h3>
@@ -357,8 +359,8 @@
                     </div>
                     
                     <!-- HOLIDAY MARKING SYSTEM -->
-                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+                    <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
                             <div class="flex items-center gap-2">
                                 <i data-lucide="calendar-heart" class="w-4 h-4 text-rose-400"></i>
                                 <h3 class="text-xs font-semibold text-white">Holiday Marking System</h3>
@@ -385,40 +387,40 @@
             
             <!-- 8 Stat Cards Grid -->
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
                     <p class="text-sm font-medium text-slate-400 mb-1">Total Jobs</p>
                     <h3 class="text-xl font-bold text-white font-mono" id="stat_total_jobs">-</h3>
                 </div>
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
                     <p class="text-sm font-medium text-slate-400 mb-1">Total Earnings</p>
                     <h3 class="text-xl font-bold text-emerald-400 font-mono" id="stat_total_earnings">-</h3>
                 </div>
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
                     <p class="text-sm font-medium text-slate-400 mb-1">Total Mistakes</p>
                     <h3 class="text-xl font-bold text-rose-400 font-mono" id="stat_total_mistakes">-</h3>
                 </div>
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
                     <p class="text-sm font-medium text-slate-400 mb-1">Total Penalties</p>
                     <h3 class="text-xl font-bold text-rose-400 font-mono" id="stat_total_deductions">-</h3>
                 </div>
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
                     <p class="text-sm font-medium text-slate-400 mb-1">Top Client</p>
                     <h3 class="text-lg font-bold text-indigo-400 truncate" id="stat_top_client">-</h3>
                 </div>
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
                     <p class="text-sm font-medium text-slate-400 mb-1">Accuracy / Error</p>
                     <div>
                         <h3 class="text-lg font-bold text-emerald-400 font-mono" id="stat_accuracy">0%</h3>
                         <p class="text-[10px] text-rose-400 truncate mt-0.5" id="stat_freq_mistake">No Data</p>
                     </div>
                 </div>
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm">
                     <p class="text-sm font-medium text-slate-400 mb-1">Night / Weekend</p>
                     <h3 class="text-xl font-bold text-amber-400 font-mono" id="stat_night_jobs">-</h3>
                 </div>
                 
                 <!-- Monthly Target Progress Card -->
-                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between relative overflow-hidden">
+                <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between relative overflow-hidden">
                     <div>
                         <p class="text-sm font-medium text-slate-400 mb-1">Monthly Target</p>
                         <h3 class="text-lg font-bold text-emerald-400 font-mono" id="stat_target_progress">0 / 170</h3>
@@ -434,7 +436,7 @@
                 
                 <!-- Charts Section (7 cols) -->
                 <div class="lg:col-span-7 space-y-4">
-                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
+                    <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
                         <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
                             <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
                             Weekly Peak Working Days
@@ -445,7 +447,7 @@
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
+                        <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
                             <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
                                 <i data-lucide="bar-chart" class="w-4 h-4 text-indigo-400"></i>
                                 Monthly Timeline (Days 1-10, 11-20, 21-31)
@@ -455,7 +457,7 @@
                             </div>
                         </div>
 
-                        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
+                        <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-lg backdrop-blur-sm">
                             <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
                                 <i data-lucide="sun-moon" class="w-4 h-4 text-amber-400"></i>
                                 Day vs Night/Weekend Ratio
@@ -469,8 +471,8 @@
 
                 <!-- Client Summary Table (5 cols) -->
                 <div class="lg:col-span-5 flex flex-col">
-                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-lg backdrop-blur-sm flex-1 flex flex-col overflow-hidden max-h-[570px]">
-                        <div class="p-6 border-b border-slate-800/80 flex items-center justify-between">
+                    <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-lg backdrop-blur-sm flex-1 flex flex-col overflow-hidden max-h-[570px]">
+                        <div class="p-6 border-b border-white/5 flex items-center justify-between">
                             <h3 class="text-xs font-semibold text-white flex items-center gap-1.5">
                                 <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
                                 Client Performance Breakdown
@@ -479,7 +481,7 @@
                         </div>
                         <div class="overflow-y-auto flex-1">
                             <table class="w-full text-left text-xs border-collapse">
-                                <thead class="sticky top-0 bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-xs tracking-wider font-semibold">
+                                <thead class="sticky top-0 bg-[#1c1c1e] text-[#8e8e93] border-b border-white/5 uppercase text-xs tracking-wider font-semibold">
                                     <tr>
                                         <th class="px-6 py-4">Client Name</th>
                                         <th class="px-6 py-4 text-right">Total Jobs</th>
@@ -500,9 +502,9 @@
         <!-- TAB 3: JOB SHEET MANAGEMENT                    -->
         <!-- ============================================== -->
         <section id="tab-jobsheet" class="hidden space-y-3">
-            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-lg backdrop-blur-sm overflow-hidden flex flex-col">
+            <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-lg backdrop-blur-sm overflow-hidden flex flex-col">
                 
-                <div class="p-6 border-b border-slate-800/80 flex flex-wrap justify-between items-center gap-6 bg-slate-900/50">
+                <div class="p-6 border-b border-white/5 flex flex-wrap justify-between items-center gap-6 bg-[#1c1c1e]">
                     <div>
                         <h2 class="text-sm font-semibold text-white flex items-center gap-2">
                             <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
@@ -522,7 +524,7 @@
 
                 <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
                     <table class="w-full text-left text-xs border-collapse min-w-[1100px]">
-                        <thead class="sticky top-0 bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-xs tracking-wider font-semibold z-10">
+                        <thead class="sticky top-0 bg-[#1c1c1e] text-[#8e8e93] border-b border-white/5 uppercase text-xs tracking-wider font-semibold z-10">
                             <tr>
                                 <th class="px-4 py-3 w-12 text-center">#</th>
                                 <th class="px-4 py-3">Date</th>
@@ -553,7 +555,7 @@
         <!-- ============================================== -->
         <section id="tab-reports" class="hidden space-y-3">
             
-            <div class="flex flex-wrap justify-between items-center gap-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+            <div class="flex flex-wrap justify-between items-center gap-6 bg-[#1c1c1e] border border-white/5 rounded-3xl p-6 shadow-xl">
                 <div>
                     <h2 class="text-sm font-semibold text-white flex items-center gap-2">
                         <i data-lucide="file-spreadsheets" class="w-4 h-4 text-emerald-400"></i>
@@ -567,10 +569,10 @@
                 </button>
             </div>
 
-            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-lg overflow-hidden">
                 <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
                     <table id="reports_table" class="w-full text-left text-xs border-collapse min-w-[1000px]">
-                        <thead class="sticky top-0 bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-xs tracking-wider font-semibold">
+                        <thead class="sticky top-0 bg-[#1c1c1e] text-[#8e8e93] border-b border-white/5 uppercase text-xs tracking-wider font-semibold">
                             <tr>
                                 <th class="px-4 py-3">No</th>
                                 <th class="px-4 py-3">Date</th>
@@ -600,9 +602,9 @@
         <!-- ============================================== -->
         <section id="tab-salary" class="hidden max-w-2xl mx-auto space-y-4">
             
-            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+            <div class="bg-[#1c1c1e] border border-white/5 rounded-3xl shadow-xl overflow-hidden backdrop-blur-sm">
                 
-                <div class="p-4 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between">
+                <div class="p-4 border-b border-white/5 bg-[#1c1c1e] flex items-center justify-between">
                     <div>
                         <h2 class="text-sm font-semibold text-white flex items-center gap-2">
                             <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-400"></i>
@@ -614,32 +616,32 @@
 
                 <div class="p-6 space-y-3 font-mono text-xs">
                     
-                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                    <div class="flex justify-between py-1.5 border-b border-white/5">
                         <span class="text-slate-400 font-sans">Basic Salary (Fixed)</span>
                         <span class="font-semibold text-white">Rs. 35,453.00</span>
                     </div>
                     
-                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                    <div class="flex justify-between py-1.5 border-b border-white/5">
                         <span class="text-slate-400 font-sans">ETF Statutory Deduction (8% of Basic)</span>
                         <span class="font-semibold text-rose-400">- Rs. 2,836.24</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                    <div class="flex justify-between py-1.5 border-b border-white/5">
                         <span class="text-slate-400 font-sans">Special Allowance (Earnings above Basic)</span>
                         <span class="font-semibold text-emerald-400" id="sal_special">Rs. 0.00</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                    <div class="flex justify-between py-1.5 border-b border-white/5">
                         <span class="text-slate-400 font-sans">Monthly Target Bonus (170+ Jobs @ Rs. 50/job)</span>
                         <span class="font-semibold text-emerald-400" id="sal_target_bonus">Rs. 0.00</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                    <div class="flex justify-between py-1.5 border-b border-white/5">
                         <span class="text-slate-400 font-sans">Holiday Allowance (Days × Rs. 1,772.65)</span>
                         <span class="font-semibold text-emerald-400" id="sal_holiday">Rs. 0.00</span>
                     </div>
 
-                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                    <div class="flex justify-between py-1.5 border-b border-white/5">
                         <span class="text-slate-400 font-sans">Total Deductions & Penalties</span>
                         <span class="font-semibold text-rose-400" id="sal_penalties">- Rs. 0.00</span>
                     </div>
@@ -659,7 +661,7 @@
 
     <!-- PIN SECURITY MODAL FOR SALARY TAB -->
     <div id="pinModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 space-y-4">
+        <div class="bg-[#2c2c2e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-5 space-y-4">
             <div class="text-center space-y-1">
                 <div class="mx-auto w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
                     <i data-lucide="lock" class="w-5 h-5"></i>
@@ -688,7 +690,7 @@
 
     <!-- EDIT JOB MODAL -->
     <div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden p-4 space-y-3">
+        <div class="bg-[#2c2c2e] border border-white/5 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden p-4 space-y-3">
             <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
                 <h3 class="text-xs font-semibold text-white flex items-center gap-1.5">
                     <i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i>
@@ -741,7 +743,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_address_title">Address / Title</label>
-                    <input type="text" id="edit_address_title" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                    <input type="text" id="edit_address_title" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onblur="autoFormatAddressInput(this)">
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
@@ -798,7 +800,7 @@
     </div>
 
     <!-- SHADCN TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md">
+    <div id="toast" class="fixed bottom-5 right-5 bg-[#2c2c2e] border border-white/5 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md">
         <i data-lucide="check-circle-2" id="toast_icon" class="w-4 h-4 text-emerald-400"></i>
         <span id="toast_msg">Action successful</span>
     </div>
@@ -837,8 +839,8 @@
             const allClients = [...predefinedClients, ...custom];
             
             grid.innerHTML = allClients.map(c => 
-                `<button type="button" onclick="selectClient('${c.name}', '${c.region}')" data-client="${c.name}" 
-                   class="client-btn px-2 py-2 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors w-full truncate">
+                `<button type="button" onclick="selectClient('${c.name}', '${c.region}', this)" data-client="${c.name}" 
+                   class="client-btn px-2 py-2 text-xs font-medium rounded-full border border-transparent bg-[#2c2c2e] text-[#8e8e93] hover:bg-[#3a3a3c] transition-colors w-full truncate">
                     ${c.name}
                 </button>`
             ).join('');
@@ -851,11 +853,11 @@
             // Update active state
             document.querySelectorAll('.client-btn').forEach(btn => {
                 if(btn.dataset.client === name) {
-                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-500');
-                    btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                    btn.classList.add('bg-[#0a84ff]', 'text-white');
+                    btn.classList.remove('bg-[#2c2c2e]', 'text-[#8e8e93]');
                 } else {
-                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-500');
-                    btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                    btn.classList.remove('bg-[#0a84ff]', 'text-white');
+                    btn.classList.add('bg-[#2c2c2e]', 'text-[#8e8e93]');
                 }
             });
         }
@@ -895,7 +897,7 @@
                 icon.setAttribute('data-lucide', 'alert-circle');
                 icon.className = 'w-4 h-4 text-rose-400';
             } else {
-                toast.className = "fixed bottom-5 right-5 bg-slate-900/90 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
+                toast.className = "fixed bottom-5 right-5 bg-[#2c2c2e] border border-white/5 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
                 icon.setAttribute('data-lucide', 'check-circle-2');
                 icon.className = 'w-4 h-4 text-emerald-400';
             }
@@ -1251,13 +1253,13 @@
                 else dayCount++;
             });
 
-            const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }, x: { ticks: { color: '#64748b' }, grid: { display: false } } } };
+            const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8e8e93' } } }, scales: { y: { ticks: { color: '#8e8e93' }, grid: { display: false } }, x: { ticks: { color: '#8e8e93' }, grid: { display: false } } } };
 
             const wCtx = document.getElementById('weeklyChart');
             if(wCtx) {
                 weeklyChartInstance = new Chart(wCtx, {
                     type: 'bar',
-                    data: { labels: days, datasets: [{ label: 'Jobs Completed', data: weekCounts, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                    data: { labels: days, datasets: [{ label: 'Jobs Completed', data: weekCounts, backgroundColor: '#0a84ff', borderRadius: 6 }] },
                     options: commonOptions
                 });
             }
@@ -1266,7 +1268,7 @@
             if(mCtx) {
                 monthlyTimelineChartInstance = new Chart(mCtx, {
                     type: 'line',
-                    data: { labels: ['Days 1-10', 'Days 11-20', 'Days 21-31'], datasets: [{ label: 'Job Volume', data: [m1,m2,m3], borderColor: '#8b5cf6', backgroundColor: '#8b5cf633', fill: true, tension: 0.3 }] },
+                    data: { labels: ['Days 1-10', 'Days 11-20', 'Days 21-31'], datasets: [{ label: 'Job Volume', data: [m1,m2,m3], borderColor: '#bf5af2', backgroundColor: '#bf5af233', fill: true, tension: 0.4 }] },
                     options: commonOptions
                 });
             }
@@ -1275,8 +1277,8 @@
             if(dnCtx) {
                 dayNightChartInstance = new Chart(dnCtx, {
                     type: 'doughnut',
-                    data: { labels: ['Day Jobs', 'Night/Weekend'], datasets: [{ data: [dayCount, nightCount], backgroundColor: ['#10b981', '#f59e0b'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }, cutout: '70%' }
+                    data: { labels: ['Day Jobs', 'Night/Weekend'], datasets: [{ data: [dayCount, nightCount], backgroundColor: ['#30d158', '#ff9f0a'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#8e8e93' } } }, cutout: '70%' }
                 });
             }
         }
@@ -1378,43 +1380,48 @@
             
             if (isReport) {
                 return `
-                    <tr class="hover:bg-slate-800/40">
-                        <td class="px-3 py-2 border-b border-slate-800/60">${seqNo}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60">${dateFormatted}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 font-sans font-medium text-white">${job.client_name}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 font-sans">${job.address_title}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.area_sqft}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60">${job.region}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60">${job.is_color ? 'Yes' : 'No'}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60">${job.mistake_type === 'None' ? '' : job.mistake_type}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.price}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.no_mistake_amount}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.ddt_amount}</td>
-                        <td class="px-3 py-2 border-b border-slate-800/60 text-right font-bold text-white">${finalTotal}</td>
+                    <tr class="hover:bg-white/5">
+                        <td class="px-3 py-2 border-b border-white/5 text-[#8e8e93]">${seqNo}</td>
+                        <td class="px-3 py-2 border-b border-white/5">${dateFormatted}</td>
+                        <td class="px-3 py-2 border-b border-white/5 font-sans font-semibold text-white">${job.client_name}</td>
+                        <td class="px-3 py-2 border-b border-white/5 font-sans">${job.address_title}</td>
+                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.area_sqft}</td>
+                        <td class="px-3 py-2 border-b border-white/5 font-mono text-white">${job.region}</td>
+                        <td class="px-3 py-2 border-b border-white/5">${job.is_color ? 'Yes' : 'No'}</td>
+                        <td class="px-3 py-2 border-b border-white/5">${job.mistake_type === 'None' ? '' : job.mistake_type}</td>
+                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.price}</td>
+                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.no_mistake_amount}</td>
+                        <td class="px-3 py-2 border-b border-white/5 text-right">${job.ddt_amount}</td>
+                        <td class="px-3 py-2 border-b border-white/5 text-right font-bold text-white">${finalTotal}</td>
                     </tr>
                 `;
             }
 
             return `
-                <tr class="hover:bg-slate-800/40 transition-colors">
-                    <td class="px-4 py-3 text-center text-slate-500 font-bold">${seqNo}</td>
-                    <td class="px-4 py-3 whitespace-nowrap">${dateFormatted}</td>
-                    <td class="px-4 py-3 font-sans font-medium text-white">${job.client_name}</td>
-                    <td class="px-4 py-3 font-sans truncate max-w-[180px]" title="${job.address_title}">${job.address_title}</td>
-                    <td class="px-4 py-3 text-right font-mono text-slate-200">${Number(job.area_sqft).toLocaleString()}</td>
-                    <td class="px-4 py-3 text-center"><span class="px-1.5 py-0.5 rounded text-xs font-sans font-medium bg-slate-800 text-slate-300 border border-slate-700">${job.region}</span></td>
-                    <td class="px-4 py-3 text-center">${job.is_color ? '<span class="text-xs text-purple-300 bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.5 rounded">Yes</span>' : '-'}</td>
-                    <td class="px-4 py-3 font-sans text-xs">${job.mistake_type === 'None' ? '-' : `<span class="text-rose-400 font-medium">${job.mistake_type}</span>`}</td>
-                    <td class="px-4 py-3 text-right font-mono">${formatCurrency(job.price)}</td>
-                    <td class="px-4 py-3 text-right font-mono text-emerald-400">${formatCurrency(job.no_mistake_amount)}</td>
-                    <td class="px-4 py-3 text-right font-mono text-rose-400">${job.ddt_amount > 0 ? '-'+formatCurrency(job.ddt_amount) : '0.00'}</td>
-                    <td class="px-4 py-3 text-right font-mono font-bold text-white bg-slate-950/40">${formatCurrency(finalTotal)}</td>
+                <tr class="hover:bg-white/5 transition-colors border-b border-white/5">
+                    <td class="px-4 py-3 text-center text-[#8e8e93]">${seqNo}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-[#8e8e93] text-sm">${dateFormatted}</td>
+                    <td class="px-4 py-3 font-sans text-xs text-[#8e8e93]">${job.client_name}</td>
+                    <td class="px-4 py-3 font-sans text-base font-medium text-white truncate max-w-[180px]" title="${job.address_title}">${job.address_title}</td>
+                    <td class="px-4 py-3 text-right">
+                        <div class="font-mono text-white text-lg font-bold">${Number(job.area_sqft).toLocaleString()}</div>
+                        <div class="w-full bg-[#2c2c2e] h-[2px] mt-1.5 rounded-full overflow-hidden">
+                            <div class="bg-[#0a84ff] h-full rounded-full" style="width: ${Math.min((job.area_sqft / 5000) * 100, 100)}%"></div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center text-sm font-sans text-[#8e8e93]">${job.region}</td>
+                    <td class="px-4 py-3 text-center">${job.is_color ? '<span class="w-2 h-2 rounded-full bg-[#bf5af2] inline-block"></span>' : '-'}</td>
+                    <td class="px-4 py-3 font-sans text-xs text-center">${job.mistake_type === 'None' ? '-' : `<span class="w-2 h-2 rounded-full bg-[#ff9f0a] inline-block" title="${job.mistake_type}"></span>`}</td>
+                    <td class="px-4 py-3 text-right font-mono text-[#8e8e93]">${formatCurrency(job.price)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-[#30d158]">${formatCurrency(job.no_mistake_amount)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-[#ff9f0a]">${job.ddt_amount > 0 ? '-'+formatCurrency(job.ddt_amount) : '0.00'}</td>
+                    <td class="px-4 py-3 text-right font-mono font-bold text-white bg-transparent">${formatCurrency(finalTotal)}</td>
                     <td class="px-4 py-3 text-center">
-                        <div class="flex items-center justify-center gap-1.5">
-                            <button onclick="openEditModal(${job.id})" class="text-slate-400 hover:text-blue-400 p-1 transition-colors" title="Edit Job">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openEditModal(${job.id})" class="text-[#8e8e93] hover:text-[#0a84ff] p-1 transition-colors" title="Edit Job">
                                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                             </button>
-                            <button onclick="deleteJob(${job.id})" class="text-slate-400 hover:text-rose-400 p-1 transition-colors" title="Delete Job">
+                            <button onclick="deleteJob(${job.id})" class="text-[#8e8e93] hover:text-[#ff9f0a] p-1 transition-colors" title="Delete Job">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -1452,11 +1459,44 @@
                 return;
             }
             
-            tbody.innerHTML = filteredJobs.map((job, idx) => {
-                const ym = job.date ? job.date.substring(0, 7) : '';
-                const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
-                return getJobRowHTML(job, true, idx + 1, bonus);
-            }).join('');
+            const sortedByDate = [...filteredJobs].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            const grouped = {};
+            sortedByDate.forEach(job => {
+                const dateKey = job.date;
+                if (!grouped[dateKey]) grouped[dateKey] = { day: [], night: [] };
+                if (job.is_night_or_weekend) grouped[dateKey].night.push(job);
+                else grouped[dateKey].day.push(job);
+            });
+
+            let finalHTML = '';
+            let seqNo = 1;
+
+            Object.keys(grouped).forEach(dateStr => {
+                const dayGroup = grouped[dateStr].day;
+                const nightGroup = grouped[dateStr].night;
+                const dateDisplay = new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                if (dayGroup.length > 0) {
+                    finalHTML += `<tr class="bg-[#2c2c2e]"><td colspan="12" class="font-bold text-white py-2 px-4 uppercase text-xs">${dateDisplay} - Day Jobs</td></tr>`;
+                    dayGroup.forEach(job => {
+                        const ym = job.date ? job.date.substring(0, 7) : '';
+                        const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
+                        finalHTML += getJobRowHTML(job, true, seqNo++, bonus);
+                    });
+                }
+                
+                if (nightGroup.length > 0) {
+                    finalHTML += `<tr class="bg-[#2c2c2e]"><td colspan="12" class="font-bold text-white py-2 px-4 uppercase text-xs">${dateDisplay} - Night & Weekend Jobs</td></tr>`;
+                    nightGroup.forEach(job => {
+                        const ym = job.date ? job.date.substring(0, 7) : '';
+                        const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
+                        finalHTML += getJobRowHTML(job, true, seqNo++, bonus);
+                    });
+                }
+            });
+            
+            tbody.innerHTML = finalHTML;
         }
 
         function copyReportsTable() {
@@ -1793,6 +1833,26 @@
             }
         }
 
+        // --- TITLE CASE & UK POSTCODE FORMATTING ---
+        function toTitleCaseWithPostcode(str) {
+            if (!str) return '';
+            let result = str.toLowerCase().replace(/(?:^|\s|[(\/\-])[a-z]/g, match => match.toUpperCase());
+            
+            const fullPostcodeRegex = /\b([a-pr-uwyz][a-hk-y0-9][a-hjkps-uw0-9]?[a-hjkps-uw0-9]?)\s*([0-9][abd-hjlnp-uw-z]{2})\b/ig;
+            result = result.replace(fullPostcodeRegex, (m, p1, p2) => `${p1.toUpperCase()} ${p2.toUpperCase()}`);
+
+            const partialPostcodeRegex = /\b([a-pr-uwyz]{1,2}[0-9][a-hjkps-uw0-9]?)\b/ig;
+            result = result.replace(partialPostcodeRegex, m => m.toUpperCase());
+
+            return result;
+        }
+
+        function autoFormatAddressInput(inputEl) {
+            if (inputEl && inputEl.value) {
+                inputEl.value = toTitleCaseWithPostcode(inputEl.value);
+            }
+        }
+
         function formatAddress() {
             const inputEl = document.getElementById('tool_address');
             let addr = inputEl.value;
@@ -1842,7 +1902,7 @@
             if (flatPrefix) addr = `${flatPrefix}, ${addr}`;
 
             addr = addr.replace(/\s*,+\s*/g, ', ').replace(/^,\s*/, '').replace(/,\s*$/, '').trim();
-            inputEl.value = addr;
+            inputEl.value = toTitleCaseWithPostcode(addr);
         }
 
         function useAddressInForm() {
