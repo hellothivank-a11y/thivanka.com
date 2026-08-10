@@ -1,269 +1,885 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floor Plan Jobs Tracker</title>
+    <title>Floor Plan Jobs Tracker — Shadcn Dark Density</title>
     
-    <!-- Google Fonts: Inter for Apple-like typography -->
+    <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- SheetJS for Excel Import -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        appleBlue: '#0071e3',
-                        appleBlueHover: '#0058b0',
-                        appleBg: '#fbfbfd',
-                        appleCard: '#ffffff',
-                        appleText: '#1d1d1f',
-                        appleTextMuted: '#86868b',
-                        appleBorder: '#d2d2d7',
-                    },
-                    boxShadow: {
-                        'apple': '0 4px 24px rgba(0, 0, 0, 0.04)',
-                        'apple-hover': '0 8px 32px rgba(0, 0, 0, 0.08)',
+                        background: '#090d16',
+                        card: '#0f172a',
+                        cardBorder: '#1e293b',
+                        accentBlue: '#3b82f6',
+                        accentEmerald: '#10b981',
+                        accentRose: '#f43f5e',
+                        accentAmber: '#f59e0b',
+                        mutedText: '#94a3b8',
                     }
                 }
             }
         }
     </script>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
         body {
-            background-color: theme('colors.appleBg');
-            color: theme('colors.appleText');
+            background-color: #090d16;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
         }
-        
-        .apple-input {
-            transition: all 0.2s ease;
-            outline: none;
-            border: 1px solid theme('colors.appleBorder');
-        }
-        
-        .apple-input:focus {
-            border-color: theme('colors.appleBlue');
-            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
-        }
 
-        .apple-button {
-            transition: all 0.2s ease;
-        }
-        
-        .apple-button:active {
-            transform: scale(0.98);
-        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-        /* Custom Scrollbar for the table */
-        .table-container::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
-        }
-        .table-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .table-container::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        .table-container::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-        
-        /* Toast Notification */
+        /* Toast Notification Animation */
         #toast {
-            visibility: hidden;
+            transform: translateY(100%);
             opacity: 0;
-            transition: visibility 0s, opacity 0.3s linear;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #toast.show {
-            visibility: visible;
+            transform: translateY(0);
             opacity: 1;
+        }
+
+        /* Custom Input styling for Shadcn look */
+        .shadcn-input {
+            background-color: rgba(15, 23, 42, 0.8);
+            border: 1px solid #1e293b;
+            color: #f8fafc;
+            transition: all 0.15s ease-in-out;
+        }
+        .shadcn-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        
+        .tab-btn.active {
+            background-color: #1e293b;
+            color: #ffffff;
+            border-color: #334155;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8">
+<body class="min-h-screen flex flex-col text-slate-200">
 
-    <div class="max-w-7xl mx-auto space-y-8">
-        
-        <!-- Header -->
-        <header class="flex justify-between items-end pb-4 border-b border-appleBorder">
-            <div>
-                <h1 class="text-3xl font-semibold tracking-tight text-appleText">Jobs Tracker</h1>
-                <p class="text-appleTextMuted mt-1">Manage architectural and drafting floor plan jobs.</p>
-            </div>
-            <div class="hidden sm:block text-right">
-                <p class="text-xs text-appleTextMuted font-medium tracking-wide uppercase">App Status</p>
-                <div class="flex items-center gap-2 mt-1 text-sm font-medium text-emerald-600">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    Live Connection
+    <!-- HEADER / TOP NAV -->
+    <header class="border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-6">
+            
+            <!-- Brand & Live Clock -->
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg text-blue-400">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
+                            Floor Plan Jobs Tracker
+                            <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-medium">SPA v2.5</span>
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Live Sri Lanka Clock Badge -->
+                <div class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-md text-xs font-mono text-slate-300">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-400"></i>
+                    <span id="header_live_clock">--:--:--</span>
+                    <span class="text-xs text-slate-500 uppercase">SLST</span>
                 </div>
             </div>
-        </header>
 
-        <!-- Stats Bar -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Total Jobs Card -->
-            <div class="bg-appleCard rounded-2xl p-6 shadow-apple flex flex-col justify-center">
-                <p class="text-sm font-medium text-appleTextMuted mb-1">Total Jobs</p>
-                <h3 class="text-3xl font-semibold text-appleText" id="stat_total_jobs">-</h3>
+            <!-- SPA Tab Controls -->
+            <nav class="flex items-center p-1 bg-slate-900/90 border border-slate-800/80 rounded-2xl gap-1 overflow-x-auto max-w-full">
+                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    Home & Entry
+                </button>
+                <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+                    Analytics
+                </button>
+                <button onclick="switchTab('tab-jobsheet')" id="btn-tab-jobsheet" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i data-lucide="table" class="w-3.5 h-3.5"></i>
+                    Job Sheet
+                </button>
+                <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                    Reports & Export
+                </button>
+                <button onclick="switchTab('tab-salary')" id="btn-tab-salary" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+                    Salary
+                    <i data-lucide="lock" id="salary_lock_icon" class="w-3 h-3 text-amber-400 ml-0.5"></i>
+                </button>
+            </nav>
+
+            <!-- Global Filter & Status -->
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                    <label for="globalMonthFilter" class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                        <i data-lucide="filter" class="w-3 h-3 text-slate-500"></i>
+                        Filter:
+                    </label>
+                    <select id="globalMonthFilter" class="shadcn-input px-4 py-2 rounded-lg text-sm font-medium text-slate-200 min-w-[130px]" onchange="onGlobalFilterChange()">
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+
+                <div class="hidden md:flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-md text-sm font-medium">
+                    <span class="relative flex h-1.5 w-1.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    Live
+                </div>
             </div>
-            <!-- Total Earnings Card -->
-            <div class="bg-appleCard rounded-2xl p-6 shadow-apple flex flex-col justify-center">
-                <p class="text-sm font-medium text-appleTextMuted mb-1">Total Earnings (LKR)</p>
-                <h3 class="text-3xl font-semibold text-appleText" id="stat_total_earnings">Rs. -</h3>
-            </div>
-            <!-- Current Tier Card -->
-            <div class="bg-appleCard rounded-2xl p-6 shadow-apple flex flex-col justify-center relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-appleBlue/5 rounded-full blur-2xl"></div>
-                <p class="text-sm font-medium text-appleTextMuted mb-1">Current Job Tier</p>
-                <h3 class="text-xl font-semibold text-appleBlue flex items-center gap-2" id="stat_current_tier">
-                    Loading...
-                </h3>
-                <p class="text-xs text-appleTextMuted mt-2" id="stat_tier_desc">Waiting for data...</p>
-            </div>
+
         </div>
+    </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Left Column: Form -->
-            <div class="lg:col-span-1">
-                <div class="bg-appleCard rounded-2xl p-6 shadow-apple">
-                    <h2 class="text-xl font-semibold mb-6">New Job</h2>
+    <!-- MAIN BODY -->
+    <main class="max-w-[1600px] mx-auto w-full p-6 md:p-8 flex-1">
+        
+        <!-- ============================================== -->
+        <!-- TAB 1: HOME & ENTRY                            -->
+        <!-- ============================================== -->
+        <section id="tab-home" class="block space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Quick Add Form Card (7 Cols) -->
+                <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="file-plus-2" class="w-4 h-4 text-blue-400"></i>
+                                <h2 class="text-sm font-semibold text-white">Job Entry Form</h2>
+                            </div>
+                            <span class="text-sm text-slate-400 font-mono">Auto-calculates pricing & allowances</span>
+                        </div>
+
+                        <form id="addJobForm" class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="date">Date</label>
+                                    <input type="date" id="date" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="job_time">Time (SL Time)</label>
+                                    <input type="time" id="job_time" step="1" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Client Selection -->
+                            <div class="mt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-sm font-medium text-slate-400">Select Client</label>
+                                    <button type="button" onclick="toggleCustomClientForm()" class="text-xs font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Add New Client
+                                    </button>
+                                </div>
+                                <input type="hidden" id="client_name">
+                                
+                                <div id="custom_client_form" class="hidden mb-3 p-3 bg-slate-900 border border-slate-700 rounded-xl flex flex-col sm:flex-row gap-3 items-end">
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Custom Client Name</label>
+                                        <input type="text" id="custom_client_input" class="shadcn-input w-full px-3 py-2 rounded-lg text-sm" placeholder="e.g. Acme Corp">
+                                    </div>
+                                    <div class="flex-1 w-full">
+                                        <label class="block text-xs font-medium text-slate-400 mb-1">Region</label>
+                                        <select id="custom_client_region" class="shadcn-input w-full px-3 py-2 rounded-lg text-sm">
+                                            <option value="UK">UK Tier</option>
+                                            <option value="AUS">AUS Tier</option>
+                                            <option value="Standard">Standard Tier</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" onclick="saveCustomClient()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto h-10">
+                                        Add
+                                    </button>
+                                </div>
+
+                                <div id="quick_client_grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                                    <!-- Buttons generated via JS -->
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="address_title">Address / Title</label>
+                                    <input type="text" id="address_title" required placeholder="e.g. Flat 12, 45 Oakfield Road, London" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="area_sqft">Area (Sq.ft)</label>
+                                    <input type="number" id="area_sqft" required min="0" step="0.01" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="region">Region Tier</label>
+                                    <select id="region" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                                        <option value="Standard">Standard Tier</option>
+                                        <option value="UK">UK Tier</option>
+                                        <option value="AUS">AUS Tier</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-400 mb-2" for="mistake_type">Mistake Type</label>
+                                    <select id="mistake_type" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                                        <option value="None">None (No Deduction)</option>
+                                        <option value="Address">Address (-300 LKR)</option>
+                                        <option value="North Point">North Point (-300 LKR)</option>
+                                        <option value="Floor Label">Floor Label (-300 LKR)</option>
+                                        <option value="Measurements">Measurements (-300 LKR)</option>
+                                        <option value="Area">Area (-200 LKR)</option>
+                                        <option value="Label">Label (-100 LKR)</option>
+                                        <option value="Under Stair RH">Under Stair RH (-25 LKR)</option>
+                                        <option value="Template">Template (-25 LKR)</option>
+                                        <option value="Entrance Arrow">Entrance Arrow (-25 LKR)</option>
+                                        <option value="Arrow Head">Arrow Head (-25 LKR)</option>
+                                        <option value="Room Parts">Room Parts (-25 LKR)</option>
+                                        <option value="Door & Window">Door & Window (-25 LKR)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Options Checkboxes -->
+                            <div class="flex items-center gap-6 pt-1">
+                                <label for="is_color" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300 hover:text-white">
+                                    <input id="is_color" type="checkbox" class="w-4 h-4 text-blue-600 bg-slate-950 border-slate-700 rounded focus:ring-blue-500 focus:ring-offset-slate-900 cursor-pointer">
+                                    <span>Color Plan (Tiered Fee)</span>
+                                </label>
+                                <label for="is_night_or_weekend" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-amber-400 hover:text-amber-300">
+                                    <input id="is_night_or_weekend" type="checkbox" onchange="isUserNightWeekendOverridden = true" class="w-4 h-4 text-amber-500 bg-slate-950 border-slate-700 rounded focus:ring-amber-500 focus:ring-offset-slate-900 cursor-pointer">
+                                    <span>Night / Weekend Job</span>
+                                </label>
+                            </div>
+
+                            <button type="submit" id="submitBtn" class="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-6 rounded-xl text-base font-semibold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span>Save Job Record</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Smart Utility Tools (5 Cols) -->
+                <div class="lg:col-span-5 flex flex-col gap-6">
                     
-                    <form id="jobForm" class="space-y-5">
-                        <div>
-                            <label class="block text-sm font-medium text-appleText mb-1.5" for="date">Date</label>
-                            <input type="date" id="date" required class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-appleText mb-1.5" for="client_name">Client Name</label>
-                            <input type="text" id="client_name" required placeholder="Enter client name" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-appleText mb-1.5" for="address_title">Address / Title</label>
-                            <input type="text" id="address_title" required placeholder="e.g. 123 Main St" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                    <!-- Tool 1: Exact Area Converter -->
+                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="calculator" class="w-4 h-4 text-emerald-400"></i>
+                                <h3 class="text-xs font-semibold text-white">Exact Windows Area Converter</h3>
+                            </div>
+                            <span class="text-xs font-mono text-slate-500">1 m² = 10.7639 ft²</span>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-appleText mb-1.5" for="area_sqft">Area (Sqft)</label>
-                                <input type="number" id="area_sqft" required min="0" step="0.01" placeholder="0.00" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                                <label class="block text-sm font-medium text-slate-400 mb-2" for="tool_sqm">Sq. Meters (Sq.m)</label>
+                                <input type="number" id="tool_sqm" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono" oninput="convertArea('sqm')">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-appleText mb-1.5" for="region">Region</label>
-                                <select id="region" required class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
-                                    <option value="Standard">Standard</option>
-                                    <option value="UK">UK</option>
-                                    <option value="AUS">AUS</option>
-                                </select>
+                                <label class="block text-sm font-medium text-slate-400 mb-2" for="tool_sqft">Sq. Feet (Sq.ft)</label>
+                                <input type="number" id="tool_sqft" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono text-emerald-400" oninput="convertArea('sqft')">
                             </div>
+                        </div>
+
+                        <button type="button" onclick="useAreaInForm()" class="mt-3 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 text-emerald-400 font-medium py-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5">
+                            <i data-lucide="arrow-left-to-line" class="w-3.5 h-3.5"></i>
+                            Apply Area to Job Form
+                        </button>
+                    </div>
+
+                    <!-- Tool 2: UK Smart Address Formatter -->
+                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="wand-2" class="w-4 h-4 text-purple-400"></i>
+                                <h3 class="text-xs font-semibold text-white">UK Smart Address Reformatter</h3>
+                            </div>
+                            <span class="text-xs text-slate-400">Fixes capitalization & UK postcodes</span>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-appleText mb-1.5" for="mistake_type">Mistake Type</label>
-                            <select id="mistake_type" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
-                                <option value="None">None (Default Allowance)</option>
-                                <option value="Address">Address (-300)</option>
-                                <option value="North Point">North Point (-300)</option>
-                                <option value="Floor Label">Floor Label (-300)</option>
-                                <option value="Label">Label (-100)</option>
-                            </select>
+                            <textarea id="tool_address" rows="2" placeholder="e.g. flat 27 12 oakfield rd croydon cr0 4qa" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm resize-none font-mono"></textarea>
                         </div>
 
-                        <div class="flex items-center pt-2">
-                            <input id="is_color" type="checkbox" class="w-5 h-5 text-appleBlue bg-gray-100 border-gray-300 rounded focus:ring-appleBlue focus:ring-2 accent-appleBlue cursor-pointer">
-                            <label for="is_color" class="ml-2 text-sm font-medium text-appleText cursor-pointer">Color Plan (+ Rs. 25)</label>
+                        <div class="flex gap-2 mt-3">
+                            <button type="button" onclick="formatAddress()" class="flex-1 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 font-medium py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1">
+                                <i data-lucide="sparkles" class="w-3 h-3"></i>
+                                Clean Address
+                            </button>
+                            <button type="button" onclick="useAddressInForm()" class="flex-1 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 font-medium py-1.5 px-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                                Apply to Form
+                            </button>
+                            <button type="button" onclick="searchAddressOnGoogle()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-3 h-12 rounded-xl text-sm flex items-center justify-center transition-all border border-slate-700" title="Search Google Maps">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i>
+                            </button>
                         </div>
-
-                        <button type="submit" id="submitBtn" class="apple-button w-full mt-4 bg-appleBlue hover:bg-appleBlueHover text-white font-medium py-3 px-4 rounded-xl shadow-sm flex justify-center items-center gap-2">
-                            <span>Save Job Record</span>
-                            <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Right Column: Data Table -->
-            <div class="lg:col-span-2 flex flex-col gap-4">
-                <div class="bg-appleCard rounded-2xl shadow-apple flex-1 flex flex-col overflow-hidden">
-                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white z-10 relative">
-                        <h2 class="text-xl font-semibold">Job Records</h2>
-                        <button onclick="copyTableForExcel()" class="apple-button text-sm font-medium text-appleBlue bg-appleBlue/10 hover:bg-appleBlue/20 py-2 px-4 rounded-lg flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                            Copy for Excel
-                        </button>
                     </div>
                     
-                    <div class="table-container overflow-x-auto flex-1 bg-white">
-                        <table class="w-full text-left border-collapse min-w-[800px]" id="jobs_table">
-                            <thead>
-                                <tr class="bg-gray-50/80 text-xs uppercase tracking-wider text-appleTextMuted border-b border-gray-200">
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">ID</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Date</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Client Name</th>
-                                    <th class="px-4 py-3 font-medium min-w-[150px]">Address</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Area</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Region</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Color</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Mistake</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right">Price</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right">Allow.</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right">Ded.</th>
-                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right text-appleText bg-gray-50">Total (Rs)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobs_table_body" class="text-sm divide-y divide-gray-100">
-                                <!-- Rows will be injected here via JS -->
-                                <tr>
-                                    <td colspan="12" class="px-4 py-12 text-center text-appleTextMuted">Loading job records...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- HOLIDAY MARKING SYSTEM -->
+                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="calendar-heart" class="w-4 h-4 text-rose-400"></i>
+                                <h3 class="text-xs font-semibold text-white">Holiday Marking System</h3>
+                            </div>
+                            <span class="text-xs text-slate-400">Auto-calc in Salary</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <input type="date" id="holiday_date_input" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm flex-1">
+                            <button type="button" onclick="markHoliday()" class="bg-rose-600/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-6 h-12 rounded-xl text-sm font-semibold transition-colors shrink-0">
+                                Mark Holiday
+                            </button>
+                        </div>
+                        <div id="holiday_list_container" class="flex flex-wrap gap-2 mt-3"></div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 2: ANALYTICS DASHBOARD                     -->
+        <!-- ============================================== -->
+        <section id="tab-analytics" class="hidden space-y-4">
+            
+            <!-- 8 Stat Cards Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6">
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Total Jobs</p>
+                    <h3 class="text-xl font-bold text-white font-mono" id="stat_total_jobs">-</h3>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Total Earnings</p>
+                    <h3 class="text-xl font-bold text-emerald-400 font-mono" id="stat_total_earnings">-</h3>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Total Mistakes</p>
+                    <h3 class="text-xl font-bold text-rose-400 font-mono" id="stat_total_mistakes">-</h3>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Total Penalties</p>
+                    <h3 class="text-xl font-bold text-rose-400 font-mono" id="stat_total_deductions">-</h3>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Top Client</p>
+                    <h3 class="text-lg font-bold text-indigo-400 truncate" id="stat_top_client">-</h3>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Accuracy / Error</p>
+                    <div>
+                        <h3 class="text-lg font-bold text-emerald-400 font-mono" id="stat_accuracy">0%</h3>
+                        <p class="text-[10px] text-rose-400 truncate mt-0.5" id="stat_freq_mistake">No Data</p>
+                    </div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+                    <p class="text-sm font-medium text-slate-400 mb-1">Night / Weekend</p>
+                    <h3 class="text-xl font-bold text-amber-400 font-mono" id="stat_night_jobs">-</h3>
+                </div>
+                
+                <!-- Monthly Target Progress Card -->
+                <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <p class="text-sm font-medium text-slate-400 mb-1">Monthly Target</p>
+                        <h3 class="text-lg font-bold text-emerald-400 font-mono" id="stat_target_progress">0 / 170</h3>
+                    </div>
+                    <div id="target_badge" class="hidden mt-1 text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded self-start">
+                        Unlocked! (+Rs.50/job)
                     </div>
                 </div>
             </div>
 
+            <!-- Charts & Client Summary Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Charts Section (7 cols) -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
+                        <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+                            Weekly Peak Working Days
+                        </h3>
+                        <div class="relative h-48 w-full">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
+                            <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
+                                <i data-lucide="bar-chart" class="w-4 h-4 text-indigo-400"></i>
+                                Monthly Timeline (Days 1-10, 11-20, 21-31)
+                            </h3>
+                            <div class="relative h-48 w-full">
+                                <canvas id="monthlyTimelineChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-lg backdrop-blur-sm">
+                            <h3 class="text-xs font-semibold text-white mb-3 flex items-center gap-1.5">
+                                <i data-lucide="sun-moon" class="w-4 h-4 text-amber-400"></i>
+                                Day vs Night/Weekend Ratio
+                            </h3>
+                            <div class="relative h-48 w-full flex justify-center">
+                                <canvas id="dayNightChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Summary Table (5 cols) -->
+                <div class="lg:col-span-5 flex flex-col">
+                    <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-lg backdrop-blur-sm flex-1 flex flex-col overflow-hidden max-h-[570px]">
+                        <div class="p-6 border-b border-slate-800/80 flex items-center justify-between">
+                            <h3 class="text-xs font-semibold text-white flex items-center gap-1.5">
+                                <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>
+                                Client Performance Breakdown
+                            </h3>
+                            <span class="text-xs text-slate-500 font-mono" id="client_summary_count">0 Clients</span>
+                        </div>
+                        <div class="overflow-y-auto flex-1">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="sticky top-0 bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-xs tracking-wider font-semibold">
+                                    <tr>
+                                        <th class="px-6 py-4">Client Name</th>
+                                        <th class="px-6 py-4 text-right">Total Jobs</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="client_summary_body" class="divide-y divide-slate-800/60 font-mono">
+                                    <tr><td colspan="2" class="p-4 text-center text-slate-500">Loading client summary...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: JOB SHEET MANAGEMENT                    -->
+        <!-- ============================================== -->
+        <section id="tab-jobsheet" class="hidden space-y-3">
+            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-lg backdrop-blur-sm overflow-hidden flex flex-col">
+                
+                <div class="p-6 border-b border-slate-800/80 flex flex-wrap justify-between items-center gap-6 bg-slate-900/50">
+                    <div>
+                        <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                            <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+                            Job Management Sheet
+                        </h2>
+                        <p class="text-sm text-slate-400">Interactive live table with auto-indexing and actions.</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+                        <button onclick="document.getElementById('excelUpload').click()" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 px-4 py-2 rounded-xl text-sm font-medium shadow-sm flex items-center gap-1.5 transition-all">
+                            <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+                            Import Excel / CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
+                    <table class="w-full text-left text-xs border-collapse min-w-[1100px]">
+                        <thead class="sticky top-0 bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-xs tracking-wider font-semibold z-10">
+                            <tr>
+                                <th class="px-4 py-3 w-12 text-center">#</th>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Client</th>
+                                <th class="px-4 py-3">Address / Title</th>
+                                <th class="px-4 py-3 text-right">Area (sqft)</th>
+                                <th class="px-4 py-3 text-center">Region</th>
+                                <th class="px-4 py-3 text-center">Color</th>
+                                <th class="px-4 py-3">Mistake</th>
+                                <th class="px-4 py-3 text-right">Base Price</th>
+                                <th class="px-4 py-3 text-right">Allowance</th>
+                                <th class="px-4 py-3 text-right">Deduction</th>
+                                <th class="px-4 py-3 text-right bg-slate-950/80 font-bold text-white">Total LKR</th>
+                                <th class="px-4 py-3 text-center w-20">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="management_table_body" class="divide-y divide-slate-800/60 font-mono text-slate-300">
+                            <!-- JS Injected Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 4: REPORTS & EXPORT                        -->
+        <!-- ============================================== -->
+        <section id="tab-reports" class="hidden space-y-3">
+            
+            <div class="flex flex-wrap justify-between items-center gap-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+                <div>
+                    <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                        <i data-lucide="file-spreadsheets" class="w-4 h-4 text-emerald-400"></i>
+                        Excel Copy & Export Table
+                    </h2>
+                    <p class="text-sm text-slate-400">Clean tab-separated table formatted for 1-click Ctrl+V pasting into Excel.</p>
+                </div>
+                <button onclick="copyReportsTable()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    Copy Table for Excel
+                </button>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-lg overflow-hidden">
+                <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
+                    <table id="reports_table" class="w-full text-left text-xs border-collapse min-w-[1000px]">
+                        <thead class="sticky top-0 bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-xs tracking-wider font-semibold">
+                            <tr>
+                                <th class="px-4 py-3">No</th>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Client Name</th>
+                                <th class="px-4 py-3">Address / Title</th>
+                                <th class="px-4 py-3 text-right">Area</th>
+                                <th class="px-4 py-3">Region</th>
+                                <th class="px-4 py-3">Color</th>
+                                <th class="px-4 py-3">Mistake</th>
+                                <th class="px-4 py-3 text-right">Price</th>
+                                <th class="px-4 py-3 text-right">Allowance</th>
+                                <th class="px-4 py-3 text-right">Deduction</th>
+                                <th class="px-4 py-3 text-right font-bold text-white">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports_table_body" class="divide-y divide-slate-800/60 font-mono text-slate-300">
+                            <!-- JS Injected Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB 5: SALARY BREAKDOWN                        -->
+        <!-- ============================================== -->
+        <section id="tab-salary" class="hidden max-w-2xl mx-auto space-y-4">
+            
+            <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+                
+                <div class="p-4 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                            <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+                            Monthly Salary Breakdown
+                        </h2>
+                        <p class="text-sm text-slate-400">Automated payroll computation based on monthly jobs completed.</p>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-3 font-mono text-xs">
+                    
+                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                        <span class="text-slate-400 font-sans">Basic Salary (Fixed)</span>
+                        <span class="font-semibold text-white">Rs. 35,453.00</span>
+                    </div>
+                    
+                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                        <span class="text-slate-400 font-sans">ETF Statutory Deduction (8% of Basic)</span>
+                        <span class="font-semibold text-rose-400">- Rs. 2,836.24</span>
+                    </div>
+
+                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                        <span class="text-slate-400 font-sans">Special Allowance (Earnings above Basic)</span>
+                        <span class="font-semibold text-emerald-400" id="sal_special">Rs. 0.00</span>
+                    </div>
+
+                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                        <span class="text-slate-400 font-sans">Monthly Target Bonus (170+ Jobs @ Rs. 50/job)</span>
+                        <span class="font-semibold text-emerald-400" id="sal_target_bonus">Rs. 0.00</span>
+                    </div>
+
+                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                        <span class="text-slate-400 font-sans">Holiday Allowance (Days × Rs. 1,772.65)</span>
+                        <span class="font-semibold text-emerald-400" id="sal_holiday">Rs. 0.00</span>
+                    </div>
+
+                    <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                        <span class="text-slate-400 font-sans">Total Deductions & Penalties</span>
+                        <span class="font-semibold text-rose-400" id="sal_penalties">- Rs. 0.00</span>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-700/80 flex justify-between items-center font-sans">
+                        <span class="text-sm font-semibold text-white">Net Total Salary Payable</span>
+                        <span class="text-xl font-bold font-mono text-blue-400" id="sal_net">Rs. 0.00</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- PIN SECURITY MODAL FOR SALARY TAB -->
+    <div id="pinModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-5 space-y-4">
+            <div class="text-center space-y-1">
+                <div class="mx-auto w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <i data-lucide="lock" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-sm font-semibold text-white">Salary Breakdown Security</h3>
+                <p class="text-xs text-slate-400">Enter security PIN to unlock financial data.</p>
+            </div>
+            
+            <form id="pinForm" onsubmit="verifyPin(event)" class="space-y-3">
+                <div>
+                    <input type="password" id="pin_input" maxlength="8" required placeholder="Enter PIN..." class="shadcn-input w-full px-3 py-2 rounded-lg text-center font-mono text-base tracking-widest text-white">
+                    <p id="pin_error" class="hidden text-sm text-rose-400 text-center mt-1">Incorrect PIN. Access Denied.</p>
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="closePinModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-1.5 px-3 rounded-lg text-xs border border-slate-700 transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium py-1.5 px-3 rounded-lg text-xs shadow-sm transition-all">
+                        Unlock
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50">
-        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        <span id="toast_msg" class="text-sm font-medium">Action successful</span>
+    <!-- EDIT JOB MODAL -->
+    <div id="editModal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden p-4 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2.5">
+                <h3 class="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i>
+                    Edit Job Record
+                </h3>
+                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="editJobForm" class="space-y-2.5">
+                <input type="hidden" id="edit_id">
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_date">Date</label>
+                        <input type="date" id="edit_date" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_job_time">Time</label>
+                        <input type="time" id="edit_job_time" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_client_name">Client Name</label>
+                    <select id="edit_client_name" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm" onchange="autoSelectRegion('edit_client_name', 'edit_region')">
+                        <option value="" disabled selected>Select Client</option>
+                        <optgroup label="UK Region">
+                            <option value="Criss">Criss</option>
+                            <option value="Peter">Peter</option>
+                            <option value="Scott">Scott</option>
+                            <option value="Robert">Robert</option>
+                            <option value="Jems">Jems</option>
+                            <option value="Lenin">Lenin</option>
+                            <option value="David">David</option>
+                            <option value="Lee">Lee</option>
+                            <option value="Martin">Martin</option>
+                            <option value="London House">London House</option>
+                        </optgroup>
+                        <optgroup label="AUS Region">
+                            <option value="Andrew">Andrew</option>
+                            <option value="Tonny">Tonny</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="Other">Other (Manual)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_address_title">Address / Title</label>
+                    <input type="text" id="edit_address_title" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_area_sqft">Area (sqft)</label>
+                        <input type="number" id="edit_area_sqft" required min="0" step="0.01" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_region">Region</label>
+                        <select id="edit_region" required class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                            <option value="Standard">Standard Tier</option>
+                            <option value="UK">UK Tier</option>
+                            <option value="AUS">AUS Tier</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2" for="edit_mistake_type">Mistake Type</label>
+                    <select id="edit_mistake_type" class="shadcn-input w-full px-4 py-3 h-12 rounded-xl text-sm">
+                        <option value="None">None</option>
+                        <option value="Address">Address (-300 LKR)</option>
+                        <option value="North Point">North Point (-300 LKR)</option>
+                        <option value="Floor Label">Floor Label (-300 LKR)</option>
+                        <option value="Measurements">Measurements (-300 LKR)</option>
+                        <option value="Area">Area (-200 LKR)</option>
+                        <option value="Label">Label (-100 LKR)</option>
+                        <option value="Under Stair RH">Under Stair RH (-25 LKR)</option>
+                        <option value="Template">Template (-25 LKR)</option>
+                        <option value="Entrance Arrow">Entrance Arrow (-25 LKR)</option>
+                        <option value="Arrow Head">Arrow Head (-25 LKR)</option>
+                        <option value="Room Parts">Room Parts (-25 LKR)</option>
+                        <option value="Door & Window">Door & Window (-25 LKR)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-6 pt-1">
+                    <label for="edit_is_color" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300">
+                        <input id="edit_is_color" type="checkbox" class="w-4 h-4 text-blue-600 bg-slate-950 border-slate-700 rounded focus:ring-blue-500 cursor-pointer">
+                        <span>Color Plan</span>
+                    </label>
+                    <label for="edit_is_night_or_weekend" class="flex items-center gap-2 cursor-pointer text-xs font-medium text-amber-400">
+                        <input id="edit_is_night_or_weekend" type="checkbox" class="w-4 h-4 text-amber-500 bg-slate-950 border-slate-700 rounded focus:ring-amber-500 cursor-pointer">
+                        <span>Night / Weekend Job</span>
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeEditModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-sm font-medium border border-slate-700 transition-all">Cancel</button>
+                    <button type="submit" id="editSubmitBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all">Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
 
+    <!-- SHADCN TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md">
+        <i data-lucide="check-circle-2" id="toast_icon" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast_msg">Action successful</span>
+    </div>
+
+    <!-- JS IMPLEMENTATION -->
     <script>
-        // --- CONFIGURATION ---
+        // --- SUPABASE SDK INITIALIZATION ---
         const SUPABASE_URL = "https://jaxzghosalfjmconowgm.supabase.co";
         const SUPABASE_KEY = "sb_publishable_eQQaWNyP0wswrsy98OD_uw_2nlFz4-e";
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- GLOBAL STATE ---
-        let globalJobCount = 0;
+        let allJobs = [];
+        let isSalaryUnlocked = false;
+        let isUserNightWeekendOverridden = false;
+        let weeklyChartInstance = null;
+        let monthlyTimelineChartInstance = null;
+        let dayNightChartInstance = null;
 
-        // --- UTILS ---
+        // --- QUICK CLIENT MANAGEMENT ---
+        const predefinedClients = [
+            { name: "Criss", region: "UK" }, { name: "Peter", region: "UK" }, { name: "Scott", region: "UK" },
+            { name: "Robert", region: "UK" }, { name: "Jems", region: "UK" }, { name: "Lenin", region: "UK" },
+            { name: "David", region: "UK" }, { name: "Lee", region: "UK" }, { name: "Martin", region: "UK" },
+            { name: "London House", region: "UK" }, { name: "Andrew", region: "AUS" }, { name: "Tonny", region: "AUS" }
+        ];
+
+        function getCustomClients() {
+            try { return JSON.parse(localStorage.getItem('custom_clients') || '[]'); } catch { return []; }
+        }
+
+        function initClientGrid() {
+            const grid = document.getElementById('quick_client_grid');
+            if(!grid) return;
+            const custom = getCustomClients();
+            const allClients = [...predefinedClients, ...custom];
+            
+            grid.innerHTML = allClients.map(c => 
+                `<button type="button" onclick="selectClient('${c.name}', '${c.region}')" data-client="${c.name}" 
+                   class="client-btn px-2 py-2 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors w-full truncate">
+                    ${c.name}
+                </button>`
+            ).join('');
+        }
+
+        function selectClient(name, region) {
+            document.getElementById('client_name').value = name;
+            document.getElementById('region').value = region === 'UK' ? 'UK' : (region === 'AUS' ? 'AUS' : 'Standard');
+            
+            // Update active state
+            document.querySelectorAll('.client-btn').forEach(btn => {
+                if(btn.dataset.client === name) {
+                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-500');
+                    btn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-500');
+                    btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                }
+            });
+        }
+
+        function toggleCustomClientForm() {
+            document.getElementById('custom_client_form').classList.toggle('hidden');
+        }
+
+        function saveCustomClient() {
+            const name = document.getElementById('custom_client_input').value.trim();
+            const regionStr = document.getElementById('custom_client_region').value;
+            if(!name) return;
+            const custom = getCustomClients();
+            if(!custom.find(c => c.name.toLowerCase() === name.toLowerCase()) && !predefinedClients.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+                custom.push({ name, region: regionStr });
+                localStorage.setItem('custom_clients', JSON.stringify(custom));
+            }
+            document.getElementById('custom_client_input').value = '';
+            toggleCustomClientForm();
+            initClientGrid();
+            selectClient(name, regionStr);
+        }
+
+        // --- UTILITY FUNCTIONS ---
         function formatCurrency(num) {
             return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -271,263 +887,993 @@
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             const msgEl = document.getElementById('toast_msg');
-            const icon = toast.querySelector('svg');
-            
+            const icon = document.getElementById('toast_icon');
             msgEl.textContent = message;
             
             if (isError) {
-                toast.classList.replace('bg-gray-900', 'bg-red-600');
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
-                icon.classList.replace('text-emerald-400', 'text-white');
+                toast.className = "fixed bottom-5 right-5 bg-rose-950/90 border border-rose-800/80 text-rose-200 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
+                icon.setAttribute('data-lucide', 'alert-circle');
+                icon.className = 'w-4 h-4 text-rose-400';
             } else {
-                toast.classList.replace('bg-red-600', 'bg-gray-900');
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
-                icon.classList.replace('text-white', 'text-emerald-400');
+                toast.className = "fixed bottom-5 right-5 bg-slate-900/90 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 text-xs font-medium backdrop-blur-md show";
+                icon.setAttribute('data-lucide', 'check-circle-2');
+                icon.className = 'w-4 h-4 text-emerald-400';
             }
 
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            lucide.createIcons();
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
         }
 
-        // Set today's date as default
-        document.getElementById('date').valueAsDate = new Date();
-
-        // --- DATA FETCHING ---
-        async function fetchStatsAndData() {
-            try {
-                // Fetch all jobs ordered by date descending
-                const { data: jobs, error } = await supabaseClient
-                    .from('jobs')
-                    .select('*')
-                    .order('id', { ascending: false });
-
-                if (error) throw error;
-
-                // Update Stats
-                globalJobCount = jobs.length;
-                const totalEarnings = jobs.reduce((acc, job) => acc + Number(job.total), 0);
-                
-                document.getElementById('stat_total_jobs').textContent = globalJobCount;
-                document.getElementById('stat_total_earnings').textContent = `Rs. ${formatCurrency(totalEarnings)}`;
-
-                // Update Tier UI
-                const tierEl = document.getElementById('stat_current_tier');
-                const tierDesc = document.getElementById('stat_tier_desc');
-                
-                if (globalJobCount < 100) {
-                    tierEl.innerHTML = `
-                        <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                        First 100 Tier
-                    `;
-                    tierDesc.textContent = `${100 - globalJobCount} jobs remaining for special pricing`;
-                } else {
-                    tierEl.innerHTML = `
-                        <svg class="w-5 h-5 text-appleBlue" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                        Regular Tier
-                    `;
-                    tierDesc.textContent = `Standard pricing applies`;
-                }
-
-                // Render Table
-                renderTable(jobs);
-                
-            } catch (err) {
-                console.error("Error fetching data: ", err);
-                showToast("Failed to load data.", true);
-            }
-        }
-
-        function renderTable(jobs) {
-            const tbody = document.getElementById('jobs_table_body');
-            tbody.innerHTML = '';
-
-            if (jobs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" class="px-4 py-8 text-center text-appleTextMuted">No jobs found. Add your first job!</td></tr>`;
+        // --- TAB MANAGEMENT ---
+        function switchTab(tabId) {
+            if (tabId === 'tab-salary' && !isSalaryUnlocked) {
+                openPinModal();
                 return;
             }
 
-            jobs.forEach(job => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50/50 transition-colors";
-                
-                // Format date nicely
-                const dateObj = new Date(job.date);
-                const dateFormatted = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(`btn-${tabId}`).classList.add('active');
 
-                tr.innerHTML = `
-                    <td class="px-4 py-3 text-appleTextMuted">#${job.id}</td>
-                    <td class="px-4 py-3">${dateFormatted}</td>
-                    <td class="px-4 py-3 font-medium text-appleText">${job.client_name}</td>
-                    <td class="px-4 py-3 truncate max-w-[200px]" title="${job.address_title}">${job.address_title}</td>
-                    <td class="px-4 py-3">${Number(job.area_sqft).toLocaleString()}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium ${
-                            job.region === 'Standard' ? 'bg-gray-100 text-gray-700' : 'bg-blue-50 text-appleBlue'
-                        }">${job.region}</span>
-                    </td>
-                    <td class="px-4 py-3">
-                        ${job.is_color ? 
-                            '<span class="inline-flex items-center text-xs font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded-md">Yes</span>' : 
-                            '<span class="text-gray-400">-</span>'}
-                    </td>
-                    <td class="px-4 py-3 text-sm">${job.mistake_type === 'None' ? '<span class="text-gray-400">-</span>' : job.mistake_type}</td>
-                    <td class="px-4 py-3 text-right">${formatCurrency(job.price)}</td>
-                    <td class="px-4 py-3 text-right text-emerald-600">${formatCurrency(job.no_mistake_amount)}</td>
-                    <td class="px-4 py-3 text-right text-red-600">${job.ddt_amount > 0 ? '-' + formatCurrency(job.ddt_amount) : '0.00'}</td>
-                    <td class="px-4 py-3 text-right font-semibold text-appleText bg-gray-50/50">${formatCurrency(job.total)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            if (tabId === 'tab-analytics') {
+                renderAnalyticsDashboard();
+            }
         }
 
-        // --- FORM SUBMISSION & LOGIC ---
-        document.getElementById('jobForm').addEventListener('submit', async (e) => {
+        function openPinModal() {
+            document.getElementById('pinModal').classList.remove('hidden');
+            document.getElementById('pin_input').value = '';
+            document.getElementById('pin_error').classList.add('hidden');
+            document.getElementById('pin_input').focus();
+        }
+
+        function closePinModal() {
+            document.getElementById('pinModal').classList.add('hidden');
+        }
+
+        async function verifyPin(e) {
             e.preventDefault();
+            const pin = document.getElementById('pin_input').value;
             
-            const submitBtn = document.getElementById('submitBtn');
-            const spinner = document.getElementById('loadingSpinner');
-            const btnText = submitBtn.querySelector('span');
+            // Hash the input PIN securely
+            const encoder = new TextEncoder();
+            const data = encoder.encode(pin);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
             
-            // UI Loading state
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
-            spinner.classList.remove('hidden');
-            btnText.textContent = 'Saving...';
+            // Compare with stored hash
+            if (hashHex === "3d1e557b540ac045b3b327994a351f08a443f9216f9b2b8d3a0f42b58671ac83") {
+                isSalaryUnlocked = true;
+                closePinModal();
+                const lockIcon = document.getElementById('salary_lock_icon');
+                if (lockIcon) lockIcon.classList.add('hidden');
+                switchTab('tab-salary');
+                calculateSalary();
+                showToast("Salary Breakdown unlocked successfully.");
+            } else {
+                document.getElementById('pin_error').classList.remove('hidden');
+            }
+        }
 
-            try {
-                // Get values
-                const date = document.getElementById('date').value;
-                const client_name = document.getElementById('client_name').value;
-                const address_title = document.getElementById('address_title').value;
-                const area_sqft = parseFloat(document.getElementById('area_sqft').value) || 0;
-                const region = document.getElementById('region').value;
-                const mistake_type = document.getElementById('mistake_type').value;
-                const is_color = document.getElementById('is_color').checked;
+        // --- BUSINESS PRICING ENGINE ---
+        function calculatePricing(data, totalJobCount) {
+            let basePrice = 0;
+            let no_mistake_amount = 0;
+            let ddt_amount = 0;
 
-                // --- BUSINESS LOGIC & CALCULATIONS ---
-                let basePrice = 0;
+            const is_color = data.is_color;
+            const is_night_or_weekend = data.is_night_or_weekend || false;
+            const area_sqft = parseFloat(data.area_sqft) || 0;
+            const region = data.region;
+            const mistake_type = data.mistake_type;
 
-                // 1. Job Count Rule (Pricing)
-                if (globalJobCount < 100) {
-                    basePrice = 0;
-                    if (is_color) basePrice += 25;
-                } else {
-                    if (region === 'Standard') {
-                        if (area_sqft <= 1000) basePrice = 200;
-                        else if (area_sqft <= 2000) basePrice = 250;
-                        else if (area_sqft <= 3000) basePrice = 300;
-                        else basePrice = 350;
-                    } else if (region === 'UK' || region === 'AUS') {
-                        if (area_sqft <= 1000) basePrice = 300;
-                        else if (area_sqft <= 2000) basePrice = 350;
-                        else if (area_sqft <= 3000) basePrice = 400;
-                        else basePrice = 450;
-                    }
-                    if (is_color) basePrice += 25;
-                }
+            // Dynamic Area-based Color Pricing
+            let colorPrice = 0;
+            if (is_color) {
+                colorPrice = area_sqft <= 1000 ? 25 : 25 + Math.ceil((area_sqft - 1000) / 1000) * 25;
+            }
 
-                // 2. Large Area Rule (> 5000 sqft)
-                if (area_sqft > 5000) {
-                    const extraArea = area_sqft - 5000;
-                    const additionalPrice = (extraArea / 1000) * 75;
-                    basePrice += additionalPrice;
-                }
-
-                // 3. Mistakes & Deductions
-                let no_mistake_amount = 25; // Default Allowance
-                let ddt_amount = 0;         // Default Deduction
-
-                if (['Address', 'North Point', 'Floor Label'].includes(mistake_type)) {
-                    ddt_amount = 300;
-                    no_mistake_amount = 0;
-                } else if (mistake_type === 'Label') {
-                    ddt_amount = 100;
-                    no_mistake_amount = 0;
-                }
-
-                // 4. Final Total
-                const total = basePrice + no_mistake_amount - ddt_amount;
-
-                // --- INSERT TO SUPABASE ---
-                const { data, error } = await supabaseClient
-                    .from('jobs')
-                    .insert([
-                        {
-                            date,
-                            client_name,
-                            address_title,
-                            area_sqft,
-                            region,
-                            is_color,
-                            mistake_type,
-                            price: basePrice,
-                            no_mistake_amount,
-                            ddt_amount,
-                            total
-                        }
-                    ]);
-
-                if (error) throw error;
-
-                // Success
-                showToast("Job saved successfully!");
-                document.getElementById('jobForm').reset();
-                // Keep today's date
-                document.getElementById('date').valueAsDate = new Date();
+            // First 100 Lifetime Jobs Rule (Weekday daytime 7AM-5PM)
+            if (totalJobCount < 100 && !is_night_or_weekend) {
+                basePrice = 0;
+                no_mistake_amount = 0;
                 
-                // Refresh data
-                await fetchStatsAndData();
+                if (is_color) basePrice += colorPrice;
+                if (area_sqft > 5000) basePrice += (area_sqft - 5000) * 0.25;
+            } 
+            // Regular Tiers (Post-100 Jobs OR Night/Weekend)
+            else {
+                no_mistake_amount = 25;
+                
+                if (region === 'Standard') {
+                    if (area_sqft <= 1000) basePrice = 200;
+                    else if (area_sqft <= 2000) basePrice = 250;
+                    else basePrice = 300; // Cap at 2500 tier
+                } else if (region === 'UK' || region === 'AUS') {
+                    if (area_sqft <= 1000) basePrice = 300;
+                    else if (area_sqft <= 2000) basePrice = 350;
+                    else basePrice = 400; // Cap at 2500 tier
+                }
+
+                if (is_color) basePrice += colorPrice;
+                if (area_sqft > 2500) basePrice += (area_sqft - 2500) * 0.25;
+            }
+
+            // Mistake Deductions mapping
+            const mistakeDeductionsMap = {
+                "None": 0,
+                "Address": 300,
+                "North Point": 300,
+                "Floor Label": 300,
+                "Measurements": 300,
+                "Area": 200,
+                "Label": 100,
+                "Under Stair RH": 25,
+                "Template": 25,
+                "Entrance Arrow": 25,
+                "Arrow Head": 25,
+                "Room Parts": 25,
+                "Door & Window": 25
+            };
+            
+            ddt_amount = mistakeDeductionsMap[mistake_type] || 0;
+            const total = basePrice + no_mistake_amount - ddt_amount;
+
+            return {
+                price: basePrice,
+                no_mistake_amount,
+                ddt_amount,
+                total
+            };
+        }
+
+        // --- FILTERING & DATA FETCHING ---
+        function getFilteredJobs() {
+            const val = document.getElementById('globalMonthFilter')?.value || 'all';
+            if (val === 'all') return allJobs;
+            return allJobs.filter(j => j.date && j.date.startsWith(val));
+        }
+
+        function getMonthJobCounts() {
+            const counts = {};
+            allJobs.forEach(j => {
+                if (j.date) {
+                    const ym = j.date.substring(0, 7);
+                    counts[ym] = (counts[ym] || 0) + 1;
+                }
+            });
+            return counts;
+        }
+
+        function populateGlobalMonthFilter() {
+            const select = document.getElementById('globalMonthFilter');
+            if (!select) return;
+
+            const currentVal = select.value;
+            const monthsSet = new Set();
+            const yearsSet = new Set();
+
+            allJobs.forEach(j => {
+                if (j.date) {
+                    const ym = j.date.substring(0, 7);
+                    const y = j.date.substring(0, 4);
+                    if (ym.length === 7) monthsSet.add(ym);
+                    if (y.length === 4) yearsSet.add(y);
+                }
+            });
+
+            const monthsArr = Array.from(monthsSet).sort().reverse();
+            const yearsArr = Array.from(yearsSet).sort().reverse();
+
+            const monthOptionsHTML = monthsArr.map(m => {
+                const d = new Date(m + "-01T00:00:00");
+                const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                return `<option value="${m}">${label}</option>`;
+            }).join('');
+
+            const yearOptionsHTML = yearsArr.map(y => {
+                return `<option value="${y}">${y} Full Year</option>`;
+            }).join('');
+
+            let html = '';
+            if (monthOptionsHTML) html += `<optgroup label="Months">${monthOptionsHTML}</optgroup>`;
+            if (yearOptionsHTML) html += `<optgroup label="Years">${yearOptionsHTML}</optgroup>`;
+            html += `<option value="all">All Time</option>`;
+
+            select.innerHTML = html;
+
+            const todayStr = new Date().toISOString().substring(0, 7);
+            
+            // Explicitly inject current month if not present
+            if (!monthsSet.has(todayStr)) {
+                const d = new Date(todayStr + "-01T00:00:00");
+                const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                if (html.includes('<optgroup label="Months">')) {
+                    html = html.replace('<optgroup label="Months">', `<optgroup label="Months"><option value="${todayStr}">${label}</option>`);
+                } else {
+                    html = `<optgroup label="Months"><option value="${todayStr}">${label}</option></optgroup>` + html;
+                }
+                select.innerHTML = html;
+            }
+
+            if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+                select.value = currentVal;
+            } else if (monthsSet.has(todayStr)) {
+                select.value = todayStr;
+            } else if (monthsArr.length > 0) {
+                select.value = monthsArr[0];
+            } else {
+                select.value = 'all';
+            }
+        }
+
+        function onGlobalFilterChange() {
+            renderAnalyticsDashboard();
+            renderJobSheet();
+            renderReportsTable();
+            calculateSalary();
+        }
+
+        async function fetchAllData() {
+            try {
+                const { data, error } = await _supabase.from('jobs').select('*').order('id', { ascending: true });
+                if (error) throw error;
+                
+                allJobs = data || [];
+                
+                populateGlobalMonthFilter();
+                renderAnalyticsDashboard();
+                renderJobSheet();
+                renderReportsTable();
+                calculateSalary();
 
             } catch (err) {
-                console.error("Save Error:", err);
-                showToast(err.message || "Failed to save job.", true);
-            } finally {
-                // Restore UI state
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
-                spinner.classList.add('hidden');
-                btnText.textContent = 'Save Job Record';
+                console.error("Fetch Error:", err);
+                showToast("Failed to load data from server.", true);
             }
-        });
+        }
 
-        // --- EXCEL COPY UTILITY ---
-        function copyTableForExcel() {
-            const table = document.getElementById('jobs_table');
+        // --- DASHBOARD & CHARTS ---
+        function renderAnalyticsDashboard() {
+            const filteredJobs = getFilteredJobs();
+            const monthCounts = getMonthJobCounts();
+
+            const totalJobs = filteredJobs.length;
+            const totalEarnings = filteredJobs.reduce((acc, j) => acc + Number(j.total), 0);
+            const totalMistakesCount = filteredJobs.filter(j => j.mistake_type && j.mistake_type !== 'None').length;
+            const totalDeductions = filteredJobs.reduce((acc, j) => acc + Number(j.ddt_amount), 0);
+            const largeJobsCount = filteredJobs.filter(j => Number(j.area_sqft) > 2500).length;
+            const nightJobsCount = filteredJobs.filter(j => j.is_night_or_weekend).length;
+
+            const elTotalJobs = document.getElementById('stat_total_jobs'); if (elTotalJobs) elTotalJobs.textContent = totalJobs;
+            const elTotalEarnings = document.getElementById('stat_total_earnings'); if (elTotalEarnings) elTotalEarnings.textContent = `Rs. ${formatCurrency(totalEarnings)}`;
+            const elTotalMistakes = document.getElementById('stat_total_mistakes'); if (elTotalMistakes) elTotalMistakes.textContent = totalMistakesCount;
+            const elTotalDeductions = document.getElementById('stat_total_deductions'); if (elTotalDeductions) elTotalDeductions.textContent = `Rs. ${formatCurrency(totalDeductions)}`;
+            const elLargeJobs = document.getElementById('stat_large_jobs'); if (elLargeJobs) elLargeJobs.textContent = largeJobsCount;
+            const elNightJobs = document.getElementById('stat_night_jobs'); if (elNightJobs) elNightJobs.textContent = nightJobsCount;
+
+            // Monthly Target Progress
+            const targetProgress = document.getElementById('stat_target_progress');
+            const targetBadge = document.getElementById('target_badge');
+            if (targetProgress) targetProgress.textContent = `${totalJobs} / 170`;
+            if (targetBadge) {
+                if (totalJobs >= 170) {
+                    targetBadge.classList.remove('hidden');
+                } else {
+                    targetBadge.classList.add('hidden');
+                }
+            }
+
+            // Client Summary Grouping
+            const clientCounts = {};
+            filteredJobs.forEach(job => {
+                const name = String(job.client_name || 'Unknown').trim();
+                clientCounts[name] = (clientCounts[name] || 0) + 1;
+            });
+            
+            const tbody = document.getElementById('client_summary_body');
+            const sortedClients = Object.entries(clientCounts).sort((a,b) => b[1] - a[1]);
+            const elClientCount = document.getElementById('client_summary_count');
+            if (elClientCount) elClientCount.textContent = `${sortedClients.length} Clients`;
+
+            if (tbody) {
+                if (sortedClients.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-slate-500">No jobs in selected period.</td></tr>`;
+                } else {
+                    tbody.innerHTML = sortedClients.map(([name, count]) => `
+                        <tr class="hover:bg-slate-800/40">
+                            <td class="px-6 py-4 text-slate-200 text-sm font-sans font-medium">${name}</td>
+                            <td class="px-6 py-4 text-right text-sm text-emerald-400 font-bold">${count}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+
+            renderCharts(filteredJobs, sortedClients);
+        }
+
+        function renderCharts(jobs, sortedClients) {
+            if (weeklyChartInstance) weeklyChartInstance.destroy();
+            if (monthlyTimelineChartInstance) monthlyTimelineChartInstance.destroy();
+            if (dayNightChartInstance) dayNightChartInstance.destroy();
+
+            // Calculate Top Client
+            const elTopClient = document.getElementById('stat_top_client');
+            if (elTopClient) {
+                if (sortedClients && sortedClients.length > 0) {
+                    elTopClient.textContent = sortedClients[0][0];
+                } else {
+                    elTopClient.textContent = "None";
+                }
+            }
+
+            // Calculate Accuracy
+            const noMistakeCount = jobs.filter(j => !j.mistake_type || j.mistake_type === 'None').length;
+            const accRate = jobs.length > 0 ? ((noMistakeCount / jobs.length) * 100).toFixed(1) : 0;
+            const elAccuracy = document.getElementById('stat_accuracy');
+            if (elAccuracy) elAccuracy.textContent = accRate + '%';
+
+            const mistakeFreq = {};
+            jobs.forEach(j => {
+                if (j.mistake_type && j.mistake_type !== 'None') {
+                    mistakeFreq[j.mistake_type] = (mistakeFreq[j.mistake_type] || 0) + 1;
+                }
+            });
+            const topMistake = Object.entries(mistakeFreq).sort((a,b)=>b[1]-a[1])[0];
+            const elFreqMistake = document.getElementById('stat_freq_mistake');
+            if (elFreqMistake) elFreqMistake.textContent = topMistake ? "Top Error: " + topMistake[0] : "Perfect Accuracy!";
+
+            // Weekly Peak Chart Data
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const weekCounts = [0,0,0,0,0,0,0];
+            jobs.forEach(j => {
+                const d = new Date(j.date);
+                if(!isNaN(d)) weekCounts[d.getDay()]++;
+            });
+
+            // Monthly Distribution (1-10, 11-20, 21-31)
+            let m1=0, m2=0, m3=0;
+            jobs.forEach(j => {
+                const d = new Date(j.date);
+                if(!isNaN(d)) {
+                    const day = d.getDate();
+                    if(day <= 10) m1++;
+                    else if(day <= 20) m2++;
+                    else m3++;
+                }
+            });
+
+            // Day vs Night
+            let dayCount = 0, nightCount = 0;
+            jobs.forEach(j => {
+                if(j.is_night_or_weekend) nightCount++;
+                else dayCount++;
+            });
+
+            const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }, x: { ticks: { color: '#64748b' }, grid: { display: false } } } };
+
+            const wCtx = document.getElementById('weeklyChart');
+            if(wCtx) {
+                weeklyChartInstance = new Chart(wCtx, {
+                    type: 'bar',
+                    data: { labels: days, datasets: [{ label: 'Jobs Completed', data: weekCounts, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                    options: commonOptions
+                });
+            }
+
+            const mCtx = document.getElementById('monthlyTimelineChart');
+            if(mCtx) {
+                monthlyTimelineChartInstance = new Chart(mCtx, {
+                    type: 'line',
+                    data: { labels: ['Days 1-10', 'Days 11-20', 'Days 21-31'], datasets: [{ label: 'Job Volume', data: [m1,m2,m3], borderColor: '#8b5cf6', backgroundColor: '#8b5cf633', fill: true, tension: 0.3 }] },
+                    options: commonOptions
+                });
+            }
+
+            const dnCtx = document.getElementById('dayNightChart');
+            if(dnCtx) {
+                dayNightChartInstance = new Chart(dnCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Day Jobs', 'Night/Weekend'], datasets: [{ data: [dayCount, nightCount], backgroundColor: ['#10b981', '#f59e0b'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8' } } }, cutout: '70%' }
+                });
+            }
+        }
+
+        // --- HOLIDAY SYSTEM ---
+        function getHolidays() {
+            try { return JSON.parse(localStorage.getItem('marked_holidays') || '[]'); } catch { return []; }
+        }
+        
+        function renderHolidayList() {
+            const container = document.getElementById('holiday_list_container');
+            if (!container) return;
+            const holidays = getHolidays();
+            if (holidays.length === 0) {
+                container.innerHTML = '<span class="text-xs text-slate-500 italic">No marked holidays</span>';
+                return;
+            }
+            container.innerHTML = holidays.map(h => `
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-lg text-xs font-mono">
+                    <span>${h}</span>
+                    <button type="button" onclick="removeHoliday('${h}')" class="text-rose-400 hover:text-rose-200 transition-colors p-0.5" title="Remove Holiday">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function removeHoliday(hDate) {
+            let holidays = getHolidays();
+            holidays = holidays.filter(h => h !== hDate);
+            localStorage.setItem('marked_holidays', JSON.stringify(holidays));
+            renderHolidayList();
+            calculateSalary();
+            showToast('Holiday Removed', `Removed ${hDate} from marked holidays.`);
+        }
+
+        function markHoliday() {
+            const hDate = document.getElementById('holiday_date_input').value;
+            if(!hDate) return alert("Select a date first!");
+            const holidays = getHolidays();
+            if(!holidays.includes(hDate)) {
+                holidays.push(hDate);
+                localStorage.setItem('marked_holidays', JSON.stringify(holidays));
+                renderHolidayList();
+                showToast('Holiday Marked!', 'Date saved and added to Salary calculation.');
+                if (isSalaryUnlocked) calculateSalary();
+            } else {
+                showToast('Warning', 'This holiday is already marked!', true);
+            }
+        }
+
+        // --- SALARY CALCULATION ---
+        function calculateSalary() {
+            const filteredJobs = getFilteredJobs();
+            const monthCounts = getMonthJobCounts();
+            const basicSalary = 35453.00;
+            
+            let baseJobEarnings = 0;
+            let totalBonusAmount = 0;
+
+            filteredJobs.forEach(j => {
+                const ym = j.date ? j.date.substring(0, 7) : '';
+                const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
+                baseJobEarnings += Number(j.total);
+                totalBonusAmount += bonus;
+            });
+
+            const penalties = filteredJobs.reduce((acc, j) => acc + Number(j.ddt_amount), 0);
+            const totalJobEarningsWithBonus = baseJobEarnings + totalBonusAmount;
+            
+            let specialAllowance = totalJobEarningsWithBonus - basicSalary;
+            if (specialAllowance < 0) specialAllowance = 0; 
+            
+            const currentFilter = document.getElementById('globalMonthFilter').value;
+            let holidayDays = 0;
+            const savedHolidays = getHolidays();
+            if (currentFilter !== 'all') {
+                holidayDays = savedHolidays.filter(h => h.startsWith(currentFilter)).length;
+            } else {
+                holidayDays = savedHolidays.length;
+            }
+            
+            const holidayAllowance = holidayDays * 1772.65;
+
+            const netSalary = basicSalary + specialAllowance + holidayAllowance - penalties;
+
+            document.getElementById('sal_special').textContent = `Rs. ${formatCurrency(specialAllowance)}`;
+            document.getElementById('sal_target_bonus').textContent = `Rs. ${formatCurrency(totalBonusAmount)}`;
+            document.getElementById('sal_holiday').textContent = `Rs. ${formatCurrency(holidayAllowance)}`;
+            document.getElementById('sal_penalties').textContent = `- Rs. ${formatCurrency(penalties)}`;
+            document.getElementById('sal_net').textContent = `Rs. ${formatCurrency(netSalary)}`;
+        }
+
+        // --- JOB SHEET & REPORTS HTML GENERATOR ---
+        function getJobRowHTML(job, isReport = false, seqNo = 1, bonus = 0) {
+            const dateFormatted = new Date(job.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const finalTotal = Number(job.total) + bonus;
+            
+            if (isReport) {
+                return `
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="px-3 py-2 border-b border-slate-800/60">${seqNo}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60">${dateFormatted}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 font-sans font-medium text-white">${job.client_name}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 font-sans">${job.address_title}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.area_sqft}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60">${job.region}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60">${job.is_color ? 'Yes' : 'No'}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60">${job.mistake_type === 'None' ? '' : job.mistake_type}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.price}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.no_mistake_amount}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 text-right">${job.ddt_amount}</td>
+                        <td class="px-3 py-2 border-b border-slate-800/60 text-right font-bold text-white">${finalTotal}</td>
+                    </tr>
+                `;
+            }
+
+            return `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                    <td class="px-4 py-3 text-center text-slate-500 font-bold">${seqNo}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">${dateFormatted}</td>
+                    <td class="px-4 py-3 font-sans font-medium text-white">${job.client_name}</td>
+                    <td class="px-4 py-3 font-sans truncate max-w-[180px]" title="${job.address_title}">${job.address_title}</td>
+                    <td class="px-4 py-3 text-right font-mono text-slate-200">${Number(job.area_sqft).toLocaleString()}</td>
+                    <td class="px-4 py-3 text-center"><span class="px-1.5 py-0.5 rounded text-xs font-sans font-medium bg-slate-800 text-slate-300 border border-slate-700">${job.region}</span></td>
+                    <td class="px-4 py-3 text-center">${job.is_color ? '<span class="text-xs text-purple-300 bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.5 rounded">Yes</span>' : '-'}</td>
+                    <td class="px-4 py-3 font-sans text-xs">${job.mistake_type === 'None' ? '-' : `<span class="text-rose-400 font-medium">${job.mistake_type}</span>`}</td>
+                    <td class="px-4 py-3 text-right font-mono">${formatCurrency(job.price)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-emerald-400">${formatCurrency(job.no_mistake_amount)}</td>
+                    <td class="px-4 py-3 text-right font-mono text-rose-400">${job.ddt_amount > 0 ? '-'+formatCurrency(job.ddt_amount) : '0.00'}</td>
+                    <td class="px-4 py-3 text-right font-mono font-bold text-white bg-slate-950/40">${formatCurrency(finalTotal)}</td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="openEditModal(${job.id})" class="text-slate-400 hover:text-blue-400 p-1 transition-colors" title="Edit Job">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="deleteJob(${job.id})" class="text-slate-400 hover:text-rose-400 p-1 transition-colors" title="Delete Job">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderJobSheet() {
+            const filteredJobs = getFilteredJobs();
+            const monthCounts = getMonthJobCounts();
+            const tbody = document.getElementById('management_table_body');
+            
+            if (filteredJobs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="px-4 py-12 text-center text-slate-500">No jobs found for selected filter period.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = filteredJobs.map((job, idx) => {
+                const ym = job.date ? job.date.substring(0, 7) : '';
+                const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
+                return getJobRowHTML(job, false, idx + 1, bonus);
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function renderReportsTable() {
+            const filteredJobs = getFilteredJobs();
+            const monthCounts = getMonthJobCounts();
+            const tbody = document.getElementById('reports_table_body');
+            
+            if (filteredJobs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" class="px-4 py-8 text-center text-slate-500">No jobs in selected period.</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = filteredJobs.map((job, idx) => {
+                const ym = job.date ? job.date.substring(0, 7) : '';
+                const bonus = (monthCounts[ym] || 0) >= 170 ? 50 : 0;
+                return getJobRowHTML(job, true, idx + 1, bonus);
+            }).join('');
+        }
+
+        function copyReportsTable() {
+            const table = document.getElementById('reports_table');
             let textToCopy = '';
             
-            // Get headers
             const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
             textToCopy += headers.join('\t') + '\n';
             
-            // Get rows
             const rows = table.querySelectorAll('tbody tr');
-            
             if (rows.length === 1 && rows[0].cells.length === 1) {
-                // Empty state handler
                 showToast("No data to copy", true);
                 return;
             }
 
             rows.forEach(row => {
-                const cells = Array.from(row.querySelectorAll('td')).map(td => {
-                    // Clean up cell text (remove newlines from inner HTML spans)
-                    return td.innerText.trim();
-                });
+                const cells = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim());
                 textToCopy += cells.join('\t') + '\n';
             });
             
             navigator.clipboard.writeText(textToCopy).then(() => {
                 showToast("Copied to clipboard! Ready to paste into Excel.");
             }).catch(err => {
-                console.error('Failed to copy: ', err);
                 showToast("Failed to copy table.", true);
             });
         }
 
-        // Initialize App
-        fetchStatsAndData();
+        // --- EXCEL BULK IMPORT ---
+        async function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+
+                    if (jsonData.length === 0) {
+                        showToast("The uploaded Excel sheet is empty.", true);
+                        return;
+                    }
+
+                    const jobsToInsert = [];
+                    let currentJobCount = allJobs.length; 
+
+                    for (const row of jsonData) {
+                        const rawDate = row['Date'] || row['date'] || '';
+                        let formattedDate = rawDate;
+                        if (rawDate && rawDate.includes('/')) {
+                            const parts = rawDate.split('/');
+                            if (parts.length === 3) {
+                                const y = parts[2].length === 4 ? parts[2] : `20${parts[2]}`;
+                                const m = parts[0].padStart(2, '0');
+                                const d = parts[1].padStart(2, '0');
+                                formattedDate = `${y}-${m}-${d}`;
+                            }
+                        }
+
+                        const job_time = row['Time'] || row['time'] || row['Job Time'] || '00:00:00';
+                        const client_name = row['Client Name'] || row['Client'] || row['client_name'] || '';
+                        const address_title = row['Address / Title'] || row['Address'] || row['Title'] || row['address_title'] || '';
+                        const area_sqft = parseFloat(row['Area Sqft'] || row['Area (Sqft)'] || row['Area'] || row['area_sqft']) || 0;
+                        const region = row['Region'] || row['region'] || 'Standard';
+                        const mistake_type = row['Mistake Type'] || row['Mistake'] || row['mistake_type'] || 'None';
+                        
+                        const colorStr = String(row['Color Plan'] || row['Color'] || row['is_color'] || '').toLowerCase();
+                        const is_color = (colorStr === 'yes' || colorStr === 'true' || colorStr === '1');
+                        
+                        const nightStr = String(row['Night Weekend'] || row['Night / Weekend'] || row['is_night_or_weekend'] || '').toLowerCase();
+                        const is_night_or_weekend = (nightStr === 'yes' || nightStr === 'true' || nightStr === '1');
+
+                        if (!client_name || !address_title) continue;
+
+                        const rawJobData = {
+                            date: formattedDate,
+                            job_time,
+                            client_name,
+                            address_title,
+                            area_sqft,
+                            region,
+                            mistake_type,
+                            is_color,
+                            is_night_or_weekend
+                        };
+
+                        const totals = calculatePricing(rawJobData, currentJobCount);
+                        jobsToInsert.push({ ...rawJobData, ...totals });
+                        currentJobCount++;
+                    }
+
+                    if (jobsToInsert.length === 0) {
+                        showToast("No valid job rows found to import.", true);
+                        return;
+                    }
+
+                    const { error } = await _supabase.from('jobs').insert(jobsToInsert);
+                    if (error) throw error;
+
+                    showToast(`Successfully imported ${jobsToInsert.length} jobs!`);
+                    document.getElementById('excelUpload').value = "";
+                    await fetchAllData();
+
+                } catch (err) {
+                    console.error("Import Error:", err);
+                    showToast("Failed to import Excel data.", true);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- CRUD ACTIONS ---
+        document.getElementById('addJobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.classList.add('opacity-70');
+            
+            const clientNameInput = document.getElementById('client_name').value;
+            if(!clientNameInput) {
+                showToast("Please select a client from the grid.", true);
+                btn.disabled = false; btn.classList.remove('opacity-70');
+                return;
+            }
+
+            const rawData = {
+                date: document.getElementById('date').value,
+                client_name: clientNameInput,
+                address_title: document.getElementById('address_title').value,
+                area_sqft: document.getElementById('area_sqft').value,
+                region: document.getElementById('region').value,
+                mistake_type: document.getElementById('mistake_type').value,
+                is_color: document.getElementById('is_color').checked,
+                job_time: document.getElementById('job_time').value,
+                is_night_or_weekend: document.getElementById('is_night_or_weekend').checked
+            };
+
+            const totals = calculatePricing(rawData, allJobs.length);
+            const insertPayload = { ...rawData, ...totals };
+
+            try {
+                const { error } = await _supabase.from('jobs').insert([insertPayload]);
+                if (error) throw error;
+                
+                showToast("Job added successfully!");
+                document.getElementById('addJobForm').reset();
+                document.getElementById('client_name').value = '';
+                document.querySelectorAll('.client-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-500');
+                    btn.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                });
+                
+                const now2 = new Date();
+                document.getElementById('date').valueAsDate = now2;
+                document.getElementById('job_time').value = String(now2.getHours()).padStart(2, '0') + ':' + String(now2.getMinutes()).padStart(2, '0');
+                autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend');
+                
+                await fetchAllData();
+            } catch (err) {
+                showToast(err.message, true);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-70');
+            }
+        });
+
+        async function deleteJob(id) {
+            if (!confirm("Are you sure you want to delete Job #" + id + "?")) return;
+            
+            try {
+                const { error } = await _supabase.from('jobs').delete().eq('id', id);
+                if (error) throw error;
+                showToast("Job deleted successfully.");
+                await fetchAllData();
+            } catch (err) {
+                showToast("Failed to delete job.", true);
+            }
+        }
+
+        function openEditModal(id) {
+            const job = allJobs.find(j => j.id === id);
+            if (!job) return;
+
+            document.getElementById('edit_id').value = job.id;
+            document.getElementById('edit_date').value = job.date;
+            
+            const clientSelect = document.getElementById('edit_client_name');
+            // Dynamically add option if custom client isn't in predefined groups
+            let optionExists = Array.from(clientSelect.options).some(opt => opt.value === job.client_name);
+            if(!optionExists) {
+                const newOpt = document.createElement('option');
+                newOpt.value = job.client_name;
+                newOpt.textContent = job.client_name;
+                clientSelect.appendChild(newOpt);
+            }
+            clientSelect.value = job.client_name;
+            
+            document.getElementById('edit_address_title').value = job.address_title;
+            document.getElementById('edit_area_sqft').value = job.area_sqft;
+            document.getElementById('edit_region').value = job.region;
+            document.getElementById('edit_mistake_type').value = job.mistake_type || 'None';
+            document.getElementById('edit_is_color').checked = job.is_color;
+            document.getElementById('edit_job_time').value = job.job_time || '';
+            document.getElementById('edit_is_night_or_weekend').checked = job.is_night_or_weekend || false;
+
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        document.getElementById('editJobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('editSubmitBtn');
+            btn.disabled = true; btn.innerText = "Saving...";
+
+            const id = document.getElementById('edit_id').value;
+            const rawData = {
+                date: document.getElementById('edit_date').value,
+                client_name: document.getElementById('edit_client_name').value,
+                address_title: document.getElementById('edit_address_title').value,
+                area_sqft: document.getElementById('edit_area_sqft').value,
+                region: document.getElementById('edit_region').value,
+                mistake_type: document.getElementById('edit_mistake_type').value,
+                is_color: document.getElementById('edit_is_color').checked,
+                job_time: document.getElementById('edit_job_time').value,
+                is_night_or_weekend: document.getElementById('edit_is_night_or_weekend').checked
+            };
+
+            const totals = calculatePricing(rawData, allJobs.length);
+            const updatePayload = { ...rawData, ...totals };
+
+            try {
+                const { error } = await _supabase.from('jobs').update(updatePayload).eq('id', id);
+                if (error) throw error;
+                
+                showToast("Job updated successfully!");
+                closeEditModal();
+                await fetchAllData();
+            } catch (err) {
+                showToast(err.message, true);
+            } finally {
+                btn.disabled = false; btn.innerText = "Save Changes";
+            }
+        });
+
+        // --- AUTOMATION & REAL-TIME CLOCK ---
+        function getSriLankaDateAndTime() {
+            const now = new Date();
+            const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+            const timeStr = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
+            return { dateStr, timeStr };
+        }
+
+        function autoCheckNightWeekend(dateId, timeId, checkboxId, isManualInputChange = false) {
+            if (isManualInputChange && checkboxId === 'is_night_or_weekend') {
+                isUserNightWeekendOverridden = false;
+            }
+            if (isUserNightWeekendOverridden && checkboxId === 'is_night_or_weekend') {
+                return;
+            }
+            
+            const dateStr = document.getElementById(dateId).value;
+            const timeStr = document.getElementById(timeId).value;
+            const checkbox = document.getElementById(checkboxId);
+            
+            if (!dateStr || !timeStr || !checkbox) return;
+            
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const d = new Date(year, month - 1, day);
+            const dayOfWeek = d.getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const timeVal = hours + (minutes / 60);
+            const isNight = (timeVal < 7 || timeVal >= 17);
+            
+            checkbox.checked = isWeekend || isNight;
+        }
+
+        function updateRealTimeClock() {
+            const dateElem = document.getElementById('date');
+            const timeElem = document.getElementById('job_time');
+            const headerClock = document.getElementById('header_live_clock');
+            
+            const { dateStr, timeStr } = getSriLankaDateAndTime();
+
+            if (headerClock) headerClock.textContent = timeStr;
+            
+            if (document.activeElement === timeElem || document.activeElement === dateElem) {
+                return;
+            }
+            
+            if (dateElem && !dateElem.value) dateElem.value = dateStr;
+            if (timeElem && !timeElem.value) timeElem.value = timeStr;
+            
+            autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend');
+        }
+
+        setInterval(updateRealTimeClock, 1000);
+        updateRealTimeClock();
+
+        // --- SMART UTILITY TOOLS ---
+        function convertArea(source) {
+            const sqmInput = document.getElementById('tool_sqm');
+            const sqftInput = document.getElementById('tool_sqft');
+            
+            if (source === 'sqm') {
+                const sqm = parseFloat(sqmInput.value);
+                if (!isNaN(sqm)) {
+                    sqftInput.value = (sqm / 0.09290304).toFixed(2);
+                } else {
+                    sqftInput.value = '';
+                }
+            } else if (source === 'sqft') {
+                const sqft = parseFloat(sqftInput.value);
+                if (!isNaN(sqft)) {
+                    sqmInput.value = (sqft * 0.09290304).toFixed(2);
+                } else {
+                    sqmInput.value = '';
+                }
+            }
+        }
+
+        function useAreaInForm() {
+            const sqft = document.getElementById('tool_sqft').value;
+            if (sqft) {
+                document.getElementById('area_sqft').value = sqft;
+                showToast("Area applied to form.");
+            } else {
+                showToast("Please enter an area first.", true);
+            }
+        }
+
+        function formatAddress() {
+            const inputEl = document.getElementById('tool_address');
+            let addr = inputEl.value;
+            if (!addr.trim()) return;
+
+            addr = addr.replace(/\n/g, ', ').replace(/\s+/g, ' ').trim();
+
+            const abbrMap = [
+                { regex: /\b(r|rd)\b/ig, rep: "Road" },
+                { regex: /\b(st)\b/ig, rep: "Street" },
+                { regex: /\b(ave)\b/ig, rep: "Avenue" },
+                { regex: /\b(cl)\b/ig, rep: "Close" },
+                { regex: /\b(fl)\b/ig, rep: "Flat" },
+                { regex: /\b(apt|apart)\b/ig, rep: "Apartment" },
+                { regex: /\b(ln)\b/ig, rep: "Lane" },
+                { regex: /\b(dr)\b/ig, rep: "Drive" },
+                { regex: /\b(ct)\b/ig, rep: "Court" },
+                { regex: /\b(cres)\b/ig, rep: "Crescent" },
+                { regex: /\b(pk)\b/ig, rep: "Park" },
+                { regex: /\b(gdns)\b/ig, rep: "Gardens" }
+            ];
+            abbrMap.forEach(item => { addr = addr.replace(item.regex, item.rep); });
+
+            addr = addr.toLowerCase().replace(/(?:^|\s|,)[a-z]/g, match => match.toUpperCase());
+
+            const fullPostcodeRegex = /\b([a-pr-uwyz][a-hk-y0-9][a-hjkps-uw0-9]?[a-hjkps-uw0-9]?)\s*([0-9][abd-hjlnp-uw-z]{2})\b/ig;
+            addr = addr.replace(fullPostcodeRegex, (m, p1, p2) => `${p1.toUpperCase()} ${p2.toUpperCase()}`);
+
+            const partialPostcodeRegex = /\b([a-z]{1,2}[0-9][a-z0-9]?)\b/ig;
+            addr = addr.replace(partialPostcodeRegex, m => m.toUpperCase());
+
+            let flatPrefix = '';
+            const flatRegex = /\b(Flat|Apartment)\s+([A-Za-z0-9]+)\b/i;
+            const flatMatch = addr.match(flatRegex);
+            if (flatMatch) {
+                flatPrefix = `${flatMatch[1]} ${flatMatch[2].toUpperCase()}`;
+                addr = addr.replace(flatRegex, '').trim();
+            }
+
+            const streetSuffixes = "Road|Street|Avenue|Close|Lane|Drive|Court|Way|Crescent|Park|Gardens|Place|Square|Hill|Row|Terrace|Mews|Rise|Grove|Walk";
+            const streetSuffixRegex = new RegExp(`\\b(${streetSuffixes})\\s+([A-Za-z]+)\\b`, "g");
+            addr = addr.replace(streetSuffixRegex, "$1, $2");
+
+            const postcodeCommaRegex = /\s*,*\s*\b([A-Z]{1,2}[0-9][A-Z0-9]?\s+[0-9][A-Z]{2}|[A-Z]{1,2}[0-9][A-Z0-9]?)\b/g;
+            addr = addr.replace(postcodeCommaRegex, ", $1");
+
+            if (flatPrefix) addr = `${flatPrefix}, ${addr}`;
+
+            addr = addr.replace(/\s*,+\s*/g, ', ').replace(/^,\s*/, '').replace(/,\s*$/, '').trim();
+            inputEl.value = addr;
+        }
+
+        function useAddressInForm() {
+            const addr = document.getElementById('tool_address').value;
+            if (addr.trim()) {
+                document.getElementById('address_title').value = addr.trim();
+                showToast("Address applied to form.");
+            } else {
+                showToast("Please format an address first.", true);
+            }
+        }
+
+        function searchAddressOnGoogle() {
+            const addr = document.getElementById('tool_address').value;
+            if (addr.trim()) {
+                const query = encodeURIComponent(addr.trim());
+                window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+            } else {
+                showToast("Please enter an address to search.", true);
+            }
+        }
+
+        // INITIALIZE ON LOAD
+        window.addEventListener('DOMContentLoaded', () => {
+            initClientGrid();
+            lucide.createIcons();
+            fetchAllData();
+            renderHolidayList();
+        });
     </script>
 </body>
 </html>
