@@ -258,7 +258,7 @@
         // --- CONFIGURATION ---
         const SUPABASE_URL = "https://jaxzghosalfjmconowgm.supabase.co";
         const SUPABASE_KEY = "sb_publishable_eQQaWNyP0wswrsy98OD_uw_2nlFz4-e";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- GLOBAL STATE ---
         let globalJobCount = 0;
@@ -298,7 +298,7 @@
         async function fetchStatsAndData() {
             try {
                 // Fetch all jobs ordered by date descending
-                const { data: jobs, error } = await supabase
+                const { data: jobs, error } = await supabaseClient
                     .from('jobs')
                     .select('*')
                     .order('id', { ascending: false });
@@ -451,7 +451,7 @@
                 const total = basePrice + no_mistake_amount - ddt_amount;
 
                 // --- INSERT TO SUPABASE ---
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('jobs')
                     .insert([
                         {
