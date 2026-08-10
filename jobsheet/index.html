@@ -1,212 +1,533 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lavientra - Job Sheet Tracker</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body class="bg-gray-100 p-6 font-sans">
-  <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md">
-    <h1 class="text-2xl font-bold mb-4 text-gray-800">Job Sheet Tracker</h1>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floor Plan Jobs Tracker</title>
     
-    <!-- Job Entry Form -->
-    <form id="jobForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded border">
-      <div>
-        <label class="block text-sm font-semibold mb-1">Date</label>
-        <input type="date" id="jobDate" class="w-full p-2 border rounded" required />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1">Client Name</label>
-        <input type="text" id="clientName" placeholder="Client Name" class="w-full p-2 border rounded" required />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1">Address / Plan Title</label>
-        <input type="text" id="addressTitle" placeholder="Address / Title" class="w-full p-2 border rounded" required />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1">Area (Sq.ft)</label>
-        <input type="number" id="areaSqft" placeholder="e.g. 1200" class="w-full p-2 border rounded" required />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1">Region</label>
-        <select id="region" class="w-full p-2 border rounded">
-          <option value="Standard">Standard</option>
-          <option value="UK">UK</option>
-          <option value="AUS">AUS</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1">Mistake Type (Optional)</label>
-        <select id="mistakeType" class="w-full p-2 border rounded">
-          <option value="">None</option>
-          <option value="Address">Address (Rs. 300)</option>
-          <option value="North Point">North Point (Rs. 300)</option>
-          <option value="Floor Label">Floor Label (Rs. 300)</option>
-          <option value="Label">Label (Rs. 100)</option>
-        </select>
-      </div>
-      <div class="flex items-center mt-6">
-        <label class="inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="isColor" class="sr-only peer">
-          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          <span class="ml-3 text-sm font-semibold">Color Plan</span>
-        </label>
-      </div>
-      <div class="flex items-end">
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">Save Job</button>
-      </div>
-    </form>
+    <!-- Google Fonts: Inter for Apple-like typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Export Button -->
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold">Saved Jobs</h2>
-      <button onclick="copyToExcel()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-        📋 Copy Table for Excel
-      </button>
-    </div>
-
-    <!-- Table -->
-    <div class="overflow-x-auto">
-      <table id="jobsTable" class="w-full text-left border-collapse border border-gray-200 text-sm">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="p-2 border">Date</th>
-            <th class="p-2 border">Client</th>
-            <th class="p-2 border">Address / Title</th>
-            <th class="p-2 border">Area</th>
-            <th class="p-2 border">Region</th>
-            <th class="p-2 border">Color</th>
-            <th class="p-2 border">Mistake</th>
-            <th class="p-2 border">Price</th>
-            <th class="p-2 border">Allowance</th>
-            <th class="p-2 border">Deduction</th>
-            <th class="p-2 border">Total</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <script>
-    // Supabase Credentials
-    const SUPABASE_URL = "https://jaxzghosalfjmconowgm.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_eQQaWNyP0wswrsy98OD_uw_2nlFz4-e";
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // Rate Calculator Logic
-    function calculatePrices(area, region, isColor, mistake) {
-      let price = 0;
-      let allowance = 25;
-      let ddt = 0;
-
-      // Base Rates
-      if (region === 'UK' || region === 'AUS') {
-        if (area <= 1000) price = 300;
-        else if (area <= 2000) price = 350;
-        else if (area <= 3000) price = 400;
-        else price = 450;
-      } else {
-        if (area <= 1000) price = 200;
-        else if (area <= 2000) price = 250;
-        else if (area <= 3000) price = 300;
-        else price = 350;
-      }
-
-      if (isColor) price += 25;
-
-      // Deductions for Mistakes
-      if (mistake === 'Address' || mistake === 'North Point' || mistake === 'Floor Label') {
-        ddt = 300;
-        allowance = 0;
-      } else if (mistake === 'Label') {
-        ddt = 100;
-        allowance = 0;
-      }
-
-      const total = price + allowance - ddt;
-      return { price, allowance, ddt, total };
-    }
-
-    // Load Data
-    async function fetchJobs() {
-      const { data, error } = await _supabase.from('jobs').select('*').order('id', { ascending: false });
-      if (error) console.error(error);
-      else renderTable(data);
-    }
-
-    function renderTable(data) {
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '';
-      data.forEach(job => {
-        tbody.innerHTML += `
-          <tr class="border-b hover:bg-gray-50">
-            <td class="p-2 border">${job.date || ''}</td>
-            <td class="p-2 border">${job.client_name || ''}</td>
-            <td class="p-2 border">${job.address_title || ''}</td>
-            <td class="p-2 border">${job.area_sqft || 0}</td>
-            <td class="p-2 border">${job.region || ''}</td>
-            <td class="p-2 border">${job.is_color ? 'Color' : ''}</td>
-            <td class="p-2 border">${job.mistake_type || ''}</td>
-            <td class="p-2 border">${job.price || 0}</td>
-            <td class="p-2 border">${job.no_mistake_amount || 0}</td>
-            <td class="p-2 border">${job.ddt_amount || 0}</td>
-            <td class="p-2 border font-bold">${job.total || 0}</td>
-          </tr>
-        `;
-      });
-    }
-
-    // Save Data
-    document.getElementById('jobForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const date = document.getElementById('jobDate').value;
-      const client_name = document.getElementById('clientName').value;
-      const address_title = document.getElementById('addressTitle').value;
-      const area_sqft = parseFloat(document.getElementById('areaSqft').value);
-      const region = document.getElementById('region').value;
-      const mistake_type = document.getElementById('mistakeType').value;
-      const is_color = document.getElementById('isColor').checked;
-
-      const calc = calculatePrices(area_sqft, region, is_color, mistake_type);
-
-      const { error } = await _supabase.from('jobs').insert([{
-        date, client_name, address_title, area_sqft, region, is_color,
-        mistake_type, price: calc.price, no_mistake_amount: calc.allowance,
-        ddt_amount: calc.ddt, total: calc.total
-      }]);
-
-      if (error) alert("Error saving job!");
-      else {
-        document.getElementById('jobForm').reset();
-        fetchJobs();
-      }
-    });
-
-    // Copy Table to Clipboard for Excel Paste
-    function copyToExcel() {
-      const el = document.getElementById('jobsTable');
-      let body = document.body, range, sel;
-      if (document.createRange && window.getSelection) {
-        range = document.createRange();
-        sel = window.getSelection();
-        sel.removeAllRanges();
-        try {
-          range.selectNodeContents(el);
-          sel.addRange(range);
-        } catch (e) {
-          range.selectNode(el);
-          sel.addRange(range);
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        appleBlue: '#0071e3',
+                        appleBlueHover: '#0058b0',
+                        appleBg: '#fbfbfd',
+                        appleCard: '#ffffff',
+                        appleText: '#1d1d1f',
+                        appleTextMuted: '#86868b',
+                        appleBorder: '#d2d2d7',
+                    },
+                    boxShadow: {
+                        'apple': '0 4px 24px rgba(0, 0, 0, 0.04)',
+                        'apple-hover': '0 8px 32px rgba(0, 0, 0, 0.08)',
+                    }
+                }
+            }
         }
-        document.execCommand('copy');
-        sel.removeAllRanges();
-        alert("Table copied! Now paste (Ctrl+V) directly into Excel.");
-      }
-    }
+    </script>
 
-    fetchJobs();
-  </script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            background-color: theme('colors.appleBg');
+            color: theme('colors.appleText');
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .apple-input {
+            transition: all 0.2s ease;
+            outline: none;
+            border: 1px solid theme('colors.appleBorder');
+        }
+        
+        .apple-input:focus {
+            border-color: theme('colors.appleBlue');
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+        }
+
+        .apple-button {
+            transition: all 0.2s ease;
+        }
+        
+        .apple-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Custom Scrollbar for the table */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s linear;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-end pb-4 border-b border-appleBorder">
+            <div>
+                <h1 class="text-3xl font-semibold tracking-tight text-appleText">Jobs Tracker</h1>
+                <p class="text-appleTextMuted mt-1">Manage architectural and drafting floor plan jobs.</p>
+            </div>
+            <div class="hidden sm:block text-right">
+                <p class="text-xs text-appleTextMuted font-medium tracking-wide uppercase">App Status</p>
+                <div class="flex items-center gap-2 mt-1 text-sm font-medium text-emerald-600">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Live Connection
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Total Jobs Card -->
+            <div class="bg-appleCard rounded-2xl p-6 shadow-apple flex flex-col justify-center">
+                <p class="text-sm font-medium text-appleTextMuted mb-1">Total Jobs</p>
+                <h3 class="text-3xl font-semibold text-appleText" id="stat_total_jobs">-</h3>
+            </div>
+            <!-- Total Earnings Card -->
+            <div class="bg-appleCard rounded-2xl p-6 shadow-apple flex flex-col justify-center">
+                <p class="text-sm font-medium text-appleTextMuted mb-1">Total Earnings (LKR)</p>
+                <h3 class="text-3xl font-semibold text-appleText" id="stat_total_earnings">Rs. -</h3>
+            </div>
+            <!-- Current Tier Card -->
+            <div class="bg-appleCard rounded-2xl p-6 shadow-apple flex flex-col justify-center relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-24 h-24 bg-appleBlue/5 rounded-full blur-2xl"></div>
+                <p class="text-sm font-medium text-appleTextMuted mb-1">Current Job Tier</p>
+                <h3 class="text-xl font-semibold text-appleBlue flex items-center gap-2" id="stat_current_tier">
+                    Loading...
+                </h3>
+                <p class="text-xs text-appleTextMuted mt-2" id="stat_tier_desc">Waiting for data...</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Form -->
+            <div class="lg:col-span-1">
+                <div class="bg-appleCard rounded-2xl p-6 shadow-apple">
+                    <h2 class="text-xl font-semibold mb-6">New Job</h2>
+                    
+                    <form id="jobForm" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-appleText mb-1.5" for="date">Date</label>
+                            <input type="date" id="date" required class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-appleText mb-1.5" for="client_name">Client Name</label>
+                            <input type="text" id="client_name" required placeholder="Enter client name" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-appleText mb-1.5" for="address_title">Address / Title</label>
+                            <input type="text" id="address_title" required placeholder="e.g. 123 Main St" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-appleText mb-1.5" for="area_sqft">Area (Sqft)</label>
+                                <input type="number" id="area_sqft" required min="0" step="0.01" placeholder="0.00" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-appleText mb-1.5" for="region">Region</label>
+                                <select id="region" required class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                                    <option value="Standard">Standard</option>
+                                    <option value="UK">UK</option>
+                                    <option value="AUS">AUS</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-appleText mb-1.5" for="mistake_type">Mistake Type</label>
+                            <select id="mistake_type" class="apple-input w-full px-3 py-2.5 rounded-xl bg-gray-50 text-sm">
+                                <option value="None">None (Default Allowance)</option>
+                                <option value="Address">Address (-300)</option>
+                                <option value="North Point">North Point (-300)</option>
+                                <option value="Floor Label">Floor Label (-300)</option>
+                                <option value="Label">Label (-100)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center pt-2">
+                            <input id="is_color" type="checkbox" class="w-5 h-5 text-appleBlue bg-gray-100 border-gray-300 rounded focus:ring-appleBlue focus:ring-2 accent-appleBlue cursor-pointer">
+                            <label for="is_color" class="ml-2 text-sm font-medium text-appleText cursor-pointer">Color Plan (+ Rs. 25)</label>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="apple-button w-full mt-4 bg-appleBlue hover:bg-appleBlueHover text-white font-medium py-3 px-4 rounded-xl shadow-sm flex justify-center items-center gap-2">
+                            <span>Save Job Record</span>
+                            <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Data Table -->
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                <div class="bg-appleCard rounded-2xl shadow-apple flex-1 flex flex-col overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white z-10 relative">
+                        <h2 class="text-xl font-semibold">Job Records</h2>
+                        <button onclick="copyTableForExcel()" class="apple-button text-sm font-medium text-appleBlue bg-appleBlue/10 hover:bg-appleBlue/20 py-2 px-4 rounded-lg flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            Copy for Excel
+                        </button>
+                    </div>
+                    
+                    <div class="table-container overflow-x-auto flex-1 bg-white">
+                        <table class="w-full text-left border-collapse min-w-[800px]" id="jobs_table">
+                            <thead>
+                                <tr class="bg-gray-50/80 text-xs uppercase tracking-wider text-appleTextMuted border-b border-gray-200">
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">ID</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Date</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Client Name</th>
+                                    <th class="px-4 py-3 font-medium min-w-[150px]">Address</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Area</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Region</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Color</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap">Mistake</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right">Price</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right">Allow.</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right">Ded.</th>
+                                    <th class="px-4 py-3 font-medium whitespace-nowrap text-right text-appleText bg-gray-50">Total (Rs)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs_table_body" class="text-sm divide-y divide-gray-100">
+                                <!-- Rows will be injected here via JS -->
+                                <tr>
+                                    <td colspan="12" class="px-4 py-12 text-center text-appleTextMuted">Loading job records...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50">
+        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span id="toast_msg" class="text-sm font-medium">Action successful</span>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SUPABASE_URL = "https://jaxzghosalfjmconowgm.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_eQQaWNyP0wswrsy98OD_uw_2nlFz4-e";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- GLOBAL STATE ---
+        let globalJobCount = 0;
+
+        // --- UTILS ---
+        function formatCurrency(num) {
+            return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast_msg');
+            const icon = toast.querySelector('svg');
+            
+            msgEl.textContent = message;
+            
+            if (isError) {
+                toast.classList.replace('bg-gray-900', 'bg-red-600');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+                icon.classList.replace('text-emerald-400', 'text-white');
+            } else {
+                toast.classList.replace('bg-red-600', 'bg-gray-900');
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+                icon.classList.replace('text-white', 'text-emerald-400');
+            }
+
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Set today's date as default
+        document.getElementById('date').valueAsDate = new Date();
+
+        // --- DATA FETCHING ---
+        async function fetchStatsAndData() {
+            try {
+                // Fetch all jobs ordered by date descending
+                const { data: jobs, error } = await supabase
+                    .from('jobs')
+                    .select('*')
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                // Update Stats
+                globalJobCount = jobs.length;
+                const totalEarnings = jobs.reduce((acc, job) => acc + Number(job.total), 0);
+                
+                document.getElementById('stat_total_jobs').textContent = globalJobCount;
+                document.getElementById('stat_total_earnings').textContent = `Rs. ${formatCurrency(totalEarnings)}`;
+
+                // Update Tier UI
+                const tierEl = document.getElementById('stat_current_tier');
+                const tierDesc = document.getElementById('stat_tier_desc');
+                
+                if (globalJobCount < 100) {
+                    tierEl.innerHTML = `
+                        <svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        First 100 Tier
+                    `;
+                    tierDesc.textContent = `${100 - globalJobCount} jobs remaining for special pricing`;
+                } else {
+                    tierEl.innerHTML = `
+                        <svg class="w-5 h-5 text-appleBlue" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        Regular Tier
+                    `;
+                    tierDesc.textContent = `Standard pricing applies`;
+                }
+
+                // Render Table
+                renderTable(jobs);
+                
+            } catch (err) {
+                console.error("Error fetching data: ", err);
+                showToast("Failed to load data.", true);
+            }
+        }
+
+        function renderTable(jobs) {
+            const tbody = document.getElementById('jobs_table_body');
+            tbody.innerHTML = '';
+
+            if (jobs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" class="px-4 py-8 text-center text-appleTextMuted">No jobs found. Add your first job!</td></tr>`;
+                return;
+            }
+
+            jobs.forEach(job => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50/50 transition-colors";
+                
+                // Format date nicely
+                const dateObj = new Date(job.date);
+                const dateFormatted = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 text-appleTextMuted">#${job.id}</td>
+                    <td class="px-4 py-3">${dateFormatted}</td>
+                    <td class="px-4 py-3 font-medium text-appleText">${job.client_name}</td>
+                    <td class="px-4 py-3 truncate max-w-[200px]" title="${job.address_title}">${job.address_title}</td>
+                    <td class="px-4 py-3">${Number(job.area_sqft).toLocaleString()}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-medium ${
+                            job.region === 'Standard' ? 'bg-gray-100 text-gray-700' : 'bg-blue-50 text-appleBlue'
+                        }">${job.region}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        ${job.is_color ? 
+                            '<span class="inline-flex items-center text-xs font-medium text-purple-700 bg-purple-50 px-2 py-1 rounded-md">Yes</span>' : 
+                            '<span class="text-gray-400">-</span>'}
+                    </td>
+                    <td class="px-4 py-3 text-sm">${job.mistake_type === 'None' ? '<span class="text-gray-400">-</span>' : job.mistake_type}</td>
+                    <td class="px-4 py-3 text-right">${formatCurrency(job.price)}</td>
+                    <td class="px-4 py-3 text-right text-emerald-600">${formatCurrency(job.no_mistake_amount)}</td>
+                    <td class="px-4 py-3 text-right text-red-600">${job.ddt_amount > 0 ? '-' + formatCurrency(job.ddt_amount) : '0.00'}</td>
+                    <td class="px-4 py-3 text-right font-semibold text-appleText bg-gray-50/50">${formatCurrency(job.total)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- FORM SUBMISSION & LOGIC ---
+        document.getElementById('jobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('loadingSpinner');
+            const btnText = submitBtn.querySelector('span');
+            
+            // UI Loading state
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Saving...';
+
+            try {
+                // Get values
+                const date = document.getElementById('date').value;
+                const client_name = document.getElementById('client_name').value;
+                const address_title = document.getElementById('address_title').value;
+                const area_sqft = parseFloat(document.getElementById('area_sqft').value) || 0;
+                const region = document.getElementById('region').value;
+                const mistake_type = document.getElementById('mistake_type').value;
+                const is_color = document.getElementById('is_color').checked;
+
+                // --- BUSINESS LOGIC & CALCULATIONS ---
+                let basePrice = 0;
+
+                // 1. Job Count Rule (Pricing)
+                if (globalJobCount < 100) {
+                    basePrice = 0;
+                    if (is_color) basePrice += 25;
+                } else {
+                    if (region === 'Standard') {
+                        if (area_sqft <= 1000) basePrice = 200;
+                        else if (area_sqft <= 2000) basePrice = 250;
+                        else if (area_sqft <= 3000) basePrice = 300;
+                        else basePrice = 350;
+                    } else if (region === 'UK' || region === 'AUS') {
+                        if (area_sqft <= 1000) basePrice = 300;
+                        else if (area_sqft <= 2000) basePrice = 350;
+                        else if (area_sqft <= 3000) basePrice = 400;
+                        else basePrice = 450;
+                    }
+                    if (is_color) basePrice += 25;
+                }
+
+                // 2. Large Area Rule (> 5000 sqft)
+                if (area_sqft > 5000) {
+                    const extraArea = area_sqft - 5000;
+                    const additionalPrice = (extraArea / 1000) * 75;
+                    basePrice += additionalPrice;
+                }
+
+                // 3. Mistakes & Deductions
+                let no_mistake_amount = 25; // Default Allowance
+                let ddt_amount = 0;         // Default Deduction
+
+                if (['Address', 'North Point', 'Floor Label'].includes(mistake_type)) {
+                    ddt_amount = 300;
+                    no_mistake_amount = 0;
+                } else if (mistake_type === 'Label') {
+                    ddt_amount = 100;
+                    no_mistake_amount = 0;
+                }
+
+                // 4. Final Total
+                const total = basePrice + no_mistake_amount - ddt_amount;
+
+                // --- INSERT TO SUPABASE ---
+                const { data, error } = await supabase
+                    .from('jobs')
+                    .insert([
+                        {
+                            date,
+                            client_name,
+                            address_title,
+                            area_sqft,
+                            region,
+                            is_color,
+                            mistake_type,
+                            price: basePrice,
+                            no_mistake_amount,
+                            ddt_amount,
+                            total
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                // Success
+                showToast("Job saved successfully!");
+                document.getElementById('jobForm').reset();
+                // Keep today's date
+                document.getElementById('date').valueAsDate = new Date();
+                
+                // Refresh data
+                await fetchStatsAndData();
+
+            } catch (err) {
+                console.error("Save Error:", err);
+                showToast(err.message || "Failed to save job.", true);
+            } finally {
+                // Restore UI state
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+                spinner.classList.add('hidden');
+                btnText.textContent = 'Save Job Record';
+            }
+        });
+
+        // --- EXCEL COPY UTILITY ---
+        function copyTableForExcel() {
+            const table = document.getElementById('jobs_table');
+            let textToCopy = '';
+            
+            // Get headers
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+            textToCopy += headers.join('\t') + '\n';
+            
+            // Get rows
+            const rows = table.querySelectorAll('tbody tr');
+            
+            if (rows.length === 1 && rows[0].cells.length === 1) {
+                // Empty state handler
+                showToast("No data to copy", true);
+                return;
+            }
+
+            rows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td')).map(td => {
+                    // Clean up cell text (remove newlines from inner HTML spans)
+                    return td.innerText.trim();
+                });
+                textToCopy += cells.join('\t') + '\n';
+            });
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast("Copied to clipboard! Ready to paste into Excel.");
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast("Failed to copy table.", true);
+            });
+        }
+
+        // Initialize App
+        fetchStatsAndData();
+    </script>
 </body>
 </html>
