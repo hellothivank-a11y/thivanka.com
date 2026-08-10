@@ -1099,12 +1099,10 @@
                 select.innerHTML = html;
             }
 
-            if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+            if (currentVal && currentVal !== 'all' && select.querySelector(`option[value="${currentVal}"]`)) {
                 select.value = currentVal;
-            } else if (monthsSet.has(todayStr)) {
+            } else if (select.querySelector(`option[value="${todayStr}"]`)) {
                 select.value = todayStr;
-            } else if (monthsArr.length > 0) {
-                select.value = monthsArr[0];
             } else {
                 select.value = 'all';
             }
