@@ -1,0 +1,114 @@
+:root {
+    --bg-main: #000000;
+    --bg-card: #09090b;
+    --border-subtle: #27272a;
+    --text-primary: #fafafa;
+    --text-muted: #a1a1aa;
+    --accent-blue: #0a84ff;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Minimal Crisp Scrollbar */
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #27272a; 
+    border-radius: 4px; 
+    transition: background 0.15s ease-out;
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #3f3f46; 
+}
+
+/* Toast Notification Animation */
+#toast {
+    transform: translateY(100%);
+    opacity: 0;
+    transition: all 0.2s ease-out;
+}
+#toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Crisp Micro-interactions: Inputs */
+.shadcn-input {
+    background-color: transparent;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    transition: all 0.15s ease-out;
+}
+.shadcn-input:focus {
+    outline: none;
+    background-color: transparent;
+    border-bottom-color: var(--accent-blue);
+    /* No glowing box-shadow, just crisp border */
+}
+
+/* Crisp Micro-interactions: Tabs */
+.tab-btn {
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease-out;
+    background-color: transparent;
+}
+.tab-btn:hover {
+    background-color: #1f1f22;
+}
+.tab-btn:active {
+    transform: none; /* No scale, keep it flat and solid */
+}
+.tab-btn.active {
+    background-color: #18181b;
+    color: var(--text-primary) !important;
+    border-color: var(--border-subtle);
+}
+
+/* Crisp Micro-interactions: Table Rows */
+tbody tr {
+    transition: all 0.15s ease-out;
+}
+tbody tr:hover {
+    background-color: #1f1f22 !important;
+    transform: none; /* Flat design */
+}
+/* Premium Segmented Control overrides for JS injected client pills */
+.client-btn {
+    border-radius: 4px !important;
+    border: 1px solid var(--border-subtle) !important;
+    background-color: transparent !important;
+    color: var(--text-muted) !important;
+    transition: all 0.15s ease-out !important;
+    font-weight: 500 !important;
+}
+.client-btn:hover {
+    background-color: #121212 !important;
+    color: var(--text-primary) !important;
+}
+.client-btn.bg-\[\#0f62fe\] {
+    background-color: rgba(15, 98, 254, 0.1) !important;
+    border-color: var(--accent-blue) !important;
+    color: var(--accent-blue) !important;
+}
+
+/* Base input border override for shadcn inputs */
+.shadcn-input {
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    background-color: #000000;
+}
+.shadcn-input:focus {
+    border-color: var(--accent-blue) !important;
+}
