@@ -1120,14 +1120,16 @@
         // --- BUSINESS PRICING ENGINE ---
         function calculatePricing(data, totalJobCount) {
             let basePrice = 0;
-            let no_mistake_amount = 0;
             let ddt_amount = 0;
 
             const is_color = data.is_color;
             const is_night_or_weekend = data.is_night_or_weekend || false;
             const area_sqft = parseFloat(data.area_sqft) || 0;
             const region = data.region;
-            const mistake_type = data.mistake_type;
+            const mistake_type = data.mistake_type || "None";
+
+            // ALWAYS give Rs. 25 allowance if there are NO mistakes, regardless of the job tier
+            let no_mistake_amount = (mistake_type === "None") ? 25 : 0;
 
             // Dynamic Area-based Color Pricing
             let colorPrice = 0;
@@ -1138,15 +1140,11 @@
             // First 100 Lifetime Jobs Rule (Weekday daytime 7AM-5PM)
             if (totalJobCount < 100 && !is_night_or_weekend) {
                 basePrice = 0;
-                no_mistake_amount = 0;
-                
                 if (is_color) basePrice += colorPrice;
                 if (area_sqft > 5000) basePrice += (area_sqft - 5000) * 0.25;
             } 
             // Regular Tiers (Post-100 Jobs OR Night/Weekend)
             else {
-                no_mistake_amount = 25;
-                
                 if (region === 'Standard') {
                     if (area_sqft <= 1000) basePrice = 200;
                     else if (area_sqft <= 2000) basePrice = 250;
