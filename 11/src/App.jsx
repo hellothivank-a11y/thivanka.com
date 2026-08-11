@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from './components/Navbar';
 import HomeTab from './components/HomeTab';
 import JobSheetTab from './components/JobSheetTab';
@@ -14,12 +14,28 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
 
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type, id: Date.now() });
   }, []);
 
-  // Fetch all jobs from Supabase sorted by date desc / id desc
+  // Fetch all jobs from Supabase with timeout protection
   const fetchJobs = useCallback(async () => {
+    // Safety timeout to ensure loading spinner dismisses even on network failure
+    const timer = setTimeout(() => {
+      if (isMountedRef.current && loading) {
+        setLoading(false);
+      }
+    }, 4000);
+
     try {
       const { data, error } = await supabase
         .from('jobs')
@@ -28,12 +44,19 @@ export default function App() {
         .order('id', { ascending: false });
 
       if (error) throw error;
-      setJobs(data || []);
+      if (isMountedRef.current) {
+        setJobs(data || []);
+      }
     } catch (err) {
       console.error('Error fetching jobs:', err);
-      showToast(err.message || 'Error connecting to Supabase jobs table', 'error');
+      if (isMountedRef.current) {
+        showToast(err.message || 'Unable to fetch jobs from database.', 'error');
+      }
     } finally {
-      setLoading(false);
+      clearTimeout(timer);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [showToast]);
 
@@ -41,45 +64,56 @@ export default function App() {
   useEffect(() => {
     fetchJobs();
 
-    const channel = supabase
-      .channel('jobs_realtime_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'jobs' },
-        (payload) => {
-          console.log('Realtime DB change received:', payload);
-          if (payload.eventType === 'INSERT') {
-            setJobs((prev) => [payload.new, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setJobs((prev) => prev.map((j) => (j.id === payload.new.id ? payload.new : j)));
-          } else if (payload.eventType === 'DELETE') {
-            setJobs((prev) => prev.filter((j) => j.id === payload.old.id));
+    let channel;
+    try {
+      channel = supabase
+        .channel('jobs_realtime_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'jobs' },
+          (payload) => {
+            if (!isMountedRef.current) return;
+            if (payload.eventType === 'INSERT') {
+              setJobs((prev) => [payload.new, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              setJobs((prev) => prev.map((j) => (j.id === payload.new.id ? payload.new : j)));
+            } else if (payload.eventType === 'DELETE') {
+              setJobs((prev) => prev.filter((j) => j.id === payload.old.id));
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsRealtimeConnected(true);
-        } else {
-          setIsRealtimeConnected(false);
-        }
-      });
+        )
+        .subscribe((status) => {
+          if (!isMountedRef.current) return;
+          if (status === 'SUBSCRIBED') {
+            setIsRealtimeConnected(true);
+          } else {
+            setIsRealtimeConnected(false);
+          }
+        });
+    } catch (err) {
+      console.warn('Realtime channel subscription error:', err);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (e) {
+          // ignore
+        }
+      }
     };
   }, [fetchJobs]);
 
-  // Derive unique months available in jobs dataset (e.g. ['2026-08', '2026-07'])
+  // Derive unique months available in jobs dataset
   const availableMonths = Array.from(
     new Set(
-      jobs
+      (jobs || [])
         .map((j) => (j.date ? j.date.substring(0, 7) : null))
         .filter(Boolean)
     )
   ).sort((a, b) => b.localeCompare(a));
 
-  // If no jobs exist yet, add current month to list
   const currentMonthStr = new Date().toISOString().substring(0, 7);
   if (!availableMonths.includes(currentMonthStr)) {
     availableMonths.unshift(currentMonthStr);
@@ -90,7 +124,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-gray-100 flex flex-col font-[#Plus_Jakarta_Sans]">
+    <div className="min-h-screen bg-[#050505] text-gray-100 flex flex-col font-sans">
       
       {/* Top Navbar */}
       <Navbar
