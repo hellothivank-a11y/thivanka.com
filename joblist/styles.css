@@ -1,114 +1,520 @@
+/* ==========================================================================
+   LAVIENTRA STUDIO | v2.0 Deep Monochrome + Crisp White Design System
+   ========================================================================== */
+
 :root {
-    --bg-main: #000000;
-    --bg-card: #09090b;
-    --border-subtle: #27272a;
-    --text-primary: #fafafa;
-    --text-muted: #a1a1aa;
-    --accent-blue: #0a84ff;
+  --bg-main: #09090b;
+  /* zinc-950 */
+  --bg-card: #121215;
+  /* customized zinc-900/80 */
+  --bg-input: rgba(24, 24, 27, 0.90);
+  /* zinc-900/90 */
+
+  --border-subtle: #27272a;
+  /* zinc-800 */
+  --border-hover: #3f3f46;
+  /* zinc-700 */
+
+  --ring-focus: #52525b;
+  /* zinc-600 */
+
+  --text-foreground: #fafafa;
+  /* zinc-50 */
+  --text-primary: #f4f4f5;
+  /* zinc-100 */
+  --text-muted: #a1a1aa;
+  /* zinc-400 */
+  --text-placeholder: #71717a;
+  /* zinc-500 */
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius-md: 0.375rem;
+  /* 6px */
+  --radius-lg: 0.5rem;
+  /* 8px */
+  --radius-xl: 0.75rem;
+  /* 12px */
 }
 
 body {
-    background-color: var(--bg-main);
-    color: var(--text-primary);
-    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Minimal Crisp Scrollbar */
-::-webkit-scrollbar { 
-    width: 6px; 
-    height: 6px; 
-}
-::-webkit-scrollbar-track { 
-    background: transparent; 
-}
-::-webkit-scrollbar-thumb { 
-    background: #27272a; 
-    border-radius: 4px; 
-    transition: background 0.15s ease-out;
-}
-::-webkit-scrollbar-thumb:hover { 
-    background: #3f3f46; 
+/* ── Authentic Shadcn Inputs (v2.0) ──────────────────────────── */
+.input-shadcn {
+  display: flex;
+  width: 100%;
+  background-color: rgba(24, 24, 27, 0.9);
+  /* bg-zinc-900/90 old style */
+  border: 1px solid #27272a;
+  /* border-zinc-800 */
+  color: #f4f4f5;
+  /* text-zinc-100 */
+  border-radius: 0.5rem;
+  /* rounded-lg */
+  height: 2.75rem;
+  /* h-11 */
+  padding-left: 0.875rem;
+  /* px-3.5 */
+  padding-right: 0.875rem;
+  font-size: 0.875rem;
+  /* text-sm */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 
-/* Toast Notification Animation */
+/* Specific Black Background for Address Title & Area SQFT (Main & Modal Form) */
+#address_title,
+#area_sqft,
+#modal_address_title,
+#modal_area_sqft {
+  background-color: #09090b !important;
+}
+
+.input-shadcn::placeholder {
+  color: #71717a;
+  /* text-zinc-500 */
+}
+
+.input-shadcn:focus,
+.input-shadcn:focus-visible {
+  outline: none;
+  border-color: #71717a !important;
+  /* focus:border-zinc-500 */
+  box-shadow: 0 0 0 1px rgba(113, 113, 122, 0.5) !important;
+  /* focus:ring-1 focus:ring-zinc-500/50 */
+}
+
+select.input-shadcn {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem !important;
+  cursor: pointer;
+}
+
+select.input-shadcn option {
+  background-color: #121215;
+  color: #f4f4f5;
+}
+
+/* Date & Time Shadow DOM Layout Fix */
+input[type="date"].input-shadcn,
+input[type="time"].input-shadcn {
+  position: relative !important;
+  padding-right: 2.5rem !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute !important;
+  right: 0.75rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  filter: invert(0.8) !important;
+  opacity: 0.75 !important;
+  transition: opacity 0.15s ease-in-out !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button,
+input[type="time"]::-webkit-clear-button {
+  display: none !important;
+}
+
+/* Remove Number Input Spinner Arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -webkit-appearance: textfield !important;
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+/* ── Segmented Toggles ────────────────────────────────────────── */
+.segmented-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  /* h-10 */
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background-color: rgba(24, 24, 27, 0.5);
+  /* transparent zinc */
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  /* text-xs */
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.segmented-toggle-btn:hover {
+  background-color: #27272a;
+  color: #e4e4e7;
+}
+
+.segmented-toggle-btn.active {
+  background-color: #27272a !important;
+  /* bg-zinc-800 */
+  border-color: #3f3f46 !important;
+  /* border-zinc-700 */
+  color: #f4f4f5 !important;
+  /* text-zinc-100 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ── Client Pills ─────────────────────────────────────────────── */
+.client-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background-color: #09090b !important;
+  /* dark black background matching canvas */
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  /* text-xs */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.client-pill:hover {
+  background-color: #18181b;
+  color: #e4e4e7;
+}
+
+.client-pill.active {
+  background-color: #27272a !important;
+  /* bg-zinc-800 */
+  border-color: #3f3f46 !important;
+  /* border-zinc-700 */
+  color: #f4f4f5 !important;
+  /* text-zinc-100 */
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* ── Toast ────────────────────────────────────────────────────── */
 #toast {
-    transform: translateY(100%);
-    opacity: 0;
-    transition: all 0.2s ease-out;
+  transform: translateY(120%) scale(0.95);
+  opacity: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  pointer-events: none;
 }
+
 #toast.show {
-    transform: translateY(0);
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   LAVIENTRA STUDIO | v2.0 Global Design System Classes
+   ========================================================================== */
+
+/* Bento & Dashboard Cards */
+.card-bento {
+  background-color: rgba(24, 24, 27, 0.8);
+  /* bg-zinc-900/80 */
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  /* border-zinc-800/80 */
+  border-radius: 1rem;
+  /* rounded-2xl */
+  padding: 1.5rem;
+  /* p-6 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* shadow-sm */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (min-width: 640px) {
+  .card-bento {
+    padding: 2rem;
+    /* sm:p-8 */
+  }
+}
+
+.card-bento:hover {
+  border-color: rgba(63, 63, 70, 0.6);
+  /* hover:border-zinc-700/60 */
+}
+
+/* Micro-Contrast Typography */
+.label-uppercase {
+  font-size: 11px;
+  /* text-[11px] */
+  font-weight: 600;
+  /* font-semibold */
+  color: #a1a1aa;
+  /* text-zinc-400 */
+  letter-spacing: 0.05em;
+  /* tracking-wider */
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.375rem;
+  /* mb-1.5 */
+}
+
+.stat-number-primary {
+  font-size: 2.25rem;
+  /* text-4xl */
+  line-height: 2.5rem;
+  font-weight: 700;
+  /* font-bold */
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  color: #f4f4f5;
+  /* text-zinc-100 */
+  letter-spacing: -0.025em;
+  /* tracking-tight */
+  margin-top: 0.5rem;
+  /* my-2 */
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .stat-number-primary {
+    font-size: 3rem;
+    /* text-5xl */
+    line-height: 1;
+  }
+}
+
+.text-subtle-muted {
+  font-size: 0.75rem;
+  /* text-xs */
+  line-height: 1rem;
+  font-weight: 500;
+  /* font-medium */
+  color: #71717a;
+  /* text-zinc-500 */
+  letter-spacing: 0em;
+  /* tracking-normal */
+}
+
+/* Buttons & Toggles */
+.btn-primary-white {
+  background-color: #f4f4f5;
+  /* bg-zinc-100 */
+  color: #09090b;
+  /* text-zinc-950 */
+  font-weight: 600;
+  /* font-semibold */
+  height: 2.75rem;
+  /* h-11 */
+  padding-left: 1rem;
+  /* px-4 */
+  padding-right: 1rem;
+  border-radius: 0.5rem;
+  /* rounded-lg */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  /* gap-2 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* shadow-sm */
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary-white:hover {
+  background-color: #ffffff;
+  /* hover:bg-white */
+}
+
+.btn-primary-white:active {
+  transform: scale(0.98);
+}
+
+.toggle-pill-active,
+.toggle-pill-inactive.active {
+  background-color: #27272a;
+  /* bg-zinc-800 */
+  color: #f4f4f5;
+  /* text-zinc-100 */
+  border: 1px solid #3f3f46;
+  /* border-zinc-700 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* shadow-sm */
+  height: 2.75rem;
+  /* h-11 */
+  border-radius: 0.5rem;
+  /* rounded-lg */
+  font-size: 0.875rem;
+  /* text-sm */
+  font-weight: 500;
+  /* font-medium */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.toggle-pill-inactive {
+  background-color: rgba(24, 24, 27, 0.6);
+  /* bg-zinc-900/60 */
+  color: #a1a1aa;
+  /* text-zinc-400 */
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  /* border-zinc-800/80 */
+  height: 2.75rem;
+  /* h-11 */
+  border-radius: 0.5rem;
+  /* rounded-lg */
+  font-size: 0.875rem;
+  /* text-sm */
+  font-weight: 500;
+  /* font-medium */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.toggle-pill-inactive:hover {
+  background-color: rgba(39, 39, 42, 0.5);
+  /* hover:bg-zinc-800/50 */
+}
+
+/* Hide native WebKit date indicator to prevent duplicate double calendar icons */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  opacity: 0;
+}
+
+/* ── Unified Dual-Thumb Range Slider ────────────────────────── */
+.dual-range-input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  outline: none;
+  margin: 0;
+  z-index: 20;
+}
+
+.dual-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #09090b;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: transform 0.15s ease;
+}
+
+.dual-range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.dual-range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #09090b;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: transform 0.15s ease;
+}
+
+.dual-range-input::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* ── Smooth Popover & Tab Animations ────────────────────────── */
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-6px);
+  }
+
+  to {
     opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
-/* Crisp Micro-interactions: Inputs */
-.shadcn-input {
-    background-color: transparent;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-subtle);
-    color: var(--text-primary);
-    transition: all 0.15s ease-out;
-}
-.shadcn-input:focus {
-    outline: none;
-    background-color: transparent;
-    border-bottom-color: var(--accent-blue);
-    /* No glowing box-shadow, just crisp border */
-}
-
-/* Crisp Micro-interactions: Tabs */
-.tab-btn {
-    border-radius: 4px;
-    border: 1px solid transparent;
-    transition: all 0.15s ease-out;
-    background-color: transparent;
-}
-.tab-btn:hover {
-    background-color: #1f1f22;
-}
-.tab-btn:active {
-    transform: none; /* No scale, keep it flat and solid */
-}
-.tab-btn.active {
-    background-color: #18181b;
-    color: var(--text-primary) !important;
-    border-color: var(--border-subtle);
-}
-
-/* Crisp Micro-interactions: Table Rows */
-tbody tr {
-    transition: all 0.15s ease-out;
-}
-tbody tr:hover {
-    background-color: #1f1f22 !important;
-    transform: none; /* Flat design */
-}
-/* Premium Segmented Control overrides for JS injected client pills */
-.client-btn {
-    border-radius: 4px !important;
-    border: 1px solid var(--border-subtle) !important;
-    background-color: transparent !important;
-    color: var(--text-muted) !important;
-    transition: all 0.15s ease-out !important;
-    font-weight: 500 !important;
-}
-.client-btn:hover {
-    background-color: #121212 !important;
-    color: var(--text-primary) !important;
-}
-.client-btn.bg-\[\#0f62fe\] {
-    background-color: rgba(15, 98, 254, 0.1) !important;
-    border-color: var(--accent-blue) !important;
-    color: var(--accent-blue) !important;
-}
-
-/* Base input border override for shadcn inputs */
-.shadcn-input {
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    background-color: #000000;
-}
-.shadcn-input:focus {
-    border-color: var(--accent-blue) !important;
+.popover-animate-in {
+  animation: popoverIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
