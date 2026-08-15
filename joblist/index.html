@@ -1,789 +1,1480 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floor Plan Jobs Tracker — Material 3 + Apple Minimalist</title>
-    
-    <!-- Google Fonts: Inter & JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lavientra Studio v2.0</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- SheetJS for Excel Import -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- CDNs: Tailwind CSS, Supabase JS, Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['IBM Plex Sans', 'sans-serif'],
-                        mono: ['IBM Plex Mono', 'monospace'],
-                    },
-                    colors: {
-                        background: '#000000',
-                        card: '#1c1c1e',
-                        inputBg: '#2c2c2e',
-                        accentBlue: '#0a84ff',
-                        mutedText: '#8e8e93',
-                    }
-                }
-            }
+  <!-- Tailwind Inter Font Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
         }
-    </script>
+      }
+    }
+  </script>
 
-    <link rel="stylesheet" href="styles.css">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen flex flex-col text-[#fafafa] bg-black">
 
-    <!-- HEADER / TOP NAV -->
-    <header class="border-b border-[#27272a] bg-black  sticky top-0 z-40">
-        <div class="max-w-[1600px] mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-10">
-            
-            <!-- Brand & Live Clock -->
-            <div class="flex items-center gap-10">
-                <div class="flex items-center gap-2.5">
-                    <div class="p-2 bg-[#0f62fe]/10 border border-[#0f62fe]/20 rounded-2xl text-[#0f62fe]">
-                        <i data-lucide="layers" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-sm font-semibold tracking-tight text-[#fafafa] flex items-center gap-2">
-                            Floor Plan Jobs Tracker
-                            <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-[#0f62fe]/10 border border-[#0f62fe]/20 text-[#0f62fe] font-medium">v2.5</span>
-                        </h1>
-                    </div>
-                </div>
+<body
+  class="min-h-screen flex flex-col text-zinc-100 bg-[#09090b] selection:bg-zinc-800 selection:text-white font-sans antialiased">
 
-                <!-- Live Sri Lanka Clock Badge -->
-                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#09090b] border border-[#27272a] rounded-full text-xs font-mono text-[#a1a1aa]">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 text-[#0f62fe]"></i>
-                    <span id="header_live_clock">--:--:--</span>
-                    <span class="text-xs text-[#a1a1aa] uppercase">SLST</span>
-                </div>
+  <!-- HEADER -->
+  <header class="border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
+
+      <!-- LEFT: BRANDING / LOGO -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-300 shadow-sm">
+          <i data-lucide="layers" stroke-width="1.5" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+            LAVIENTRA STUDIO
+            <span
+              class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 font-medium">v2.0</span>
+          </h1>
+          <p class="text-[11px] text-zinc-500 font-medium">Floorplan Operations &amp; Analytics</p>
+        </div>
+      </div>
+
+      <!-- CENTER: NAVIGATION TABS -->
+      <div class="flex-1 flex justify-center">
+        <nav class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800/90 p-1 rounded-xl shadow-sm">
+          <button type="button" onclick="switchTab('home')" id="tab_btn_home"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm flex items-center gap-2">
+            <i data-lucide="home" class="w-3.5 h-3.5"></i>
+            <span>Home</span>
+          </button>
+          <button type="button" onclick="switchTab('dashboard')" id="tab_btn_dashboard"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2">
+            <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+            <span>Dashboard</span>
+          </button>
+          <button type="button" onclick="switchTab('jobsheet')" id="tab_btn_jobsheet"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2">
+            <i data-lucide="table" class="w-3.5 h-3.5"></i>
+            <span>Job Sheet</span>
+          </button>
+          <button type="button" onclick="switchTab('salary')" id="tab_btn_salary"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2">
+            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+            <span>Salary</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- RIGHT: LOCK TAB BUTTON & DATE RANGE PICKER POPOVER -->
+      <div class="flex items-center gap-2.5 shrink-0">
+
+        <!-- Lock Tab Button (Only visible on Salary Tab) -->
+        <button type="button" id="header_lock_salary_btn" onclick="lockSalaryTab()"
+          class="hidden bg-zinc-900 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 text-xs px-3.5 py-2 rounded-xl items-center gap-1.5 cursor-pointer transition-all shadow-sm font-semibold"
+          title="Lock and protect Salary tab">
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+          <span>Lock Tab</span>
+        </button>
+
+        <div class="relative shrink-0">
+
+          <!-- Trigger Button -->
+          <button type="button" id="date_picker_trigger_btn" onclick="toggleDatePickerPopover(event)"
+            class="bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-zinc-200 text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-sm">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span id="date_picker_trigger_label" class="font-medium">This Month (August 2026)</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-400 ml-0.5"></i>
+          </button>
+
+        <!-- Popover Container (100% Solid Backdrop, No Bleed) -->
+        <div id="date_picker_popover"
+          class="absolute right-0 top-full mt-2 z-50 w-72 bg-zinc-950 border border-zinc-800/90 rounded-2xl p-2 shadow-2xl hidden flex-col gap-1">
+
+          <!-- Header Section Label -->
+          <div class="px-2 py-1.5 border-b border-zinc-800/60 mb-1 flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Date Filter Range</span>
+            <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-zinc-500"></i>
+          </div>
+
+          <!-- Vertical Menu Item Presets -->
+          <button type="button" onclick="selectDatePreset('current_month')" id="preset_current_month"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-100 bg-zinc-900 border border-zinc-800/80 transition-all flex items-center justify-between">
+            <span>This Month (August 2026)</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('last_month')" id="preset_last_month"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>Last Month (July 2026)</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('last_3_months')" id="preset_last_3_months"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>Last 3 Months</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('this_year')" id="preset_this_year"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>This Year (2026)</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('all_time')" id="preset_all_time"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>All Time</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <!-- ADVANCED FILTER SEGMENTED SECTION -->
+          <div class="border-t border-zinc-800/60 mt-1 pt-2 px-1 pb-1">
+            <div class="px-1 mb-1.5 flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Advanced Filter</span>
+              <i data-lucide="sliders" class="w-3 h-3 text-zinc-500"></i>
             </div>
 
-            <!-- SPA Tab Controls -->
-            <nav class="flex items-center p-1 bg-[#09090b] border border-[#27272a] rounded-full gap-1 overflow-x-auto max-w-full">
-                <button onclick="switchTab('tab-home')" id="btn-tab-home" class="tab-btn active px-4 py-2 rounded-full text-sm font-medium text-[#a1a1aa] hover:text-[#fafafa] transition-all flex items-center gap-1.5 whitespace-nowrap">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                    Home & Entry
-                </button>
-                <button onclick="switchTab('tab-analytics')" id="btn-tab-analytics" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#a1a1aa] hover:text-[#fafafa] transition-all flex items-center gap-1.5 whitespace-nowrap">
-                    <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
-                    Analytics
-                </button>
-                <button onclick="switchTab('tab-jobsheet')" id="btn-tab-jobsheet" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#a1a1aa] hover:text-[#fafafa] transition-all flex items-center gap-1.5 whitespace-nowrap">
-                    <i data-lucide="table" class="w-3.5 h-3.5"></i>
-                    Job Sheet
-                </button>
-                <button onclick="switchTab('tab-reports')" id="btn-tab-reports" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#a1a1aa] hover:text-[#fafafa] transition-all flex items-center gap-1.5 whitespace-nowrap">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                    Reports & Export
-                </button>
-                <button onclick="switchTab('tab-salary')" id="btn-tab-salary" class="tab-btn px-4 py-2 rounded-full text-sm font-medium text-[#a1a1aa] hover:text-[#fafafa] transition-all flex items-center gap-1.5 whitespace-nowrap">
-                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
-                    Salary
-                    <i data-lucide="lock" id="salary_lock_icon" class="w-3 h-3 text-amber-400 ml-0.5"></i>
-                </button>
-            </nav>
+            <!-- Segmented Mode Pills (Year / Month / Date) -->
+            <div class="flex items-center gap-1 bg-zinc-900 p-1 rounded-xl border border-zinc-800 w-full mb-1">
+              <button type="button" onclick="setAdvancedDateFilterTab('year')" id="adv_tab_year"
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <span>🗓️ Year</span>
+              </button>
+              <button type="button" onclick="setAdvancedDateFilterTab('month')" id="adv_tab_month"
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <span>📅 Month</span>
+              </button>
+              <button type="button" onclick="setAdvancedDateFilterTab('date')" id="adv_tab_date"
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <span>📆 Date</span>
+              </button>
+            </div>
 
-            <!-- Global Filter & Status -->
-            <div class="flex items-center gap-10">
+            <!-- MODE A: Year Selection Grid (Initially Hidden) -->
+            <div id="adv_panel_year" class="hidden grid-cols-2 gap-1.5 p-1 mt-1">
+              <!-- JS Injected Years Grid -->
+            </div>
+
+            <!-- MODE B: Month Selection Grid (12 Months, Initially Hidden) -->
+            <div id="adv_panel_month" class="hidden grid-cols-4 gap-1.5 p-1 mt-1">
+              <!-- JS Injected 12 Month Buttons (Jan to Dec) -->
+            </div>
+
+            <!-- MODE C: Specific Date Picker -->
+            <div id="adv_panel_date" class="hidden p-1">
+              <div class="relative flex items-center">
+                <input type="date" id="popover_specific_date_picker" onclick="triggerNativeDatePicker()"
+                  onchange="selectSpecificSingleDate(this.value)"
+                  class="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-xl pl-3 pr-8 py-2 focus:border-zinc-500 focus:outline-none cursor-pointer font-medium hover:border-zinc-700 transition-colors">
+                <button type="button" onclick="triggerNativeDatePicker()"
+                  class="absolute right-2.5 p-1 text-zinc-400 hover:text-zinc-100 transition-colors"
+                  title="Open Calendar">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-[1400px] mx-auto w-full px-6 py-8 flex-1">
+
+    <!-- ==========================================================================
+         TAB 1: HOME VIEW (60/40 SPLIT DATA ENTRY & LIVE BENTO METRICS)
+         ========================================================================== -->
+    <div id="tab_content_home" class="block">
+      <div class="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8 items-start">
+
+        <!-- LEFT 60%: DATA ENTRY FORM -->
+        <div class="card-bento">
+          <div class="flex items-center gap-2 border-b border-zinc-800/60 pb-4 mb-4">
+            <i data-lucide="layout-template" stroke-width="1.5" class="w-4 h-4 text-zinc-400"></i>
+            <h2 class="label-uppercase !mb-0">Log New Floorplan</h2>
+          </div>
+
+          <form id="addJobForm" class="space-y-4 text-sm">
+
+            <!-- ROW 1: Date & Time -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="label-uppercase">Date</label>
+                <input type="date" id="date" required class="input-shadcn">
+              </div>
+              <div>
+                <label class="label-uppercase">Time</label>
+                <input type="time" id="job_time" required class="input-shadcn">
+              </div>
+            </div>
+
+            <!-- ROW 2: Property Address (70%) + Area (30%) -->
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 sm:col-span-8">
+                <label class="label-uppercase">Property Address / Title</label>
+                <input type="text" id="address_title" required placeholder="e.g. 17 Calville House, London"
+                  class="input-shadcn">
+              </div>
+              <div class="col-span-12 sm:col-span-4">
+                <label class="label-uppercase">Area <span
+                    class="text-zinc-400 font-normal lowercase tracking-normal">(Sq.Ft)</span></label>
+                <input type="number" id="area_sqft" min="1" required placeholder="e.g. 1250" class="input-shadcn">
+              </div>
+            </div>
+
+            <!-- ROW 3: Select Client Chips -->
+            <div>
+              <label class="label-uppercase !flex items-center justify-between !mb-2">
                 <div class="flex items-center gap-2">
-                    <label for="globalMonthFilter" class="text-xs font-medium text-[#a1a1aa] flex items-center gap-1">
-                        <i data-lucide="filter" class="w-3 h-3 text-[#a1a1aa]"></i>
-                        Filter:
-                    </label>
-                    <select id="globalMonthFilter" class="shadcn-input px-4 py-2 text-sm font-medium text-[#fafafa] min-w-[140px]" onchange="onGlobalFilterChange()">
-                        <option value="all">All Time</option>
-                    </select>
+                  <span>Select Client</span>
+                  <button type="button" onclick="openClientModal()"
+                    class="text-zinc-500 hover:text-zinc-300 transition-colors" title="Manage Clients">
+                    <i data-lucide="settings-2" stroke-width="1.5" class="w-3.5 h-3.5"></i>
+                  </button>
                 </div>
-
-                <div class="hidden md:flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium">
-                    <span class="relative flex h-1.5 w-1.5">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                    </span>
-                    Live
-                </div>
+                <span id="selected_client_badge"
+                  class="hidden text-zinc-300 font-medium normal-case tracking-normal text-[11px]"></span>
+              </label>
+              <input type="hidden" id="client_name" required>
+              <div id="quick_client_pills" class="space-y-3">
+                <!-- JS Injected Pills -->
+              </div>
             </div>
+
+            <!-- ROW 4: Region Market & Mistake Type -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="label-uppercase">Region Market</label>
+                <select id="region" required class="input-shadcn">
+                  <option value="UK">UK Tier</option>
+                  <option value="AUS">AUS Tier</option>
+                </select>
+              </div>
+              <div>
+                <label class="label-uppercase">Mistake / Deduction Type</label>
+                <select id="mistake_type" class="input-shadcn">
+                  <option value="None">None (Clean Job +Rs.25)</option>
+                  <option value="Address">Wrong Address (-Rs.300)</option>
+                  <option value="North Point">North Point (-Rs.300)</option>
+                  <option value="Floor Label">Floor Label (-Rs.300)</option>
+                  <option value="Measurements">Measurements (-Rs.300)</option>
+                  <option value="Area">Area Error (-Rs.200)</option>
+                  <option value="Label">Label Error (-Rs.100)</option>
+                  <option value="Under Stair RH">Under Stair RH (-Rs.25)</option>
+                  <option value="Template">Wrong Template (-Rs.25)</option>
+                  <option value="Entrance Arrow">Entrance Arrow (-Rs.25)</option>
+                  <option value="Arrow Head">Arrow Head (-Rs.25)</option>
+                  <option value="Room Parts">Room Parts (-Rs.25)</option>
+                  <option value="Door &amp; Window">Door &amp; Window (-Rs.25)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- ROW 5: Segmented Toggles -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <input type="checkbox" id="is_color" class="hidden">
+              <button type="button" id="toggle_color_plan" onclick="toggleOption('is_color')"
+                class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
+                <i data-lucide="palette" stroke-width="1.5"
+                  class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
+                <span>Color Plan</span>
+              </button>
+
+              <input type="checkbox" id="is_night_or_weekend" class="hidden">
+              <button type="button" id="toggle_night_weekend" onclick="toggleOption('is_night_or_weekend')"
+                class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
+                <i data-lucide="moon" stroke-width="1.5"
+                  class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
+                <span>Night / Wknd</span>
+              </button>
+            </div>
+
+            <!-- REAL-TIME LIVE PAYOUT STRIP -->
+            <div id="payout_strip_container"
+              class="bg-zinc-900/40 border border-dashed border-zinc-800/80 opacity-60 rounded-lg p-3.5 mt-4 mb-2 flex items-center justify-between gap-2 shadow-sm transition-all">
+              <div id="payout_breakdown_badges" class="flex items-center gap-1.5 flex-wrap text-[11px]">
+                <span class="text-zinc-500 text-[11px] font-medium flex items-center gap-1.5">
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-zinc-600"></i> Enter job details to calculate payout
+                </span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold block">Estimated Payout</span>
+                <div id="payout_total_val" class="text-base font-bold text-zinc-400 tracking-tight">--</div>
+              </div>
+            </div>
+
+            <!-- BOTTOM: Primary Save Action Button -->
+            <div class="pt-3 border-t border-zinc-800/60">
+              <button type="submit" id="submitBtn" class="w-full btn-primary-white group">
+                <i data-lucide="check" stroke-width="2" class="w-4 h-4 shrink-0"></i>
+                <span>Save Floorplan Record</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- RIGHT 40%: METRICS STACK -->
+        <div class="flex flex-col justify-between gap-4 h-full">
+
+          <!-- DIGITAL CLOCK & LIVE CONTEXT WIDGET -->
+          <div class="card-bento !p-6">
+            <div class="mb-1">
+              <span id="live_clock_date"
+                class="text-xs uppercase font-semibold text-zinc-400 tracking-wider block">Loading...</span>
+            </div>
+
+            <div id="live_clock_time" class="stat-number-primary my-1">
+              --:--:-- --
+            </div>
+
+            <div
+              class="pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-500 font-medium">
+              <div class="flex items-center gap-1.5">
+                <span class="text-zinc-400 font-semibold">LONDON:</span>
+                <span id="tz_london" class="text-zinc-300">--:-- --</span>
+              </div>
+              <div class="h-3 w-[1px] bg-zinc-800"></div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-zinc-400 font-semibold">SYDNEY:</span>
+                <span id="tz_sydney" class="text-zinc-300">--:-- --</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STANDALONE OPERATIONAL CONTEXT STRIP -->
+          <div id="op_context_strip"
+            class="bg-zinc-900/80 border border-zinc-800/80 rounded-xl p-3.5 flex items-center justify-between text-xs">
+            <!-- Left Side: Base Rate text (top) + Last job detail (bottom) -->
+            <div class="space-y-1">
+              <div id="op_rate_text" class="text-zinc-400 text-[11px] font-medium tracking-wide">
+                (Standard Office Hours)
+              </div>
+              <div class="text-zinc-400 text-[11px] font-medium truncate max-w-[220px]">
+                <span>Last Job: </span>
+                <span id="op_last_job" class="text-zinc-200 font-medium">#0 (None)</span>
+              </div>
+            </div>
+
+            <!-- Right Side: Shift Status Badge -->
+            <div class="shrink-0">
+              <span id="op_shift_badge"
+                class="px-2.5 py-1 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold text-[11px] flex items-center gap-1.5 shadow-sm">
+                <span id="op_shift_dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span id="op_shift_text">DAY SHIFT ACTIVE</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 170 Target Progress -->
+          <div class="card-bento !p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="label-uppercase !flex items-center gap-2 !mb-0">
+                <i data-lucide="target" stroke-width="1.5" class="w-4 h-4"></i>
+                170 Monthly Target
+              </h3>
+              <span id="target_status_badge"
+                class="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-medium">0 /
+                170</span>
+            </div>
+            <div class="flex items-end justify-between mb-3">
+              <div class="text-4xl font-bold tracking-tight text-zinc-100" id="target_hero_count">0</div>
+              <div class="text-sm font-semibold text-zinc-400 mb-1" id="target_percentage_label">0%</div>
+            </div>
+            <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div id="target_progress_fill" class="h-full bg-zinc-100 rounded-full transition-all duration-500"
+                style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Bento Grid Jobs & Shifts -->
+          <div class="grid grid-cols-2 gap-5 h-[190px]">
+
+            <!-- TODAY'S JOBS BENTO CARD -->
+            <div class="card-bento">
+              <div>
+                <span class="label-uppercase !flex items-center gap-1.5 !mb-3">
+                  <i data-lucide="sun" stroke-width="2" class="w-3.5 h-3.5"></i>
+                  Today's Jobs
+                </span>
+                <div class="text-[40px] font-bold tracking-tight text-zinc-100 leading-none" id="stat_today_jobs">0
+                </div>
+              </div>
+              <div class="mt-4">
+                <div class="flex items-center justify-between text-xs text-zinc-400 font-medium mb-2.5">
+                  <span>DAY: <span id="today_day_count" class="text-zinc-100">0</span></span>
+                  <span>NIGHT: <span id="today_night_count" class="text-zinc-100">0</span></span>
+                </div>
+                <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden flex">
+                  <div id="today_day_bar" class="bg-zinc-100 transition-all h-full" style="width: 50%;"></div>
+                  <div id="today_night_bar" class="bg-zinc-600 transition-all h-full" style="width: 50%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MONTHLY JOBS BENTO CARD -->
+            <div class="card-bento">
+              <div>
+                <span class="label-uppercase !flex items-center gap-1.5 !mb-3">
+                  <i data-lucide="calendar-days" stroke-width="2" class="w-3.5 h-3.5"></i>
+                  Monthly Jobs
+                </span>
+                <div class="text-[40px] font-bold tracking-tight text-zinc-100 leading-none" id="stat_month_jobs">0
+                </div>
+              </div>
+              <div class="mt-4">
+                <div class="flex items-center justify-between text-xs text-zinc-400 font-medium mb-2.5">
+                  <span>DAY: <span id="month_day_count" class="text-zinc-100">0</span></span>
+                  <span>NIGHT: <span id="month_night_count" class="text-zinc-100">0</span></span>
+                </div>
+                <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden flex">
+                  <div id="month_day_bar" class="bg-zinc-100 transition-all h-full" style="width: 50%;"></div>
+                  <div id="month_night_bar" class="bg-zinc-600 transition-all h-full" style="width: 50%;"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Top Client & Clean Rate -->
+          <div class="grid grid-cols-2 gap-5">
+            <div class="card-bento h-full !p-5">
+              <span class="label-uppercase !mb-2">Top Client Today</span>
+              <div class="text-2xl font-bold tracking-tight text-zinc-100 truncate" id="bento_total_area">None</div>
+            </div>
+            <div class="card-bento h-full !p-5">
+              <span class="label-uppercase !mb-2">Clean Rate</span>
+              <div class="text-4xl font-bold tracking-tight text-zinc-100" id="bento_clean_rate">100%</div>
+            </div>
+          </div>
 
         </div>
-    </header>
 
-    <!-- MAIN BODY -->
-    <main class="max-w-[1600px] mx-auto w-full p-8 md:p-12 flex-1">
-        
-        <!-- ============================================== -->
-        <!-- TAB 1: HOME & ENTRY                            -->
-        <!-- ============================================== -->
-        <section id="tab-home" class="block space-y-4">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                
-                <!-- Quick Add Form Card (7 Cols) -->
-                <div class="lg:col-span-7 bg-[#09090b] border border-[#27272a] rounded-xl p-8 md:p-10 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between border-b border-[#27272a] pb-4 mb-6">
-                            <div class="flex items-center gap-2.5">
-                                <i data-lucide="file-plus-2" class="w-4 h-4 text-[#0f62fe]"></i>
-                                <h2 class="text-sm font-semibold text-[#fafafa] uppercase tracking-widest">Job Entry Form</h2>
-                            </div>
-                            <span class="text-[10px] text-[#a1a1aa] font-mono tracking-widest uppercase">Auto-Calc Engine</span>
-                        </div>
+      </div>
+    </div>
 
-                        <form id="addJobForm" class="flex flex-col gap-y-8">
-                            
-                            <!-- GROUP 1: Time & Client -->
-                            <div class="space-y-4">
-                                <h3 class="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#0f62fe]"></span> Time & Client
-                                </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-2 uppercase tracking-wider" for="date">Date</label>
-                                        <input type="date" id="date" required class="shadcn-input w-full px-4 py-3 h-12 text-sm text-[#fafafa]" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-2 uppercase tracking-wider" for="job_time">Time (SL Time)</label>
-                                        <input type="time" id="job_time" step="1" required class="shadcn-input w-full px-4 py-3 h-12 text-sm font-mono text-[#fafafa]" onchange="autoCheckNightWeekend('date', 'job_time', 'is_night_or_weekend', true)">
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <div class="flex items-center justify-between mb-2 mt-2">
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wider">Select Client</label>
-                                        <button type="button" onclick="toggleCustomClientForm()" class="text-[10px] font-semibold text-[#0f62fe] hover:text-blue-400 flex items-center gap-1 uppercase tracking-wider">
-                                            <i data-lucide="plus" class="w-3 h-3"></i> Custom
-                                        </button>
-                                    </div>
-                                    <input type="hidden" id="client_name">
-                                    
-                                    <div id="custom_client_form" class="hidden mb-3 p-4 bg-black border border-[#27272a] rounded-sm flex flex-col sm:flex-row gap-3 items-end">
-                                        <div class="flex-1 w-full">
-                                            <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-1 uppercase tracking-wider">Custom Name</label>
-                                            <input type="text" id="custom_client_input" class="shadcn-input w-full px-3 py-2 text-sm text-[#fafafa]" placeholder="e.g. Acme Corp">
-                                        </div>
-                                        <div class="flex-1 w-full">
-                                            <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-1 uppercase tracking-wider">Region Tier</label>
-                                            <select id="custom_client_region" class="shadcn-input w-full px-3 py-2 text-sm text-[#fafafa]">
-                                                <option value="UK">UK Tier</option>
-                                                <option value="AUS">AUS Tier</option>
-                                                <option value="Standard">Standard Tier</option>
-                                            </select>
-                                        </div>
-                                        <button type="button" onclick="saveCustomClient()" class="bg-[#0f62fe] hover:bg-blue-500 text-[#fafafa] px-5 h-9 rounded-sm text-xs font-semibold transition-colors w-full sm:w-auto">
-                                            Add
-                                        </button>
-                                    </div>
+    <!-- ==========================================================================
+         TAB 2: DASHBOARD VIEW (ASYMMETRIC BENTO & DIVERSE CHARTS)
+         ========================================================================== -->
+    <div id="tab_content_dashboard" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-zinc-100">Operations &amp; Peak Performance Dashboard</h2>
+          <p class="text-xs text-zinc-400">Target milestones, quality error metrics, shift breakdowns, and peak volume
+            analytics.</p>
+        </div>
+        <span
+          class="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs text-zinc-400 font-medium">Real-Time
+          Analytics Engine</span>
+      </div>
 
-                                    <div id="quick_client_grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                                        <!-- Buttons generated via JS -->
-                                    </div>
-                                </div>
-                            </div>
+      <!-- ROW 1: ASYMMETRIC BENTO GRID (7 Cols / 5 Cols Split) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                            <!-- GROUP 2: Property Details -->
-                            <div class="space-y-4 pt-6 border-t border-[#27272a]">
-                                <h3 class="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Property Details
-                                </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div class="sm:col-span-2">
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-2 uppercase tracking-wider" for="address_title">Address / Title</label>
-                                        <input type="text" id="address_title" required placeholder="e.g. Flat 12, 45 Oakfield Road" class="shadcn-input w-full px-4 py-3 h-12 text-sm text-[#fafafa]" onblur="autoFormatAddressInput(this)">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-2 uppercase tracking-wider" for="area_sqft">Area (Sq.ft)</label>
-                                        <input type="number" id="area_sqft" required min="0" step="0.01" placeholder="0.00" class="shadcn-input w-full px-4 py-3 h-12 text-sm font-mono text-[#fafafa]">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- GROUP 3: Modifiers -->
-                            <div class="space-y-4 pt-6 border-t border-[#27272a]">
-                                <h3 class="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest flex items-center gap-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Modifiers
-                                </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-2 uppercase tracking-wider" for="region">Region Tier</label>
-                                        <select id="region" required class="shadcn-input w-full px-4 py-3 h-12 text-sm text-[#fafafa]">
-                                            <option value="Standard">Standard Tier</option>
-                                            <option value="UK">UK Tier</option>
-                                            <option value="AUS">AUS Tier</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-semibold text-[#a1a1aa] mb-2 uppercase tracking-wider" for="mistake_type">Mistake Type</label>
-                                        <select id="mistake_type" class="shadcn-input w-full px-4 py-3 h-12 text-sm text-[#fafafa]">
-                                            <option value="None">None (No Deduction)</option>
-                                            <option value="Address">Address (-300 LKR)</option>
-                                            <option value="North Point">North Point (-300 LKR)</option>
-                                            <option value="Floor Label">Floor Label (-300 LKR)</option>
-                                            <option value="Measurements">Measurements (-300 LKR)</option>
-                                            <option value="Area">Area (-200 LKR)</option>
-                                            <option value="Label">Label (-100 LKR)</option>
-                                            <option value="Under Stair RH">Under Stair RH (-25 LKR)</option>
-                                            <option value="Template">Template (-25 LKR)</option>
-                                            <option value="Entrance Arrow">Entrance Arrow (-25 LKR)</option>
-                                            <option value="Arrow Head">Arrow Head (-25 LKR)</option>
-                                            <option value="Room Parts">Room Parts (-25 LKR)</option>
-                                            <option value="Door & Window">Door & Window (-25 LKR)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <!-- Checkboxes -->
-                                <div class="flex flex-wrap items-center gap-10 pt-2">
-                                    <label for="is_color" class="flex items-center gap-2 cursor-pointer group">
-                                        <input id="is_color" type="checkbox" class="w-4 h-4 text-[#0f62fe] bg-black border-[#27272a] rounded-sm focus:ring-0 cursor-pointer">
-                                        <span class="text-xs font-medium text-[#a1a1aa] group-hover:text-[#fafafa] transition-colors">Color Plan (Tiered Fee)</span>
-                                    </label>
-                                    <label for="is_night_or_weekend" class="flex items-center gap-2 cursor-pointer group">
-                                        <input id="is_night_or_weekend" type="checkbox" onchange="isUserNightWeekendOverridden = true" class="w-4 h-4 text-amber-500 bg-black border-[#27272a] rounded-sm focus:ring-0 cursor-pointer">
-                                        <span class="text-xs font-medium text-[#a1a1aa] group-hover:text-amber-400 transition-colors">Night / Weekend Job</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Save Button -->
-                            <button type="submit" id="submitBtn" class="w-full h-12 bg-[#0f62fe] hover:bg-blue-600 text-[#fafafa] rounded-sm text-sm font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.98] mt-4">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                                <span>Save Job Record</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Smart Utility Tools (5 Cols) -->
-                <div class="lg:col-span-5 flex flex-col gap-6">
-                    
-                    <!-- Dashboard Item: Daily Job Count -->
-                    <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-[#27272a] pb-4 mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <i data-lucide="activity" class="w-4 h-4 text-[#0f62fe]"></i>
-                                <h3 class="text-[10px] font-semibold text-[#fafafa] uppercase tracking-widest">Daily Jobs</h3>
-                            </div>
-                            <span class="text-[10px] text-[#a1a1aa] tracking-wider uppercase">Today</span>
-                        </div>
-                        <h3 class="text-4xl font-bold text-[#fafafa] font-mono tracking-tighter" id="home_daily_jobs">-</h3>
-                    </div>
-
-                    <!-- Dashboard Item: Monthly Job Count -->
-                    <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-[#27272a] pb-4 mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
-                                <h3 class="text-[10px] font-semibold text-[#fafafa] uppercase tracking-widest">Monthly Jobs</h3>
-                            </div>
-                            <span class="text-[10px] text-[#a1a1aa] tracking-wider uppercase">This Month</span>
-                        </div>
-                        <h3 class="text-4xl font-bold text-emerald-400 font-mono tracking-tighter" id="home_monthly_jobs">-</h3>
-                    </div>
-                    
-                    <!-- HOLIDAY MARKING SYSTEM -->
-                    <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-between">
-                        <div class="flex items-center justify-between border-b border-[#27272a] pb-4 mb-4">
-                            <div class="flex items-center gap-2.5">
-                                <i data-lucide="calendar-heart" class="w-4 h-4 text-rose-400"></i>
-                                <h3 class="text-[10px] font-semibold text-[#fafafa] uppercase tracking-widest">Holiday System</h3>
-                            </div>
-                            <span class="text-[10px] text-[#a1a1aa] tracking-wider uppercase">Auto-calc</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="date" id="holiday_date_input" class="shadcn-input w-full px-4 h-10 text-sm flex-1 text-[#fafafa]">
-                            <button type="button" onclick="markHoliday()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-6 h-10 rounded-sm text-xs font-semibold transition-colors shrink-0">
-                                Mark
-                            </button>
-                        </div>
-                        <div id="holiday_list_container" class="flex flex-wrap gap-2 mt-4"></div>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================== -->
-        <!-- TAB 2: ANALYTICS DASHBOARD                     -->
-        <!-- ============================================== -->
-        <!-- ============================================== -->
-        <!-- TAB 2: ANALYTICS DASHBOARD                     -->
-        <!-- ============================================== -->
-        <section id="tab-analytics" class="hidden space-y-12 pb-12">
-            
-            <!-- SECTION A: The Motivation (Hero Elements) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <!-- Net Earnings -->
-                <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-10 flex flex-col justify-center">
-                    <p class="text-[10px] font-semibold text-[#a1a1aa] mb-3 uppercase tracking-widest">Net Earnings</p>
-                    <h3 class="text-5xl lg:text-6xl font-bold text-emerald-400 font-mono tracking-tighter" id="stat_total_earnings">-</h3>
-                </div>
-                
-                <!-- Monthly Target Progress -->
-                <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-10 flex flex-col justify-center">
-                    <div class="flex items-end justify-between mb-3">
-                        <p class="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-widest">Target Progress</p>
-                        <h3 class="text-4xl font-bold text-[#fafafa] font-mono tracking-tighter" id="stat_target_progress">0 / 170</h3>
-                    </div>
-                    <!-- Minimal structural line representing track -->
-                    <div class="w-full h-1 bg-[#18181b] rounded-full mt-2 relative"></div>
-                    <div id="target_badge" class="hidden mt-4 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-full self-start uppercase tracking-wider">
-                        Unlocked! (+Rs.50/job)
-                    </div>
-                </div>
+        <!-- Left Card (7 Cols): Monthly Target & Growth Engine (2-Tier Hierarchy) -->
+        <div class="lg:col-span-7 card-bento">
+          <!-- TOP TIER: TARGET PROGRESS BAR & METRICS -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="label-uppercase !mb-0 flex items-center gap-2">
+                <i data-lucide="target" class="w-4 h-4 text-zinc-400"></i>
+                Monthly Target Progress
+              </span>
+              <span id="dash_target_badge"
+                class="px-2.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-semibold">0
+                / 170</span>
             </div>
 
-            <!-- SECTION B: Quality Control (Pain Points & Mistakes) -->
+            <!-- Flex Layout Row -->
+            <div class="flex flex-wrap items-center justify-between text-xs my-2 font-medium gap-2">
+              <span id="dash_target_count_label" class="text-zinc-100 font-bold text-sm">0 Jobs Completed</span>
+              <span id="dash_target_pct" class="text-zinc-200 font-bold text-xs">0% Completed</span>
+              <span id="dash_target_remaining" class="text-zinc-400 text-xs">170 Remaining to Goal</span>
+            </div>
+
+            <!-- Target Progress Bar -->
+            <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden my-3">
+              <div id="dash_target_bar" class="bg-zinc-100 h-full transition-all duration-500" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- BOTTOM TIER: MONTHLY SUMMARY SUB-CARDS -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-zinc-800/80">
+            <!-- SUB-CARD 1: Monthly Total -->
+            <div class="p-3.5 bg-zinc-900/90 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
+              <div>
+                <span class="label-uppercase !text-[10px] !text-zinc-500 !mb-1">Monthly Total</span>
+                <div id="dash_sub_total_jobs" class="text-2xl font-bold text-zinc-100 tracking-tight">0 Floorplans</div>
+              </div>
+              <div id="dash_mom_badge"
+                class="mt-2 text-[10px] bg-zinc-800 text-zinc-300 border border-zinc-700 px-2 py-0.5 rounded-md font-medium inline-flex items-center gap-1 w-fit">
+                <i data-lucide="trending-up" class="w-3 h-3 text-zinc-400"></i>
+                <span>+0% vs Prev Month</span>
+              </div>
+            </div>
+
+            <!-- SUB-CARD 2: Day Shift Breakdown -->
+            <div class="p-3.5 bg-zinc-900/90 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
+              <div>
+                <span class="label-uppercase !text-[10px] !text-zinc-500 !mb-1">Day Shift Volume</span>
+                <div id="dash_sub_day_jobs" class="text-2xl font-bold text-zinc-100 tracking-tight">0 Jobs</div>
+              </div>
+              <span class="mt-2 text-[10px] text-zinc-500 font-medium tracking-wider uppercase block">Standard
+                Shift</span>
+            </div>
+
+            <!-- SUB-CARD 3: Night / Wknd Breakdown -->
+            <div class="p-3.5 bg-zinc-900/90 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
+              <div>
+                <span class="label-uppercase !text-[10px] !text-zinc-500 !mb-1">Night / Wknd Volume</span>
+                <div id="dash_sub_night_jobs" class="text-2xl font-bold text-zinc-100 tracking-tight">0 Jobs</div>
+              </div>
+              <span class="mt-2 text-[10px] text-zinc-500 font-medium tracking-wider uppercase block">Overtime /
+                Weekend</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Card (5 Cols): Quality & Error Metrics Grid -->
+        <div class="lg:col-span-5 card-bento">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
+            <span class="label-uppercase !mb-0 flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4 text-zinc-400"></i>
+              Quality &amp; Error Metrics Grid
+            </span>
+            <span class="text-xs text-zinc-500 font-medium">Quality Assurance</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <!-- 1. Accuracy Rate -->
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
+              <span class="label-uppercase !text-[10px] !mb-1">Accuracy Rate</span>
+              <div id="dash_accuracy_rate" class="text-2xl font-bold text-zinc-100">100%</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Zero Error Jobs</span>
+            </div>
+
+            <!-- 2. Total Mistakes -->
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
+              <span class="label-uppercase !text-[10px] !mb-1">Total Mistakes</span>
+              <div id="dash_total_mistakes" class="text-2xl font-bold text-zinc-100">0</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Deduction Logs</span>
+            </div>
+
+            <!-- 3. Total Penalties -->
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
+              <span class="label-uppercase !text-[10px] !mb-1">Total Penalties</span>
+              <div id="dash_total_penalties" class="text-2xl font-bold text-zinc-100">Rs. 0</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Amount Deducted</span>
+            </div>
+
+            <!-- 4. Frequency Error Rate -->
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
+              <span class="label-uppercase !text-[10px] !mb-1">Error Frequency</span>
+              <div id="dash_error_rate" class="text-2xl font-bold text-zinc-100">0.0%</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Mistakes / Job</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 2: SHIFTS & REGIONAL METRICS (6 Cols / 6 Cols Split) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Card 1 (6 Cols): Day vs Night Shift Productivity -->
+        <div class="lg:col-span-6 card-bento">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
+            <span class="label-uppercase !mb-0 flex items-center gap-2">
+              <i data-lucide="sun-moon" class="w-4 h-4 text-zinc-400"></i>
+              Day vs Night Shift Productivity
+            </span>
+            <span class="text-xs text-zinc-500 font-medium">Shift Distribution</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] uppercase font-semibold text-zinc-400 flex items-center gap-1">
+                  <i data-lucide="sun" class="w-3 h-3 text-zinc-400"></i> Day Shift
+                </span>
+              </div>
+              <div id="dash_day_shift_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_day_shift_rev" class="text-xs font-semibold text-zinc-300 block mt-1">Rs. 0</span>
+            </div>
+
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] uppercase font-semibold text-zinc-400 flex items-center gap-1">
+                  <i data-lucide="moon" class="w-3 h-3 text-zinc-400"></i> Night / Wknd Shift
+                </span>
+              </div>
+              <div id="dash_night_shift_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_night_shift_rev" class="text-xs font-semibold text-zinc-300 block mt-1">Rs. 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 (6 Cols): Regional Performance Breakdown -->
+        <div class="lg:col-span-6 card-bento">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
+            <span class="label-uppercase !mb-0 flex items-center gap-2">
+              <i data-lucide="globe" class="w-4 h-4 text-zinc-400"></i>
+              Regional Performance (UK vs AUS)
+            </span>
+            <span class="text-xs text-zinc-500 font-medium">Market Tiers</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-zinc-200">UK Market Tier</span>
+                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-400 font-mono">UK</span>
+              </div>
+              <div id="dash_uk_jobs_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_uk_sqft" class="text-xs text-zinc-400 font-medium block mt-1">0 <span
+                  class="text-zinc-400">Sq.Ft</span></span>
+            </div>
+
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-zinc-200">AUS Market Tier</span>
+                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-400 font-mono">AUS</span>
+              </div>
+              <div id="dash_aus_jobs_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_aus_sqft" class="text-xs text-zinc-400 font-medium block mt-1">0 <span
+                  class="text-zinc-400">Sq.Ft</span></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 3: PEAK INSIGHTS & DIVERSE CHARTS (4 / 4 / 4 Cols Split) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Chart Style 1 (4 Cols): VERTICAL COLUMN BAR CHART -->
+        <div class="lg:col-span-4 card-bento">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
+            <span class="label-uppercase !mb-0 flex items-center gap-2">
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-zinc-400"></i>
+              Weekly Peak Days
+            </span>
+            <span class="text-[10px] text-zinc-500 font-medium">Column Chart</span>
+          </div>
+
+          <div id="dash_weekly_chart" class="flex items-end justify-between gap-1.5 h-36 pt-4 px-1">
+            <!-- Dynamic Injected Vertical Columns (Mon to Sun) -->
+          </div>
+        </div>
+
+        <!-- Chart Style 2 (4 Cols): SMOOTH CURVED AREA / SPARKLINE LINE CHART -->
+        <div class="lg:col-span-4 card-bento flex flex-col justify-between">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-3">
+            <span class="label-uppercase !mb-0 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-4 h-4 text-zinc-400"></i>
+              Monthly Peak Trends
+            </span>
+            <span class="text-[10px] text-zinc-500 font-medium">SVG Sparkline</span>
+          </div>
+
+          <div id="dash_monthly_peaks" class="flex-1 flex flex-col justify-between">
+            <!-- Dynamic Injected SVG Curved Line Sparkline & Date Callouts -->
+          </div>
+        </div>
+
+        <!-- Chart Style 3 (4 Cols): HORIZONTAL TIME-WINDOW DISTRIBUTION CHART -->
+        <div class="lg:col-span-4 card-bento">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
+            <span class="label-uppercase !mb-0 flex items-center gap-2">
+              <i data-lucide="clock" class="w-4 h-4 text-zinc-400"></i>
+              Peak Submission Hours
+            </span>
+            <span class="text-[10px] text-zinc-500 font-medium">Time Distribution</span>
+          </div>
+
+          <div id="dash_hourly_chart" class="space-y-3 text-xs">
+            <!-- Dynamic Injected Opacity Fill Block Rows (Morning, Afternoon, Evening, Night) -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         TAB 3: JOB SHEET VIEW (INTERACTIVE JOBS LIST TABLE)
+         ========================================================================== -->
+    <div id="tab_content_jobsheet" class="hidden space-y-6">
+      <!-- Top Header Row -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-zinc-100">Floorplan Operations Job Sheet</h2>
+          <p class="text-xs text-zinc-400">Chronological list of all recorded floorplan jobs with real-time price
+            calculations.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+          <button id="preview-sheet-btn" onclick="openExcelPreviewModal()"
+            class="bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-zinc-200 font-medium px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all">
+            <i data-lucide="eye" class="w-4 h-4 text-zinc-400"></i>
+            <span>Preview &amp; Download Sheet</span>
+          </button>
+          <button onclick="openAddJobModal()"
+            class="bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add New Job</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ADVANCED SEARCH & MULTI-FILTER TOOLBAR -->
+      <div
+        class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3 backdrop-blur-md shadow-md flex flex-col md:flex-row items-center gap-3 w-full relative z-30">
+
+        <!-- 1. Full-Width Prominent Search Bar -->
+        <div class="relative flex-1 w-full">
+          <i data-lucide="search"
+            class="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input type="text" id="jobsheet_search_input" oninput="handleJobSheetFilterChange()"
+            placeholder="Search property address, client name, or job #..."
+            class="w-full bg-zinc-900/90 border border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-11 px-4 pl-10 text-sm rounded-xl focus:border-zinc-600 focus:outline-none hover:border-zinc-700 font-medium">
+        </div>
+
+        <!-- Right Group: Area Slider Popover Trigger, Market Chips, Shift Chips -->
+        <div class="flex items-center gap-2 flex-wrap w-full md:w-auto shrink-0 justify-between md:justify-end">
+
+          <!-- 2. Area Range Popover Trigger Button -->
+          <div class="relative z-40">
+            <button type="button" id="area_popover_trigger_btn" onclick="toggleAreaFilterPopover(event)"
+              class="h-11 px-3.5 bg-zinc-900/90 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-zinc-400"></i>
+              <span id="area_popover_label" class="font-medium">Area SQFT</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-500"></i>
+            </button>
+
+            <!-- Floating Area Slider Popover -->
+            <div id="area_filter_popover"
+              class="absolute right-0 top-full mt-2 z-50 w-72 bg-zinc-950/95 border border-zinc-800 shadow-2xl backdrop-blur-md rounded-2xl p-4 hidden flex-col gap-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                  <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-zinc-400"></i>
+                  Area SQFT Range
+                </span>
+                <button type="button" onclick="resetAreaFilter()"
+                  class="text-[10px] text-zinc-400 hover:text-zinc-100 transition-colors">Reset</button>
+              </div>
+
+              <!-- Clean Monochrome White Range Readout Badge -->
+              <div
+                class="bg-zinc-900 border border-zinc-800 text-zinc-100 font-semibold text-sm py-2 px-4 rounded-xl text-center shadow-inner tracking-wide font-mono">
+                <span id="area_range_display">100 SQFT - 20,000 SQFT</span>
+              </div>
+
+              <!-- Unified Single-Track Dual Range Slider UI -->
+              <div class="pt-2 pb-1 space-y-2">
+                <div class="flex justify-between text-[11px] font-mono text-zinc-400 font-medium px-0.5">
+                  <span id="min_sqft_label">100 SQFT</span>
+                  <span id="max_sqft_label">20,000 SQFT</span>
+                </div>
+
+                <!-- Single Track Overlay Container -->
+                <div class="relative w-full h-6 flex items-center">
+                  <!-- Outer Track Background -->
+                  <div class="absolute inset-x-0 h-2 bg-zinc-800 rounded-lg pointer-events-none"></div>
+                  <!-- Active Filled Range Bar -->
+                  <div id="area_slider_range_bar" class="absolute h-2 bg-zinc-300 rounded-lg pointer-events-none"
+                    style="left: 0%; width: 100%;"></div>
+
+                  <!-- Stacked Dual Range Thumb Inputs -->
+                  <input type="range" id="jobsheet_min_sqft_slider" min="100" max="20000" step="100" value="100"
+                    oninput="handleAreaSliderInput()" class="dual-range-input">
+                  <input type="range" id="jobsheet_max_sqft_slider" min="100" max="20000" step="100" value="20000"
+                    oninput="handleAreaSliderInput()" class="dual-range-input">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Market Chips -->
+          <div class="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 h-11">
+            <button type="button" onclick="setJobSheetMarketFilter('all')" id="js_market_all"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm">All</button>
+            <button type="button" onclick="setJobSheetMarketFilter('UK')" id="js_market_uk"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">UK</button>
+            <button type="button" onclick="setJobSheetMarketFilter('AUS')" id="js_market_aus"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">AUS</button>
+          </div>
+
+          <!-- 4. Shift Chips (All | Day | Night | Weekend) -->
+          <div class="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 h-11">
+            <button type="button" onclick="setJobSheetShiftFilter('all')" id="js_shift_all"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm">All</button>
+            <button type="button" onclick="setJobSheetShiftFilter('day')" id="js_shift_day"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">Day</button>
+            <button type="button" onclick="setJobSheetShiftFilter('night')" id="js_shift_night"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">Night</button>
+            <button type="button" onclick="setJobSheetShiftFilter('weekend')" id="js_shift_weekend"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">Weekend</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Table Card Container -->
+      <div
+        class="card-bento !p-0 overflow-hidden border border-zinc-800/80 bg-zinc-900/60 backdrop-blur-md shadow-lg w-full">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="border-b border-zinc-800 bg-zinc-900/90 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <th class="px-4 py-3.5">#</th>
+                <th class="px-4 py-3.5">Date &amp; Time</th>
+                <th class="px-4 py-3.5">Property Address / Title</th>
+                <th class="px-4 py-3.5">Client &amp; Market</th>
+                <th class="px-4 py-3.5">Area &amp; Tier</th>
+                <th class="px-4 py-3.5">Revenue</th>
+                <th class="px-4 py-3.5">Status</th>
+                <th class="px-4 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobs_table_body" class="divide-y divide-zinc-800/40">
+              <!-- JS Dynamic Injected Rows -->
+              <tr>
+                <td colspan="8" class="px-6 py-12 text-center text-xs text-zinc-500 font-medium">
+                  Loading floorplan job records...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. SALARY STATEMENT & PAYSLIP TAB -->
+    <div id="tab_content_salary" class="hidden space-y-6">
+
+      <!-- Top Settings & Controls Strip -->
+      <div
+        class="max-w-4xl mx-auto w-full bg-zinc-900/60 border border-zinc-800/80 rounded-2xl px-5 py-4 backdrop-blur-md shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Left: Title & Period Badge -->
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div
+            class="w-10 h-10 rounded-xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-zinc-200 shrink-0">
+            <i data-lucide="receipt" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2.5">
+              <h2 class="text-sm font-bold text-zinc-100 tracking-tight whitespace-nowrap">Monthly Salary Statement</h2>
+              <span id="salary_period_badge"
+                class="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-700/80 text-zinc-300 font-medium whitespace-nowrap">Period</span>
+            </div>
+            <p class="text-[11px] text-zinc-500 font-medium truncate mt-0.5">Dynamic earnings breakdown &amp; verified statutory payslip</p>
+          </div>
+        </div>
+
+        <!-- Right: Input Parameters -->
+        <div class="flex items-center gap-3 shrink-0">
+          <!-- Public Holidays Input -->
+          <div class="flex items-center gap-2.5 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-1.5 shadow-sm">
+            <label for="salary_holidays_count"
+              class="text-xs font-semibold text-zinc-400 shrink-0 flex items-center gap-1.5 whitespace-nowrap">
+              <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>
+              Public Holidays:
+            </label>
+            <input type="number" id="salary_holidays_count" min="0" max="31" value="0"
+              oninput="calculateMonthlySalaryStatement()"
+              class="bg-zinc-950 border border-zinc-800 text-zinc-100 font-bold text-xs rounded-lg px-2.5 py-1 w-16 text-center focus:outline-none focus:border-zinc-600">
+          </div>
+
+          <!-- Base Salary Input with PIN Lock -->
+          <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-1.5 shadow-sm">
+            <label for="salary_base_amount"
+              class="text-xs font-semibold text-zinc-400 shrink-0 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              onclick="handleUnlockBasicSalaryClick()">
+              <i id="salary_lock_icon" data-lucide="lock" class="w-3.5 h-3.5 text-zinc-400"></i>
+              Basic (LKR):
+            </label>
+            <input type="number" id="salary_base_amount" step="0.01" min="0" value="35453.00" readonly
+              oninput="calculateMonthlySalaryStatement()"
+              class="bg-zinc-950/80 border border-zinc-800 text-zinc-100 font-bold text-xs rounded-lg px-2.5 py-1 w-24 text-right focus:outline-none focus:border-zinc-600 cursor-not-allowed opacity-90 transition-all">
+            <button type="button" id="salary_edit_btn" onclick="handleUnlockBasicSalaryClick()"
+              class="p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+              title="Unlock Basic Salary">
+              <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Layout Container (max-w-4xl) -->
+      <div class="max-w-4xl mx-auto w-full space-y-5">
+
+        <!-- Main Bento Payslip Card -->
+        <div class="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 w-full">
+
+          <!-- Payslip Header -->
+          <div class="flex items-start justify-between border-b border-zinc-800/80 pb-5">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <span class="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">Official Payslip Statement</span>
+              </div>
+              <h1 class="text-lg sm:text-xl font-black text-zinc-100 tracking-tight font-sans">SALARY STATEMENT</h1>
+              <p id="salary_statement_subtitle" class="text-xs text-zinc-400 font-medium">Period: Current Period</p>
+            </div>
+            <div class="text-right">
+              <span
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                Verified
+              </span>
+            </div>
+          </div>
+
+          <!-- Structured Payslip Line Items -->
+          <div class="space-y-3 font-sans text-xs sm:text-sm">
+
+            <!-- 1. Basic Salary -->
+            <div class="flex items-center justify-between py-2 border-b border-zinc-800/40">
+              <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+                <span class="text-zinc-300 font-medium">Basic Salary</span>
+              </div>
+              <span id="payslip_basic_salary" class="font-bold text-zinc-100">LKR 35,453.00</span>
+            </div>
+
+            <!-- 2. Special Allowance -->
+            <div class="py-2 border-b border-zinc-800/40 space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span class="text-zinc-300 font-medium">Special Allowance (Job Earnings)</span>
+                </div>
+                <span id="payslip_special_allowance" class="font-bold text-indigo-300">LKR 0.00</span>
+              </div>
+              <!-- Sub-breakdown chips / details -->
+              <div class="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 pl-3.5 font-sans">
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
+                  <span>Clean Bonuses:</span>
+                  <span id="salary_sub_clean_bonus" class="text-zinc-300 font-semibold">+LKR 0.00</span>
+                </div>
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
+                  <span>Night / Shifts:</span>
+                  <span id="salary_sub_shifts" class="text-zinc-300 font-semibold">+LKR 0.00</span>
+                </div>
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
+                  <span>Color & Extra Area:</span>
+                  <span id="salary_sub_color_area" class="text-zinc-300 font-semibold">+LKR 0.00</span>
+                </div>
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
+                  <span>Mistake Deductions:</span>
+                  <span id="salary_sub_penalties" class="text-rose-400 font-semibold">-LKR 0.00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Holiday Allowance -->
+            <div class="flex items-center justify-between py-2 border-b border-zinc-800/40">
+              <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <div>
+                  <span class="text-zinc-300 font-medium">Holiday Allowance</span>
+                  <span id="payslip_holiday_calc_label" class="text-[11px] text-zinc-500 font-sans block sm:inline sm:ml-1.5">(0 days × LKR 1,772.65)</span>
+                </div>
+              </div>
+              <span id="payslip_holiday_allowance" class="font-bold text-amber-300">LKR 0.00</span>
+            </div>
+
+          </div>
+
+          <!-- Highlighted Primary Net Salary Box -->
+          <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-5 shadow-inner space-y-1">
+            <div class="flex items-center justify-between text-xs text-zinc-400 font-sans uppercase tracking-wider font-semibold">
+              <span>Net Take-Home Salary</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-sans font-semibold">Total Payable</span>
+            </div>
+            <div class="flex items-baseline justify-between pt-1">
+              <span id="payslip_net_salary" class="text-2xl sm:text-3xl font-black text-white font-sans tracking-tight">
+                LKR 35,453.00
+              </span>
+              <span class="text-xs text-zinc-500 font-medium">Direct Bank Credit</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Secondary Statutory Reference Strip (4 Equal Columns Bento Grid) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+
+          <!-- 1. Job Count -->
+          <div
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
+            <div class="flex items-center gap-2 min-h-[36px] items-start">
+              <div class="text-xs font-semibold tracking-wide text-zinc-400 flex items-center gap-1.5">
+                <i data-lucide="check-square" class="w-4 h-4 text-zinc-400 shrink-0"></i>
+                <span>Completed Jobs</span>
+              </div>
+            </div>
+            <!-- Tier 2: Middle Hero Number -->
+            <div class="my-auto py-1">
+              <div id="statutory_job_count" class="text-2xl lg:text-3xl font-bold text-zinc-100 tracking-tight font-sans">
+                0
+              </div>
+            </div>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Monthly completed total</p>
+            </div>
+          </div>
+
+          <!-- 2. ETF (8%) Record -->
+          <div
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
+            <div class="flex items-center gap-2 min-h-[36px] items-start">
+              <div class="text-xs font-semibold tracking-wide text-zinc-400 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-zinc-400 shrink-0"></i>
+                <span>ETF (8% Employer)</span>
+              </div>
+            </div>
+            <!-- Tier 2: Middle Hero Number -->
+            <div class="my-auto py-1">
+              <div id="statutory_etf_amount" class="text-2xl lg:text-3xl font-bold text-zinc-100 tracking-tight font-sans">
+                LKR 2,836.24
+              </div>
+            </div>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Not deducted (Statutory)</p>
+            </div>
+          </div>
+
+          <!-- 3. Daily Holiday Rate -->
+          <div
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
+            <div class="flex items-center gap-2 min-h-[36px] items-start">
+              <div class="text-xs font-semibold tracking-wide text-amber-400/90 flex items-center gap-1.5">
+                <i data-lucide="calendar" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span>Holiday Rate</span>
+              </div>
+            </div>
+            <!-- Tier 2: Middle Hero Number -->
+            <div class="my-auto py-1">
+              <div id="statutory_holiday_rate" class="text-2xl lg:text-3xl font-bold text-zinc-100 tracking-tight font-sans">
+                LKR 1,772.65
+              </div>
+            </div>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Per holiday day (1/20th)</p>
+            </div>
+          </div>
+
+          <!-- 4. Total Penalty Logged -->
+          <div
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
+            <div class="flex items-center gap-2 min-h-[36px] items-start">
+              <div class="text-xs font-semibold tracking-wide text-rose-400/90 flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0"></i>
+                <span>Penalty Logged</span>
+              </div>
+            </div>
+            <!-- Tier 2: Middle Hero Number -->
+            <div class="my-auto py-1">
+              <div id="statutory_penalty_amount" class="text-2xl lg:text-3xl font-bold text-rose-400 tracking-tight font-sans">
+                LKR 0.00
+              </div>
+            </div>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Deducted from allowance</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast"
+    class="fixed bottom-6 right-6 bg-zinc-900 border border-zinc-800 text-zinc-100 px-4 py-3 rounded-md flex items-center gap-3 z-50 text-xs font-medium shadow-xl">
+    <i data-lucide="check" class="w-4 h-4 text-zinc-300"></i>
+    <span id="toast_msg">Action completed</span>
+  </div>
+
+  <!-- SALARY PIN AUTHORIZATION MODAL -->
+  <div id="salaryPinModalBackdrop"
+    class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    <div
+      class="bg-[#121215] border border-zinc-800 w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-zinc-300">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-zinc-100">Security PIN</h3>
+            <p class="text-[11px] text-zinc-500">Auto-unlocks on 4 digits</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSalaryPinModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="salaryPinForm" onsubmit="handleSalaryPinSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Enter 4-Digit PIN</label>
+          <input type="password" id="salary_pin_input" maxlength="4" placeholder="••••" required autofocus
+            oninput="handleSalaryPinInput(event)"
+            class="w-full bg-zinc-950 border border-zinc-800 text-zinc-100 text-center tracking-[0.5em] text-lg font-bold h-11 rounded-xl focus:border-zinc-500 focus:outline-none transition-all">
+        </div>
+        <div class="flex gap-2">
+          <button type="button" onclick="closeSalaryPinModal()"
+            class="flex-1 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors">
+            Cancel
+          </button>
+          <button type="submit"
+            class="flex-1 py-2 text-xs font-semibold rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold transition-colors">
+            Authorize
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD JOB MODAL / OVERLAY CONTAINER -->
+  <div id="addJobModalBackdrop"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    <div
+      class="bg-[#121215] border border-zinc-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <!-- Header -->
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i data-lucide="layout-template" class="w-4 h-4 text-zinc-400"></i>
+          Log New Floorplan Record
+        </h2>
+        <button type="button" onclick="closeAddJobModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body / Form -->
+      <div class="p-6 overflow-y-auto flex-1">
+        <form id="modalAddJobForm" class="space-y-4 text-sm flex flex-col">
+          <!-- ROW 1: Date & Time -->
+          <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2 class="text-[#a1a1aa] text-[10px] uppercase tracking-widest mb-6 font-semibold flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    Quality Control
-                </h2>
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    
-                    <!-- Error Matrix by Client -->
-                    <div class="lg:col-span-7 bg-[#09090b] border border-[#27272a] rounded-xl flex flex-col overflow-hidden h-[420px]">
-                        <div class="p-8 pb-4 flex items-center justify-between">
-                            <h3 class="text-[10px] font-semibold text-[#fafafa] uppercase tracking-widest">Error Matrix by Client</h3>
-                            <span class="text-[10px] text-[#a1a1aa] font-mono" id="client_summary_count">0 Clients</span>
-                        </div>
-                        <div class="overflow-y-auto flex-1 px-8 pb-8">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead class="sticky top-0 bg-[#09090b] text-[#a1a1aa] uppercase tracking-widest text-[10px] font-semibold z-10">
-                                    <tr>
-                                        <th class="py-4 border-b border-[#27272a] font-medium">Client Name</th>
-                                        <th class="py-4 text-right border-b border-[#27272a] font-medium">Total Jobs</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="client_summary_body" class="divide-y divide-[#27272a] font-mono text-[#fafafa]">
-                                    <tr><td colspan="2" class="p-4 text-center text-[#a1a1aa]">Loading client summary...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Top Defect Types -->
-                    <div class="lg:col-span-5 grid grid-cols-2 gap-4">
-                        <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-center">
-                            <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest mb-2">Accuracy</p>
-                            <h3 class="text-3xl font-bold text-emerald-400 font-mono tracking-tighter" id="stat_accuracy">0%</h3>
-                        </div>
-                        <div class="bg-[#09090b] border border-rose-900/30 rounded-xl p-8 flex flex-col justify-center">
-                            <p class="text-[10px] uppercase font-semibold text-rose-500/70 tracking-widest mb-2">Frequent Error</p>
-                            <h3 class="text-sm font-bold text-rose-400 truncate" id="stat_freq_mistake">No Data</h3>
-                        </div>
-                        <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-center">
-                            <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest mb-2">Total Mistakes</p>
-                            <h3 class="text-3xl font-bold text-rose-400 font-mono tracking-tighter" id="stat_total_mistakes">-</h3>
-                        </div>
-                        <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-center">
-                            <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest mb-2">Total Penalties</p>
-                            <h3 class="text-3xl font-bold text-rose-400 font-mono tracking-tighter" id="stat_total_deductions">-</h3>
-                        </div>
-                        <div class="col-span-2 bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex flex-col justify-center">
-                            <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest mb-2">Top Client</p>
-                            <h3 class="text-xl font-bold text-indigo-400 truncate" id="stat_top_client">-</h3>
-                        </div>
-                        <div class="col-span-2 bg-[#09090b] border border-[#27272a] rounded-xl p-8 flex justify-between items-end">
-                            <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest">Total Jobs Logged</p>
-                            <h3 class="text-xl font-bold text-[#fafafa] font-mono tracking-tighter" id="stat_total_jobs">-</h3>
-                        </div>
-                    </div>
-                </div>
+              <label class="label-uppercase">Date</label>
+              <input type="date" id="modal_date" required class="input-shadcn">
             </div>
-
-            <!-- SECTION C: Time & Effort Analytics -->
             <div>
-                <h2 class="text-[#a1a1aa] text-[10px] uppercase tracking-widest mb-6 font-semibold flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    Time & Effort
-                </h2>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                    
-                    <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-10 flex flex-col h-[280px]">
-                        <div class="flex justify-between items-start mb-6">
-                            <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest">Day vs Night</p>
-                            <h3 class="text-lg font-bold text-amber-400 font-mono tracking-tighter" id="stat_night_jobs">-</h3>
-                        </div>
-                        <div class="relative flex-1 w-full">
-                            <canvas id="dayNightChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-10 flex flex-col h-[280px]">
-                        <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest mb-6">Weekly Peak Days</p>
-                        <div class="relative flex-1 w-full">
-                            <canvas id="weeklyChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#09090b] border border-[#27272a] rounded-xl p-10 flex flex-col h-[280px]">
-                        <p class="text-[10px] uppercase font-semibold text-[#a1a1aa] tracking-widest mb-6">24-Hour Peak Zones</p>
-                        <div class="relative flex-1 w-full">
-                            <canvas id="monthlyTimelineChart"></canvas>
-                        </div>
-                    </div>
-                    
-                </div>
+              <label class="label-uppercase">Time</label>
+              <input type="time" id="modal_job_time" required class="input-shadcn">
             </div>
+          </div>
 
-        </section>
-
-        <!-- ============================================== -->
-        <!-- TAB 3: JOB SHEET MANAGEMENT                    -->
-        <!-- ============================================== -->
-        <section id="tab-jobsheet" class="hidden space-y-3">
-            <div class="bg-[#09090b] border border-[#27272a] rounded-xl    overflow-hidden flex flex-col">
-                
-                <div class="p-10 border-b border-[#27272a] flex flex-wrap justify-between items-center gap-4 bg-[#09090b]">
-                    <div>
-                        <h2 class="text-sm font-semibold text-[#fafafa] flex items-center gap-2">
-                            <i data-lucide="database" class="w-4 h-4 text-[#0f62fe]"></i>
-                            Job Management Sheet
-                        </h2>
-                        <p class="text-xs text-[#a1a1aa]">Interactive live table with auto-indexing and advance search.</p>
-                    </div>
-
-                    <div class="relative flex-1 min-w-[240px] max-w-md">
-                        <i data-lucide="search" class="w-4 h-4 text-[#a1a1aa] absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                        <input type="text" id="jobsheet_search" placeholder="Search address, client, region..." oninput="renderJobSheet()" class="shadcn-input w-full pl-10 pr-4 py-2 rounded-none border-b border-transparent focus:border-[#0f62fe] text-xs text-[#fafafa] placeholder-[#a1a1aa] bg-[#09090b]">
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <input type="file" id="excelUpload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
-                        <button onclick="document.getElementById('excelUpload').click()" class="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold  flex items-center gap-1.5 transition-all">
-                            <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
-                            Import Excel / CSV
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
-                    <table class="w-full text-left text-xs border-collapse min-w-[1100px]">
-                        <thead class="sticky top-0 bg-[#09090b] text-[#a1a1aa] border-b border-[#27272a] uppercase text-xs tracking-wider font-semibold z-10">
-                            <tr>
-                                <th class="px-4 py-3.5 w-12 text-center">#</th>
-                                <th class="px-4 py-3.5">Date</th>
-                                <th class="px-4 py-3.5">Client</th>
-                                <th class="px-4 py-3.5">Address / Title</th>
-                                <th class="px-4 py-3.5 text-right">Area (sqft)</th>
-                                <th class="px-4 py-3.5 text-center">Region</th>
-                                <th class="px-4 py-3.5 text-center">Color</th>
-                                <th class="px-4 py-3.5 text-center">Mistake</th>
-                                <th class="px-4 py-3.5 text-right">Base Price</th>
-                                <th class="px-4 py-3.5 text-right">Allowance</th>
-                                <th class="px-4 py-3.5 text-right">Deduction</th>
-                                <th class="px-4 py-3.5 text-right font-bold text-[#fafafa]">Total LKR</th>
-                                <th class="px-4 py-3.5 text-center w-24">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="management_table_body" class="divide-y divide-white/5 font-mono text-slate-300">
-                            <!-- JS Injected Rows -->
-                        </tbody>
-                    </table>
-                </div>
-
+          <!-- ROW 2: Address & Area -->
+          <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-8">
+              <label class="label-uppercase">Property Address / Title</label>
+              <input type="text" id="modal_address_title" required placeholder="e.g. 17 Calville House, London"
+                class="input-shadcn">
             </div>
-        </section>
+            <div class="col-span-4">
+              <label class="label-uppercase">Area <span
+                  class="text-zinc-400 font-normal lowercase tracking-normal">(Sq.Ft)</span></label>
+              <input type="number" id="modal_area_sqft" min="1" required placeholder="e.g. 1250" class="input-shadcn">
+            </div>
+          </div>
 
-        <!-- ============================================== -->
-        <!-- TAB 4: REPORTS & EXPORT                        -->
-        <!-- ============================================== -->
-        <section id="tab-reports" class="hidden space-y-3">
-            
-            <div class="flex flex-wrap justify-between items-center gap-10 bg-[#09090b] border border-[#27272a] rounded-xl  p-10 ">
-                <div>
-                    <h2 class="text-sm font-semibold text-[#fafafa] flex items-center gap-2">
-                        <i data-lucide="file-spreadsheets" class="w-4 h-4 text-emerald-400"></i>
-                        Excel Copy & Export Table
-                    </h2>
-                    <p class="text-sm text-[#a1a1aa]">Clean tab-separated table formatted for 1-click Ctrl+V pasting into Excel.</p>
-                </div>
-                <button onclick="copyReportsTable()" class="bg-[#0f62fe] hover:bg-blue-500 text-[#fafafa] text-xs font-semibold py-2.5 px-5 rounded-full flex items-center gap-1.5  transition-all">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    Copy Table for Excel
+          <!-- ROW 3: Select Client Chips -->
+          <div>
+            <label class="label-uppercase !flex items-center justify-between !mb-2">
+              <div class="flex items-center gap-2">
+                <span>Select Client</span>
+                <button type="button" onclick="openClientModal()"
+                  class="text-zinc-500 hover:text-zinc-300 transition-colors" title="Manage Clients">
+                  <i data-lucide="settings-2" stroke-width="1.5" class="w-3.5 h-3.5"></i>
                 </button>
+              </div>
+              <span id="modal_selected_client_badge"
+                class="hidden text-zinc-300 font-medium normal-case tracking-normal text-[11px]"></span>
+            </label>
+            <input type="hidden" id="modal_client_name" required>
+            <div id="modal_quick_client_pills" class="flex flex-wrap gap-2">
+              <!-- JS Injected Pills -->
             </div>
+          </div>
 
-            <div class="bg-[#09090b] border border-[#27272a] rounded-xl   overflow-hidden">
-                <div class="overflow-x-auto overflow-y-auto max-h-[70vh]">
-                    <table id="reports_table" class="w-full text-left text-xs border-collapse min-w-[1000px]">
-                        <thead class="sticky top-0 bg-[#09090b] text-[#a1a1aa] border-b border-[#27272a] uppercase text-xs tracking-wider font-semibold">
-                            <tr>
-                                <th class="px-4 py-3.5">No</th>
-                                <th class="px-4 py-3.5">Date</th>
-                                <th class="px-4 py-3.5">Client Name</th>
-                                <th class="px-4 py-3.5">Address / Title</th>
-                                <th class="px-4 py-3.5 text-right">Area</th>
-                                <th class="px-4 py-3.5 text-center">Region</th>
-                                <th class="px-4 py-3.5 text-center">Color</th>
-                                <th class="px-4 py-3.5 text-center">Mistake</th>
-                                <th class="px-4 py-3.5 text-right">Price</th>
-                                <th class="px-4 py-3.5 text-right">Allowance</th>
-                                <th class="px-4 py-3.5 text-right">Deduction</th>
-                                <th class="px-4 py-3.5 text-right font-bold text-[#fafafa]">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reports_table_body" class="divide-y divide-white/5 font-mono text-[#a1a1aa]">
-                            <!-- JS Injected Rows -->
-                        </tbody>
-                    </table>
-                </div>
+          <!-- ROW 4: Region & Mistake -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="label-uppercase">Region Market</label>
+              <select id="modal_region" required class="input-shadcn">
+                <option value="UK">UK Tier</option>
+                <option value="AUS">AUS Tier</option>
+              </select>
             </div>
-
-        </section>
-
-        <!-- ============================================== -->
-        <!-- TAB 5: SALARY BREAKDOWN                        -->
-        <!-- ============================================== -->
-        <section id="tab-salary" class="hidden max-w-2xl mx-auto space-y-4">
-            
-            <div class="bg-[#09090b] border border-[#27272a] rounded-xl   overflow-hidden ">
-                
-                <div class="p-10 border-b border-[#27272a] bg-[#09090b] flex items-center justify-between">
-                    <div>
-                        <h2 class="text-sm font-semibold text-[#fafafa] flex items-center gap-2">
-                            <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-emerald-400"></i>
-                            Monthly Salary Breakdown
-                        </h2>
-                        <p class="text-sm text-[#a1a1aa]">Automated payroll computation based on monthly jobs completed.</p>
-                    </div>
-                </div>
-
-                <div class="p-10 space-y-3 font-mono text-xs">
-                    
-                    <div class="flex justify-between py-2 border-b border-[#27272a]">
-                        <span class="text-[#a1a1aa] font-sans">Basic Salary (Fixed)</span>
-                        <span class="font-semibold text-[#fafafa]">Rs. 35,453.00</span>
-                    </div>
-                    
-                    <div class="flex justify-between py-2 border-b border-[#27272a]">
-                        <span class="text-[#a1a1aa] font-sans">ETF Statutory Deduction (8% of Basic)</span>
-                        <span class="font-semibold text-rose-400">- Rs. 2,836.24</span>
-                    </div>
-
-                    <div class="flex justify-between py-2 border-b border-[#27272a]">
-                        <span class="text-[#a1a1aa] font-sans">Special Allowance (Earnings above Basic)</span>
-                        <span class="font-semibold text-emerald-400" id="sal_special">Rs. 0.00</span>
-                    </div>
-
-                    <div class="flex justify-between py-2 border-b border-[#27272a]">
-                        <span class="text-[#a1a1aa] font-sans">Monthly Target Bonus (170+ Jobs @ Rs. 50/job)</span>
-                        <span class="font-semibold text-emerald-400" id="sal_target_bonus">Rs. 0.00</span>
-                    </div>
-
-                    <div class="flex justify-between py-2 border-b border-[#27272a]">
-                        <span class="text-[#a1a1aa] font-sans">Holiday Allowance (Days × Rs. 1,772.65)</span>
-                        <span class="font-semibold text-emerald-400" id="sal_holiday">Rs. 0.00</span>
-                    </div>
-
-                    <div class="flex justify-between py-2 border-b border-[#27272a]">
-                        <span class="text-[#a1a1aa] font-sans">Total Deductions & Penalties</span>
-                        <span class="font-semibold text-rose-400" id="sal_penalties">- Rs. 0.00</span>
-                    </div>
-
-                    <div class="pt-4 border-t border-[#27272a] flex justify-between items-center font-sans">
-                        <span class="text-sm font-semibold text-[#fafafa]">Net Total Salary Payable</span>
-                        <span class="text-xl font-bold font-mono text-[#0f62fe]" id="sal_net">Rs. 0.00</span>
-                    </div>
-
-                </div>
-
+            <div>
+              <label class="label-uppercase">Mistake / Deduction Type</label>
+              <select id="modal_mistake_type" class="input-shadcn">
+                <option value="None">None (Clean Job +Rs.25)</option>
+                <option value="Address">Wrong Address (-Rs.300)</option>
+                <option value="North Point">North Point (-Rs.300)</option>
+                <option value="Floor Label">Floor Label (-Rs.300)</option>
+                <option value="Measurements">Measurements (-Rs.300)</option>
+                <option value="Area">Area Error (-Rs.200)</option>
+                <option value="Label">Label Error (-Rs.100)</option>
+                <option value="Under Stair RH">Under Stair RH (-Rs.25)</option>
+                <option value="Template">Wrong Template (-Rs.25)</option>
+                <option value="Entrance Arrow">Entrance Arrow (-Rs.25)</option>
+                <option value="Arrow Head">Arrow Head (-Rs.25)</option>
+                <option value="Room Parts">Room Parts (-Rs.25)</option>
+                <option value="Door &amp; Window">Door &amp; Window (-Rs.25)</option>
+              </select>
             </div>
+          </div>
 
-        </section>
+          <!-- ROW 5: Segmented Toggles -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <input type="checkbox" id="modal_is_color" class="hidden">
+            <button type="button" id="modal_toggle_color_plan" onclick="toggleModalOption('modal_is_color')"
+              class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
+              <i data-lucide="palette" stroke-width="1.5"
+                class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
+              <span>Color Plan</span>
+            </button>
 
-    </main>
+            <input type="checkbox" id="modal_is_night_or_weekend" class="hidden">
+            <button type="button" id="modal_toggle_night_weekend"
+              onclick="toggleModalOption('modal_is_night_or_weekend')"
+              class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
+              <i data-lucide="moon" stroke-width="1.5"
+                class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
+              <span>Night / Wknd</span>
+            </button>
+          </div>
 
-    <!-- PIN SECURITY MODAL FOR SALARY TAB -->
-    <div id="pinModal" class="fixed inset-0 bg-black  hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-[#09090b] border border-[#27272a] rounded-xl   w-full max-w-sm overflow-hidden p-10 space-y-4">
-            <div class="text-center space-y-1">
-                <div class="mx-auto w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-                    <i data-lucide="lock" class="w-5 h-5"></i>
-                </div>
-                <h3 class="text-sm font-semibold text-[#fafafa] mt-2">Salary Breakdown Security</h3>
-                <p class="text-xs text-[#a1a1aa]">Enter security PIN to unlock financial data.</p>
+          <!-- REAL-TIME LIVE PAYOUT STRIP -->
+          <div id="modal_payout_strip_container"
+            class="bg-zinc-900/40 border border-dashed border-zinc-800/80 opacity-60 rounded-lg p-3.5 mt-4 mb-2 flex items-center justify-between gap-2 shadow-sm transition-all">
+            <div id="modal_payout_breakdown_badges" class="flex items-center gap-1.5 flex-wrap text-[11px]">
+              <span class="text-zinc-500 text-[11px] font-medium flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-zinc-600"></i> Enter job details to calculate payout
+              </span>
             </div>
-            
-            <form id="pinForm" onsubmit="verifyPin(event)" class="space-y-4">
-                <div>
-                    <input type="password" id="pin_input" maxlength="8" required placeholder="Enter PIN..." class="shadcn-input w-full px-4 py-3 rounded-t-md rounded-b-none border-b-2 border-transparent focus:border-[#0f62fe] text-center font-mono text-base tracking-widest text-[#fafafa]">
-                    <p id="pin_error" class="hidden text-xs text-rose-400 text-center mt-2">Incorrect PIN. Access Denied.</p>
-                </div>
+            <div class="text-right">
+              <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold block">Estimated Payout</span>
+              <div id="modal_payout_total_val" class="text-base font-bold text-zinc-400 tracking-tight">--</div>
+            </div>
+          </div>
 
-                <div class="flex gap-2 pt-1">
-                    <button type="button" onclick="closePinModal()" class="flex-1 bg-[#393939] hover:bg-[#3a3a3c] text-[#a1a1aa] font-medium py-2.5 px-4 rounded-full text-xs transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 bg-[#0f62fe] hover:bg-blue-500 text-[#fafafa] font-semibold py-2.5 px-4 rounded-full text-xs  transition-all">
-                        Unlock
-                    </button>
-                </div>
-            </form>
+          <!-- Submit Button -->
+          <div class="pt-3 border-t border-zinc-800/60">
+            <button type="submit" id="modalSubmitBtn" class="w-full btn-primary-white group">
+              <i data-lucide="check" stroke-width="2" class="w-4 h-4 shrink-0"></i>
+              <span>Save Floorplan Record</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW JOB DETAILS MODAL -->
+  <div id="viewJobModalBackdrop"
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    <div
+      class="bg-[#121215] border border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-zinc-400"></i>
+          <span id="view_modal_title">Floorplan Details</span>
+        </h2>
+        <button type="button" onclick="closeViewJobModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-xs overflow-y-auto" id="view_modal_body">
+        <!-- Injected via JS -->
+      </div>
+      <div class="p-4 border-t border-zinc-800/60 bg-zinc-900/40 flex justify-end">
+        <button type="button" onclick="closeViewJobModal()"
+          class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold rounded-lg transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT MANAGEMENT MODAL -->
+  <div id="clientModalBackdrop"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    <div class="bg-[#121215] border border-zinc-800 w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[85vh]">
+      <!-- Header -->
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-zinc-400"></i>
+          Manage Clients
+        </h2>
+        <button type="button" onclick="closeClientModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <!-- Add New Client Form -->
+      <div class="p-5 border-b border-zinc-800/50 bg-zinc-900/50">
+        <form id="addClientForm" onsubmit="handleAddClient(event)" class="flex gap-2 items-end">
+          <div class="flex-1">
+            <label class="label-uppercase !text-[10px] !text-zinc-500">Client Name</label>
+            <input type="text" id="new_client_name" required placeholder="e.g. John Doe"
+              class="input-shadcn h-9 text-xs">
+          </div>
+          <div class="w-28">
+            <label class="label-uppercase !text-[10px] !text-zinc-500">Region</label>
+            <select id="new_client_region" class="input-shadcn h-9 text-xs">
+              <option value="UK">UK</option>
+              <option value="AUS">AUS</option>
+            </select>
+          </div>
+          <button type="submit"
+            class="h-9 px-3 bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-xs rounded-md transition-colors shrink-0">
+            Add
+          </button>
+        </form>
+      </div>
+      <!-- List -->
+      <div class="p-5 overflow-y-auto flex-1">
+        <div id="modal_client_list" class="flex flex-col gap-2">
+          <!-- JS Injected List -->
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- VIEW JOB DETAILS MODAL -->
-    <div id="viewModal" class="fixed inset-0 bg-black  hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-[#09090b] border border-[#27272a] rounded-xl   w-full max-w-lg overflow-hidden p-10 space-y-4">
-            <div class="flex justify-between items-center border-b border-[#27272a] pb-3">
-                <h3 class="text-sm font-semibold text-[#fafafa] flex items-center gap-2">
-                    <i data-lucide="eye" class="w-4 h-4 text-[#0f62fe]"></i>
-                    Job Details View
-                </h3>
-                <button type="button" onclick="closeViewModal()" class="text-[#a1a1aa] hover:text-[#fafafa] transition-colors">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
+  <!-- EXCEL PREVIEW & DOWNLOAD SHEET MODAL OVERLAY -->
+  <div id="excelPreviewModalBackdrop"
+    class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4 sm:p-6 transition-opacity">
+    <div
+      class="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
 
-            <div id="view_modal_content" class="space-y-4 text-xs font-sans">
-                <!-- Dynamically filled by openViewModal(id) -->
-            </div>
-
-            <div class="flex justify-end gap-2 pt-3 border-t border-[#27272a]">
-                <button type="button" onclick="closeViewModal()" class="bg-[#393939] hover:bg-[#3a3a3c] text-[#a1a1aa] px-5 py-2.5 rounded-full text-xs font-medium transition-all">Close</button>
-                <button type="button" id="view_modal_edit_btn" class="bg-[#0f62fe] hover:bg-blue-500 text-[#fafafa] px-5 py-2.5 rounded-full text-xs font-semibold  transition-all flex items-center gap-1.5">
-                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                    Edit Record
-                </button>
-            </div>
+      <!-- Modal Header & Excel Sheet Tabs -->
+      <div class="p-5 border-b border-zinc-800/80 bg-zinc-900/40 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+              Excel Export Preview &amp; Download Engine
+            </h2>
+            <p class="text-[11px] text-zinc-400">Exact 11-column mapping (Col A to K) formatted for direct Excel Ctrl+V
+              pasting.</p>
+          </div>
         </div>
-    </div>
 
-    <!-- EDIT JOB MODAL -->
-    <div id="editModal" class="fixed inset-0 bg-black  hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-[#09090b] border border-[#27272a] rounded-xl   w-full max-w-lg overflow-hidden p-10 space-y-4">
-            <div class="flex justify-between items-center border-b border-[#27272a] pb-3">
-                <h3 class="text-sm font-semibold text-[#fafafa] flex items-center gap-2">
-                    <i data-lucide="edit-3" class="w-4 h-4 text-[#0f62fe]"></i>
-                    Edit Job Record
-                </h3>
-                <button type="button" onclick="closeEditModal()" class="text-[#a1a1aa] hover:text-[#fafafa] transition-colors">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
+        <!-- Right Header Close Icon -->
+        <button type="button" onclick="closeExcelPreviewModal()"
+          class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 rounded-xl transition-colors"
+          title="Close Preview">
+          <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
+        </button>
+      </div>
 
-            <form id="editJobForm" class="space-y-3">
-                <input type="hidden" id="edit_id">
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_date">Date</label>
-                        <input type="date" id="edit_date" required class="shadcn-input w-full px-4 py-3 h-12 text-sm" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_job_time">Time</label>
-                        <input type="time" id="edit_job_time" required class="shadcn-input w-full px-4 py-3 h-12 text-sm font-mono" onchange="autoCheckNightWeekend('edit_date', 'edit_job_time', 'edit_is_night_or_weekend')">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_client_name">Client Name</label>
-                    <select id="edit_client_name" required class="shadcn-input w-full px-4 py-3 h-12 text-sm" onchange="autoSelectRegion('edit_client_name', 'edit_region')">
-                        <option value="" disabled selected>Select Client</option>
-                        <optgroup label="UK Region">
-                            <option value="Criss">Criss</option>
-                            <option value="Peter">Peter</option>
-                            <option value="Scott">Scott</option>
-                            <option value="Robert">Robert</option>
-                            <option value="Jems">Jems</option>
-                            <option value="Lenin">Lenin</option>
-                            <option value="David">David</option>
-                            <option value="Lee">Lee</option>
-                            <option value="Martin">Martin</option>
-                            <option value="London House">London House</option>
-                        </optgroup>
-                        <optgroup label="AUS Region">
-                            <option value="Andrew">Andrew</option>
-                            <option value="Tonny">Tonny</option>
-                        </optgroup>
-                        <optgroup label="Other">
-                            <option value="Other">Other (Manual)</option>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_address_title">Address / Title</label>
-                    <input type="text" id="edit_address_title" required class="shadcn-input w-full px-4 py-3 h-12 text-sm" onblur="autoFormatAddressInput(this)">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_area_sqft">Area (sqft)</label>
-                        <input type="number" id="edit_area_sqft" required min="0" step="0.01" class="shadcn-input w-full px-4 py-3 h-12 text-sm font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_region">Region</label>
-                        <select id="edit_region" required class="shadcn-input w-full px-4 py-3 h-12 text-sm">
-                            <option value="Standard">Standard Tier</option>
-                            <option value="UK">UK Tier</option>
-                            <option value="AUS">AUS Tier</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#a1a1aa] mb-2" for="edit_mistake_type">Mistake Type</label>
-                    <select id="edit_mistake_type" class="shadcn-input w-full px-4 py-3 h-12 text-sm">
-                        <option value="None">None</option>
-                        <option value="Address">Address (-300 LKR)</option>
-                        <option value="North Point">North Point (-300 LKR)</option>
-                        <option value="Floor Label">Floor Label (-300 LKR)</option>
-                        <option value="Measurements">Measurements (-300 LKR)</option>
-                        <option value="Area">Area (-200 LKR)</option>
-                        <option value="Label">Label (-100 LKR)</option>
-                        <option value="Under Stair RH">Under Stair RH (-25 LKR)</option>
-                        <option value="Template">Template (-25 LKR)</option>
-                        <option value="Entrance Arrow">Entrance Arrow (-25 LKR)</option>
-                        <option value="Arrow Head">Arrow Head (-25 LKR)</option>
-                        <option value="Room Parts">Room Parts (-25 LKR)</option>
-                        <option value="Door & Window">Door & Window (-25 LKR)</option>
-                    </select>
-                </div>
-
-                <div class="bg-[#393939]/50 p-4 rounded-2xl flex items-center gap-10 border border-[#27272a] my-3">
-                    <label for="edit_is_color" class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-[#fafafa] hover:text-blue-300">
-                        <input id="edit_is_color" type="checkbox" class="w-4 h-4 text-[#0f62fe] bg-[#09090b] border-[#27272a] rounded focus:ring-[#0a84ff] focus:ring-offset-black cursor-pointer">
-                        <span>Color Plan</span>
-                    </label>
-                    <label for="edit_is_night_or_weekend" class="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-amber-400 hover:text-amber-300">
-                        <input id="edit_is_night_or_weekend" type="checkbox" class="w-4 h-4 text-amber-500 bg-[#09090b] border-[#27272a] rounded focus:ring-amber-500 focus:ring-offset-black cursor-pointer">
-                        <span>Night / Weekend Job</span>
-                    </label>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-3 border-t border-[#27272a]">
-                    <button type="button" onclick="closeEditModal()" class="bg-[#393939] hover:bg-[#3a3a3c] text-[#a1a1aa] px-5 py-2.5 rounded-full text-xs font-medium transition-all">Cancel</button>
-                    <button type="submit" id="editSubmitBtn" class="bg-[#0f62fe] hover:bg-blue-500 text-[#fafafa] px-5 py-2.5 rounded-full text-xs font-semibold  transition-all">Save Changes</button>
-                </div>
-            </form>
+      <!-- Sub-Bar: Excel Sheet Tabs -->
+      <div class="px-5 py-2.5 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
+        <div class="flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-zinc-800">
+          <button type="button" id="excel_tab_all" onclick="switchExcelPreviewTab('all')"
+            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm flex items-center gap-1.5">
+            <i data-lucide="table" class="w-3.5 h-3.5"></i>
+            <span>All Jobs Sheet</span>
+          </button>
+          <button type="button" id="excel_tab_night" onclick="switchExcelPreviewTab('night')"
+            class="px-3 py-1 rounded-lg text-xs font-medium transition-all text-zinc-400 hover:text-zinc-200 flex items-center gap-1.5">
+            <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+            <span>Night Jobs Block (#101+)</span>
+          </button>
         </div>
-    </div>
+        <div class="flex items-center gap-2 text-[11px] text-zinc-400">
+          <span id="excel_preview_count_badge"
+            class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 font-semibold text-[10px]">0 Rows</span>
+        </div>
+      </div>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-[#393939] border border-[#27272a] text-[#fafafa] px-6 py-4 rounded-full  flex items-center gap-4 z-50 text-xs font-medium ">
-        <i data-lucide="check-circle-2" id="toast_icon" class="w-4 h-4 text-emerald-400"></i>
-        <span id="toast_msg">Action successful</span>
-    </div>
+      <!-- Data Grid View (Excel Style Scrollable Table) -->
+      <div class="overflow-y-auto max-h-[55vh] border-t border-zinc-800/80 bg-zinc-950 flex-1 relative">
+        <table class="w-full text-left border-collapse font-mono text-xs text-zinc-300">
+          <thead class="sticky top-0 z-20">
+            <tr class="bg-zinc-950 text-zinc-400 font-mono text-[11px] border-b border-zinc-800 shadow-sm">
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 w-12 text-center bg-zinc-950 text-zinc-400">A (#)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 bg-zinc-950 text-zinc-400">B (Date)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 min-w-[200px] bg-zinc-950 text-zinc-400">C (Property
+                Address)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-400">D (Area)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-center bg-zinc-950 text-zinc-400">E (Market)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-center bg-zinc-950 text-zinc-400">F (Color)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-500">G (Price)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 bg-zinc-950 text-zinc-400">H (Mistake)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-500">I (NoMistake)
+              </th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-400">J (Ddt)</th>
+              <th class="py-2.5 px-3 text-right bg-zinc-950 text-zinc-500">K (Total)</th>
+            </tr>
+          </thead>
+          <tbody id="excel_preview_table_body" class="divide-y divide-zinc-800/40">
+            <!-- JS Dynamic Excel Preview Rows -->
+          </tbody>
+        </table>
+      </div>
 
-    <!-- JS IMPLEMENTATION -->
-    <script src="script.js" defer></script>
+      <!-- Bottom Floating Glassmorphic Control Bar -->
+      <div
+        class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-zinc-900/95 border border-zinc-700/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-2xl pointer-events-auto">
+        <button type="button" onclick="downloadCSVData()"
+          class="bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-md">
+          <i data-lucide="download" class="w-4 h-4 text-zinc-950"></i>
+          <span>Download CSV</span>
+        </button>
+        <button type="button" onclick="copyExcelFormattedData()"
+          class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-medium text-xs px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+          <i data-lucide="clipboard-copy" class="w-4 h-4 text-zinc-300"></i>
+          <span>Copy TSV for Excel</span>
+        </button>
+        <button type="button" onclick="closeExcelPreviewModal()"
+          class="text-zinc-400 hover:text-zinc-100 text-xs px-3 py-2 rounded-xl transition-all">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
+
 </html>
