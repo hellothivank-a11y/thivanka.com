@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -9,7 +9,7 @@
   <!-- Inter Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- CDNs: Tailwind CSS, Supabase JS, Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,7 +19,6 @@
   <!-- Tailwind Inter Font Config -->
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -35,172 +34,165 @@
 </head>
 
 <body
-  class="min-h-screen flex flex-col text-slate-900 bg-[#f1f5f9] dark:bg-[#09090b] dark:text-zinc-100 selection:bg-slate-300 selection:text-slate-900 dark:selection:bg-zinc-800 dark:selection:text-white font-sans antialiased">
+  class="min-h-screen flex flex-col text-zinc-100 bg-[#09090b] selection:bg-zinc-800 selection:text-white font-sans antialiased">
 
   <!-- HEADER -->
-  <header class="app-header sticky top-0 z-50 backdrop-blur-md">
+  <header class="border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md sticky top-0 z-50">
     <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-4">
 
       <!-- LEFT: BRANDING / LOGO -->
       <div class="flex items-center gap-3 shrink-0">
-        <div class="p-2 bg-slate-900 border border-slate-900 dark:bg-zinc-900 dark:border-zinc-800 rounded-lg text-white dark:text-zinc-300 shadow-sm">
-          <i data-lucide="layers" stroke-width="2" class="w-4 h-4"></i>
+        <div class="p-2 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-300 shadow-sm">
+          <i data-lucide="layers" stroke-width="1.5" class="w-4 h-4"></i>
         </div>
         <div>
-          <h1 class="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
+          <h1 class="text-sm font-bold text-zinc-100 tracking-tight flex items-center gap-2">
             LAVIENTRA STUDIO
             <span
-              class="text-[10px] px-2 py-0.5 rounded-full bg-slate-200 border border-slate-300 text-slate-800 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 font-bold">v2.0</span>
+              class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 font-medium">v2.0</span>
           </h1>
-          <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-semibold">Floorplan Operations &amp; Analytics</p>
+          <p class="text-[11px] text-zinc-500 font-medium">Floorplan Operations &amp; Analytics</p>
         </div>
       </div>
 
       <!-- CENTER: NAVIGATION TABS -->
       <div class="flex-1 flex justify-center">
-        <nav class="flex items-center gap-1 bg-slate-200/80 border border-slate-300/90 dark:bg-zinc-900/90 dark:border-zinc-800/90 p-1 rounded-xl shadow-inner">
+        <nav class="flex items-center gap-1 bg-zinc-900/90 border border-zinc-800/90 p-1 rounded-xl shadow-sm">
           <button type="button" onclick="switchTab('home')" id="tab_btn_home"
-            class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-300/80 dark:border-zinc-700 shadow-sm flex items-center gap-2 transition-all">
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm flex items-center gap-2">
             <i data-lucide="home" class="w-3.5 h-3.5"></i>
             <span>Home</span>
           </button>
           <button type="button" onclick="switchTab('dashboard')" id="tab_btn_dashboard"
-            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-2 transition-all">
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2">
             <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
             <span>Dashboard</span>
           </button>
           <button type="button" onclick="switchTab('jobsheet')" id="tab_btn_jobsheet"
-            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-2 transition-all">
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2">
             <i data-lucide="table" class="w-3.5 h-3.5"></i>
             <span>Job Sheet</span>
           </button>
           <button type="button" onclick="switchTab('salary')" id="tab_btn_salary"
-            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-2 transition-all">
+            class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2">
             <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
             <span>Salary</span>
           </button>
         </nav>
       </div>
 
-      <!-- RIGHT: LOCK TAB BUTTON, THEME TOGGLE & DATE RANGE PICKER POPOVER -->
+      <!-- RIGHT: LOCK TAB BUTTON & DATE RANGE PICKER POPOVER -->
       <div class="flex items-center gap-2.5 shrink-0">
 
         <!-- Lock Tab Button (Only visible on Salary Tab) -->
         <button type="button" id="header_lock_salary_btn" onclick="lockSalaryTab()"
-          class="hidden bg-slate-100 hover:bg-rose-50 border border-slate-300 hover:border-rose-300 text-slate-700 hover:text-rose-700 dark:bg-zinc-900 dark:hover:bg-rose-500/10 dark:border-zinc-800 dark:hover:border-rose-500/30 dark:text-zinc-400 dark:hover:text-rose-400 text-xs px-3.5 py-2 rounded-xl items-center gap-1.5 cursor-pointer transition-all shadow-sm font-bold"
+          class="hidden bg-zinc-900 hover:bg-rose-500/10 border border-zinc-800 hover:border-rose-500/30 text-zinc-400 hover:text-rose-400 text-xs px-3.5 py-2 rounded-xl items-center gap-1.5 cursor-pointer transition-all shadow-sm font-semibold"
           title="Lock and protect Salary tab">
           <i data-lucide="lock" class="w-3.5 h-3.5"></i>
           <span>Lock Tab</span>
-        </button>
-
-        <!-- Theme Toggle Button -->
-        <button type="button" id="theme_toggle_btn" onclick="toggleTheme()"
-          class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:border-zinc-800 dark:text-zinc-300 text-xs p-2 rounded-xl flex items-center justify-center cursor-pointer transition-all shadow-sm"
-          title="Toggle Light / Dark Mode">
-          <i id="theme_icon" data-lucide="moon" class="w-4 h-4"></i>
         </button>
 
         <div class="relative shrink-0">
 
           <!-- Trigger Button -->
           <button type="button" id="date_picker_trigger_btn" onclick="toggleDatePickerPopover(event)"
-            class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-900 dark:bg-zinc-900 dark:hover:bg-zinc-800/90 dark:border-zinc-800 dark:text-zinc-200 text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-sm font-bold">
-            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-700 dark:text-zinc-400"></i>
-            <span id="date_picker_trigger_label" class="font-bold">This Month (August 2026)</span>
-            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-600 dark:text-zinc-400 ml-0.5"></i>
+            class="bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-zinc-200 text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-sm">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span id="date_picker_trigger_label" class="font-medium">This Month (August 2026)</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-400 ml-0.5"></i>
           </button>
 
-          <!-- Popover Container -->
-          <div id="date_picker_popover"
-            class="absolute right-0 top-full mt-2 z-50 w-72 bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800/90 rounded-2xl p-2.5 shadow-2xl hidden flex-col gap-1 popover-animate-in">
+        <!-- Popover Container (100% Solid Backdrop, No Bleed) -->
+        <div id="date_picker_popover"
+          class="absolute right-0 top-full mt-2 z-50 w-72 bg-zinc-950 border border-zinc-800/90 rounded-2xl p-2 shadow-2xl hidden flex-col gap-1">
 
-            <!-- Header Section Label -->
-            <div class="px-2 py-1.5 border-b border-slate-200 dark:border-zinc-800/60 mb-1 flex items-center justify-between">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400">Date Filter Range</span>
-              <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-slate-600 dark:text-zinc-400"></i>
+          <!-- Header Section Label -->
+          <div class="px-2 py-1.5 border-b border-zinc-800/60 mb-1 flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Date Filter Range</span>
+            <i data-lucide="calendar-range" class="w-3.5 h-3.5 text-zinc-500"></i>
+          </div>
+
+          <!-- Vertical Menu Item Presets -->
+          <button type="button" onclick="selectDatePreset('current_month')" id="preset_current_month"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-100 bg-zinc-900 border border-zinc-800/80 transition-all flex items-center justify-between">
+            <span>This Month (August 2026)</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('last_month')" id="preset_last_month"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>Last Month (July 2026)</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('last_3_months')" id="preset_last_3_months"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>Last 3 Months</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('this_year')" id="preset_this_year"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>This Year (2026)</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <button type="button" onclick="selectDatePreset('all_time')" id="preset_all_time"
+            class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between">
+            <span>All Time</span>
+            <i data-lucide="check" class="w-3.5 h-3.5 text-zinc-100 hidden preset-check-icon"></i>
+          </button>
+
+          <!-- ADVANCED FILTER SEGMENTED SECTION -->
+          <div class="border-t border-zinc-800/60 mt-1 pt-2 px-1 pb-1">
+            <div class="px-1 mb-1.5 flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Advanced Filter</span>
+              <i data-lucide="sliders" class="w-3 h-3 text-zinc-500"></i>
             </div>
 
-            <!-- Vertical Menu Item Presets -->
-            <button type="button" onclick="selectDatePreset('current_month')" id="preset_current_month"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800/80 transition-all flex items-center justify-between">
-              <span>This Month (August 2026)</span>
-              <i data-lucide="check" class="w-3.5 h-3.5 text-slate-900 dark:text-zinc-100 preset-check-icon"></i>
-            </button>
+            <!-- Segmented Mode Pills (Year / Month / Date) -->
+            <div class="flex items-center gap-1 bg-zinc-900 p-1 rounded-xl border border-zinc-800 w-full mb-1">
+              <button type="button" onclick="setAdvancedDateFilterTab('year')" id="adv_tab_year"
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <span>🗓️ Year</span>
+              </button>
+              <button type="button" onclick="setAdvancedDateFilterTab('month')" id="adv_tab_month"
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <span>📅 Month</span>
+              </button>
+              <button type="button" onclick="setAdvancedDateFilterTab('date')" id="adv_tab_date"
+                class="flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
+                <span>📆 Date</span>
+              </button>
+            </div>
 
-            <button type="button" onclick="selectDatePreset('last_month')" id="preset_last_month"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all flex items-center justify-between">
-              <span>Last Month (July 2026)</span>
-              <i data-lucide="check" class="w-3.5 h-3.5 text-slate-900 dark:text-zinc-100 hidden preset-check-icon"></i>
-            </button>
+            <!-- MODE A: Year Selection Grid (Initially Hidden) -->
+            <div id="adv_panel_year" class="hidden grid-cols-2 gap-1.5 p-1 mt-1">
+              <!-- JS Injected Years Grid -->
+            </div>
 
-            <button type="button" onclick="selectDatePreset('last_3_months')" id="preset_last_3_months"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all flex items-center justify-between">
-              <span>Last 3 Months</span>
-              <i data-lucide="check" class="w-3.5 h-3.5 text-slate-900 dark:text-zinc-100 hidden preset-check-icon"></i>
-            </button>
+            <!-- MODE B: Month Selection Grid (12 Months, Initially Hidden) -->
+            <div id="adv_panel_month" class="hidden grid-cols-4 gap-1.5 p-1 mt-1">
+              <!-- JS Injected 12 Month Buttons (Jan to Dec) -->
+            </div>
 
-            <button type="button" onclick="selectDatePreset('this_year')" id="preset_this_year"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all flex items-center justify-between">
-              <span>This Year (2026)</span>
-              <i data-lucide="check" class="w-3.5 h-3.5 text-slate-900 dark:text-zinc-100 hidden preset-check-icon"></i>
-            </button>
-
-            <button type="button" onclick="selectDatePreset('all_time')" id="preset_all_time"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all flex items-center justify-between">
-              <span>All Time</span>
-              <i data-lucide="check" class="w-3.5 h-3.5 text-slate-900 dark:text-zinc-100 hidden preset-check-icon"></i>
-            </button>
-
-            <!-- ADVANCED FILTER SEGMENTED SECTION -->
-            <div class="border-t border-slate-200 dark:border-zinc-800/60 mt-1 pt-2 px-1 pb-1">
-              <div class="px-1 mb-1.5 flex items-center justify-between">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400">Advanced Filter</span>
-                <i data-lucide="sliders" class="w-3 h-3 text-slate-600 dark:text-zinc-400"></i>
-              </div>
-
-              <!-- Segmented Mode Pills (Year / Month / Date) -->
-              <div class="flex items-center gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-300 dark:border-zinc-800 w-full mb-1">
-                <button type="button" onclick="setAdvancedDateFilterTab('year')" id="adv_tab_year"
-                  class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
-                  <span>🗓️ Year</span>
-                </button>
-                <button type="button" onclick="setAdvancedDateFilterTab('month')" id="adv_tab_month"
-                  class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
-                  <span>📅 Month</span>
-                </button>
-                <button type="button" onclick="setAdvancedDateFilterTab('date')" id="adv_tab_date"
-                  class="flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 transition-all flex items-center justify-center gap-1">
-                  <span>📆 Date</span>
+            <!-- MODE C: Specific Date Picker -->
+            <div id="adv_panel_date" class="hidden p-1">
+              <div class="relative flex items-center">
+                <input type="date" id="popover_specific_date_picker" onclick="triggerNativeDatePicker()"
+                  onchange="selectSpecificSingleDate(this.value)"
+                  class="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-xl pl-3 pr-8 py-2 focus:border-zinc-500 focus:outline-none cursor-pointer font-medium hover:border-zinc-700 transition-colors">
+                <button type="button" onclick="triggerNativeDatePicker()"
+                  class="absolute right-2.5 p-1 text-zinc-400 hover:text-zinc-100 transition-colors"
+                  title="Open Calendar">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-zinc-400"></i>
                 </button>
               </div>
-
-              <!-- MODE A: Year Selection Grid -->
-              <div id="adv_panel_year" class="hidden grid-cols-2 gap-1.5 p-1 mt-1">
-              </div>
-
-              <!-- MODE B: Month Selection Grid -->
-              <div id="adv_panel_month" class="hidden grid-cols-4 gap-1.5 p-1 mt-1">
-              </div>
-
-              <!-- MODE C: Specific Date Picker -->
-              <div id="adv_panel_date" class="hidden p-1">
-                <div class="relative flex items-center">
-                  <input type="date" id="popover_specific_date_picker" onclick="triggerNativeDatePicker()"
-                    onchange="selectSpecificSingleDate(this.value)"
-                    class="w-full bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 text-xs rounded-xl pl-3 pr-8 py-2 focus:border-slate-900 dark:focus:border-zinc-500 focus:outline-none cursor-pointer font-bold hover:border-slate-400 dark:hover:border-zinc-700 transition-colors">
-                  <button type="button" onclick="triggerNativeDatePicker()"
-                    class="absolute right-2.5 p-1 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                    title="Open Calendar">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-600 dark:text-zinc-400"></i>
-                  </button>
-                </div>
-              </div>
-
             </div>
 
           </div>
-        </div>
 
+        </div>
       </div>
 
     </div>
@@ -217,8 +209,8 @@
 
         <!-- LEFT 60%: DATA ENTRY FORM -->
         <div class="card-bento">
-          <div class="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-800/60 pb-4 mb-4">
-            <i data-lucide="layout-template" stroke-width="2" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+          <div class="flex items-center gap-2 border-b border-zinc-800/60 pb-4 mb-4">
+            <i data-lucide="layout-template" stroke-width="1.5" class="w-4 h-4 text-zinc-400"></i>
             <h2 class="label-uppercase !mb-0">Log New Floorplan</h2>
           </div>
 
@@ -245,7 +237,7 @@
               </div>
               <div class="col-span-12 sm:col-span-4">
                 <label class="label-uppercase">Area <span
-                    class="text-slate-600 dark:text-zinc-400 font-semibold lowercase tracking-normal">(Sq.Ft)</span></label>
+                    class="text-zinc-400 font-normal lowercase tracking-normal">(Sq.Ft)</span></label>
                 <input type="number" id="area_sqft" min="1" required placeholder="e.g. 1250" class="input-shadcn">
               </div>
             </div>
@@ -256,12 +248,12 @@
                 <div class="flex items-center gap-2">
                   <span>Select Client</span>
                   <button type="button" onclick="openClientModal()"
-                    class="text-slate-600 hover:text-slate-950 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors" title="Manage Clients">
-                    <i data-lucide="settings-2" stroke-width="2" class="w-3.5 h-3.5"></i>
+                    class="text-zinc-500 hover:text-zinc-300 transition-colors" title="Manage Clients">
+                    <i data-lucide="settings-2" stroke-width="1.5" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
                 <span id="selected_client_badge"
-                  class="hidden text-slate-900 dark:text-zinc-300 font-bold normal-case tracking-normal text-[11px]"></span>
+                  class="hidden text-zinc-300 font-medium normal-case tracking-normal text-[11px]"></span>
               </label>
               <input type="hidden" id="client_name" required>
               <div id="quick_client_pills" class="space-y-3">
@@ -303,38 +295,38 @@
               <input type="checkbox" id="is_color" class="hidden">
               <button type="button" id="toggle_color_plan" onclick="toggleOption('is_color')"
                 class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
-                <i data-lucide="palette" stroke-width="2"
-                  class="w-4 h-4 text-slate-700 group-[.active]:text-white dark:text-zinc-500 dark:group-[.active]:text-zinc-100 transition-colors"></i>
+                <i data-lucide="palette" stroke-width="1.5"
+                  class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
                 <span>Color Plan</span>
               </button>
 
               <input type="checkbox" id="is_night_or_weekend" class="hidden">
               <button type="button" id="toggle_night_weekend" onclick="toggleOption('is_night_or_weekend')"
                 class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
-                <i data-lucide="moon" stroke-width="2"
-                  class="w-4 h-4 text-slate-700 group-[.active]:text-white dark:text-zinc-500 dark:group-[.active]:text-zinc-100 transition-colors"></i>
+                <i data-lucide="moon" stroke-width="1.5"
+                  class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
                 <span>Night / Wknd</span>
               </button>
             </div>
 
             <!-- REAL-TIME LIVE PAYOUT STRIP -->
             <div id="payout_strip_container"
-              class="bg-slate-100/80 border border-dashed border-slate-300 dark:bg-zinc-900/40 dark:border-zinc-800/80 rounded-xl p-3.5 mt-4 mb-2 flex items-center justify-between gap-2 shadow-sm transition-all">
+              class="bg-zinc-900/40 border border-dashed border-zinc-800/80 opacity-60 rounded-lg p-3.5 mt-4 mb-2 flex items-center justify-between gap-2 shadow-sm transition-all">
               <div id="payout_breakdown_badges" class="flex items-center gap-1.5 flex-wrap text-[11px]">
-                <span class="text-slate-700 dark:text-zinc-400 text-[11px] font-semibold flex items-center gap-1.5">
-                  <i data-lucide="info" class="w-3.5 h-3.5 text-slate-600 dark:text-zinc-500"></i> Enter job details to calculate payout
+                <span class="text-zinc-500 text-[11px] font-medium flex items-center gap-1.5">
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-zinc-600"></i> Enter job details to calculate payout
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-[10px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-bold block">Estimated Payout</span>
-                <div id="payout_total_val" class="text-base font-extrabold text-slate-800 dark:text-zinc-300 tracking-tight">--</div>
+                <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold block">Estimated Payout</span>
+                <div id="payout_total_val" class="text-base font-bold text-zinc-400 tracking-tight">--</div>
               </div>
             </div>
 
             <!-- BOTTOM: Primary Save Action Button -->
-            <div class="pt-3 border-t border-slate-200 dark:border-zinc-800/60">
+            <div class="pt-3 border-t border-zinc-800/60">
               <button type="submit" id="submitBtn" class="w-full btn-primary-white group">
-                <i data-lucide="check" stroke-width="2.5" class="w-4 h-4 shrink-0"></i>
+                <i data-lucide="check" stroke-width="2" class="w-4 h-4 shrink-0"></i>
                 <span>Save Floorplan Record</span>
               </button>
             </div>
@@ -348,7 +340,7 @@
           <div class="card-bento !p-6">
             <div class="mb-1">
               <span id="live_clock_date"
-                class="text-xs uppercase font-bold text-slate-700 dark:text-zinc-400 tracking-wider block">Loading...</span>
+                class="text-xs uppercase font-semibold text-zinc-400 tracking-wider block">Loading...</span>
             </div>
 
             <div id="live_clock_time" class="stat-number-primary my-1">
@@ -356,38 +348,38 @@
             </div>
 
             <div
-              class="pt-3 border-t border-slate-200 dark:border-zinc-800/60 flex items-center justify-between text-xs text-slate-700 dark:text-zinc-400 font-semibold">
+              class="pt-3 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-500 font-medium">
               <div class="flex items-center gap-1.5">
-                <span class="text-slate-700 dark:text-zinc-400 font-bold">LONDON:</span>
-                <span id="tz_london" class="text-slate-900 dark:text-zinc-200 font-bold">--:-- --</span>
+                <span class="text-zinc-400 font-semibold">LONDON:</span>
+                <span id="tz_london" class="text-zinc-300">--:-- --</span>
               </div>
-              <div class="h-3 w-[1px] bg-slate-300 dark:bg-zinc-800"></div>
+              <div class="h-3 w-[1px] bg-zinc-800"></div>
               <div class="flex items-center gap-1.5">
-                <span class="text-slate-700 dark:text-zinc-400 font-bold">SYDNEY:</span>
-                <span id="tz_sydney" class="text-slate-900 dark:text-zinc-200 font-bold">--:-- --</span>
+                <span class="text-zinc-400 font-semibold">SYDNEY:</span>
+                <span id="tz_sydney" class="text-zinc-300">--:-- --</span>
               </div>
             </div>
           </div>
 
           <!-- STANDALONE OPERATIONAL CONTEXT STRIP -->
           <div id="op_context_strip"
-            class="bg-white border border-slate-300 dark:bg-zinc-900/80 dark:border-zinc-800/80 rounded-xl p-3.5 flex items-center justify-between text-xs shadow-sm">
+            class="bg-zinc-900/80 border border-zinc-800/80 rounded-xl p-3.5 flex items-center justify-between text-xs">
             <!-- Left Side: Base Rate text (top) + Last job detail (bottom) -->
             <div class="space-y-1">
-              <div id="op_rate_text" class="text-slate-700 dark:text-zinc-300 text-[11px] font-bold tracking-wide">
+              <div id="op_rate_text" class="text-zinc-400 text-[11px] font-medium tracking-wide">
                 (Standard Office Hours)
               </div>
-              <div class="text-slate-700 dark:text-zinc-400 text-[11px] font-semibold truncate max-w-[220px]">
+              <div class="text-zinc-400 text-[11px] font-medium truncate max-w-[220px]">
                 <span>Last Job: </span>
-                <span id="op_last_job" class="text-slate-900 dark:text-zinc-100 font-bold">#0 (None)</span>
+                <span id="op_last_job" class="text-zinc-200 font-medium">#0 (None)</span>
               </div>
             </div>
 
             <!-- Right Side: Shift Status Badge -->
             <div class="shrink-0">
               <span id="op_shift_badge"
-                class="px-2.5 py-1 rounded bg-slate-200 text-slate-900 border border-slate-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700 font-bold text-[11px] flex items-center gap-1.5 shadow-sm">
-                <span id="op_shift_dot" class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                class="px-2.5 py-1 rounded bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold text-[11px] flex items-center gap-1.5 shadow-sm">
+                <span id="op_shift_dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 <span id="op_shift_text">DAY SHIFT ACTIVE</span>
               </span>
             </div>
@@ -397,19 +389,19 @@
           <div class="card-bento !p-5">
             <div class="flex items-center justify-between mb-4">
               <h3 class="label-uppercase !flex items-center gap-2 !mb-0">
-                <i data-lucide="target" stroke-width="2" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+                <i data-lucide="target" stroke-width="1.5" class="w-4 h-4"></i>
                 170 Monthly Target
               </h3>
               <span id="target_status_badge"
-                class="px-2 py-0.5 rounded bg-slate-200 border border-slate-300 text-slate-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 text-[10px] font-bold">0 /
+                class="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-medium">0 /
                 170</span>
             </div>
             <div class="flex items-end justify-between mb-3">
-              <div class="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-zinc-100" id="target_hero_count">0</div>
-              <div class="text-sm font-bold text-slate-700 dark:text-zinc-400 mb-1" id="target_percentage_label">0%</div>
+              <div class="text-4xl font-bold tracking-tight text-zinc-100" id="target_hero_count">0</div>
+              <div class="text-sm font-semibold text-zinc-400 mb-1" id="target_percentage_label">0%</div>
             </div>
-            <div class="w-full bg-slate-200 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden">
-              <div id="target_progress_fill" class="h-full bg-slate-900 dark:bg-zinc-100 rounded-full transition-all duration-500"
+            <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div id="target_progress_fill" class="h-full bg-zinc-100 rounded-full transition-all duration-500"
                 style="width: 0%;"></div>
             </div>
           </div>
@@ -421,20 +413,20 @@
             <div class="card-bento">
               <div>
                 <span class="label-uppercase !flex items-center gap-1.5 !mb-3">
-                  <i data-lucide="sun" stroke-width="2.5" class="w-3.5 h-3.5 text-slate-700 dark:text-zinc-400"></i>
+                  <i data-lucide="sun" stroke-width="2" class="w-3.5 h-3.5"></i>
                   Today's Jobs
                 </span>
-                <div class="text-[40px] font-extrabold tracking-tight text-slate-900 dark:text-zinc-100 leading-none" id="stat_today_jobs">0
+                <div class="text-[40px] font-bold tracking-tight text-zinc-100 leading-none" id="stat_today_jobs">0
                 </div>
               </div>
               <div class="mt-4">
-                <div class="flex items-center justify-between text-xs text-slate-700 dark:text-zinc-400 font-bold mb-2.5">
-                  <span>DAY: <span id="today_day_count" class="text-slate-950 dark:text-zinc-100 font-extrabold">0</span></span>
-                  <span>NIGHT: <span id="today_night_count" class="text-slate-950 dark:text-zinc-100 font-extrabold">0</span></span>
+                <div class="flex items-center justify-between text-xs text-zinc-400 font-medium mb-2.5">
+                  <span>DAY: <span id="today_day_count" class="text-zinc-100">0</span></span>
+                  <span>NIGHT: <span id="today_night_count" class="text-zinc-100">0</span></span>
                 </div>
-                <div class="w-full bg-slate-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden flex">
-                  <div id="today_day_bar" class="bg-slate-900 dark:bg-zinc-100 transition-all h-full" style="width: 50%;"></div>
-                  <div id="today_night_bar" class="bg-slate-500 dark:bg-zinc-500 transition-all h-full" style="width: 50%;"></div>
+                <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden flex">
+                  <div id="today_day_bar" class="bg-zinc-100 transition-all h-full" style="width: 50%;"></div>
+                  <div id="today_night_bar" class="bg-zinc-600 transition-all h-full" style="width: 50%;"></div>
                 </div>
               </div>
             </div>
@@ -443,20 +435,20 @@
             <div class="card-bento">
               <div>
                 <span class="label-uppercase !flex items-center gap-1.5 !mb-3">
-                  <i data-lucide="calendar-days" stroke-width="2.5" class="w-3.5 h-3.5 text-slate-700 dark:text-zinc-400"></i>
+                  <i data-lucide="calendar-days" stroke-width="2" class="w-3.5 h-3.5"></i>
                   Monthly Jobs
                 </span>
-                <div class="text-[40px] font-extrabold tracking-tight text-slate-900 dark:text-zinc-100 leading-none" id="stat_month_jobs">0
+                <div class="text-[40px] font-bold tracking-tight text-zinc-100 leading-none" id="stat_month_jobs">0
                 </div>
               </div>
               <div class="mt-4">
-                <div class="flex items-center justify-between text-xs text-slate-700 dark:text-zinc-400 font-bold mb-2.5">
-                  <span>DAY: <span id="month_day_count" class="text-slate-950 dark:text-zinc-100 font-extrabold">0</span></span>
-                  <span>NIGHT: <span id="month_night_count" class="text-slate-950 dark:text-zinc-100 font-extrabold">0</span></span>
+                <div class="flex items-center justify-between text-xs text-zinc-400 font-medium mb-2.5">
+                  <span>DAY: <span id="month_day_count" class="text-zinc-100">0</span></span>
+                  <span>NIGHT: <span id="month_night_count" class="text-zinc-100">0</span></span>
                 </div>
-                <div class="w-full bg-slate-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden flex">
-                  <div id="month_day_bar" class="bg-slate-900 dark:bg-zinc-100 transition-all h-full" style="width: 50%;"></div>
-                  <div id="month_night_bar" class="bg-slate-500 dark:bg-zinc-500 transition-all h-full" style="width: 50%;"></div>
+                <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden flex">
+                  <div id="month_day_bar" class="bg-zinc-100 transition-all h-full" style="width: 50%;"></div>
+                  <div id="month_night_bar" class="bg-zinc-600 transition-all h-full" style="width: 50%;"></div>
                 </div>
               </div>
             </div>
@@ -467,11 +459,11 @@
           <div class="grid grid-cols-2 gap-5">
             <div class="card-bento h-full !p-5">
               <span class="label-uppercase !mb-2">Top Client Today</span>
-              <div class="text-2xl font-black tracking-tight text-slate-900 dark:text-zinc-100 truncate" id="bento_total_area">None</div>
+              <div class="text-2xl font-bold tracking-tight text-zinc-100 truncate" id="bento_total_area">None</div>
             </div>
             <div class="card-bento h-full !p-5">
               <span class="label-uppercase !mb-2">Clean Rate</span>
-              <div class="text-4xl font-black tracking-tight text-slate-900 dark:text-zinc-100" id="bento_clean_rate">100%</div>
+              <div class="text-4xl font-bold tracking-tight text-zinc-100" id="bento_clean_rate">100%</div>
             </div>
           </div>
 
@@ -486,11 +478,12 @@
     <div id="tab_content_dashboard" class="hidden space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">Operations &amp; Peak Performance Dashboard</h2>
-          <p class="text-xs text-slate-600 dark:text-zinc-400 font-medium">Target milestones, quality error metrics, shift breakdowns, and peak volume analytics.</p>
+          <h2 class="text-xl font-bold tracking-tight text-zinc-100">Operations &amp; Peak Performance Dashboard</h2>
+          <p class="text-xs text-zinc-400">Target milestones, quality error metrics, shift breakdowns, and peak volume
+            analytics.</p>
         </div>
         <span
-          class="px-3 py-1 bg-white border border-slate-300 dark:bg-zinc-900 dark:border-zinc-800 rounded-full text-xs text-slate-800 dark:text-zinc-400 font-bold shadow-sm">Real-Time
+          class="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs text-zinc-400 font-medium">Real-Time
           Analytics Engine</span>
       </div>
 
@@ -503,59 +496,59 @@
           <div>
             <div class="flex items-center justify-between mb-3">
               <span class="label-uppercase !mb-0 flex items-center gap-2">
-                <i data-lucide="target" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+                <i data-lucide="target" class="w-4 h-4 text-zinc-400"></i>
                 Monthly Target Progress
               </span>
               <span id="dash_target_badge"
-                class="px-2.5 py-0.5 rounded bg-slate-200 border border-slate-300 text-slate-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 text-[11px] font-bold">0
+                class="px-2.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-semibold">0
                 / 170</span>
             </div>
 
             <!-- Flex Layout Row -->
-            <div class="flex flex-wrap items-center justify-between text-xs my-2 font-bold gap-2">
-              <span id="dash_target_count_label" class="text-slate-900 dark:text-zinc-100 font-extrabold text-sm">0 Jobs Completed</span>
-              <span id="dash_target_pct" class="text-slate-800 dark:text-zinc-200 font-bold text-xs">0% Completed</span>
-              <span id="dash_target_remaining" class="text-slate-600 dark:text-zinc-400 text-xs font-semibold">170 Remaining to Goal</span>
+            <div class="flex flex-wrap items-center justify-between text-xs my-2 font-medium gap-2">
+              <span id="dash_target_count_label" class="text-zinc-100 font-bold text-sm">0 Jobs Completed</span>
+              <span id="dash_target_pct" class="text-zinc-200 font-bold text-xs">0% Completed</span>
+              <span id="dash_target_remaining" class="text-zinc-400 text-xs">170 Remaining to Goal</span>
             </div>
 
             <!-- Target Progress Bar -->
-            <div class="w-full bg-slate-200 dark:bg-zinc-800 h-2.5 rounded-full overflow-hidden my-3">
-              <div id="dash_target_bar" class="bg-slate-900 dark:bg-zinc-100 h-full transition-all duration-500" style="width: 0%;"></div>
+            <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden my-3">
+              <div id="dash_target_bar" class="bg-zinc-100 h-full transition-all duration-500" style="width: 0%;"></div>
             </div>
           </div>
 
           <!-- BOTTOM TIER: MONTHLY SUMMARY SUB-CARDS -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-slate-200 dark:border-zinc-800/80">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-zinc-800/80">
             <!-- SUB-CARD 1: Monthly Total -->
-            <div class="p-3.5 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl flex flex-col justify-between">
+            <div class="p-3.5 bg-zinc-900/90 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
               <div>
-                <span class="label-uppercase !text-[10px] !text-slate-600 dark:!text-zinc-500 !mb-1">Monthly Total</span>
-                <div id="dash_sub_total_jobs" class="text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">0 Floorplans</div>
+                <span class="label-uppercase !text-[10px] !text-zinc-500 !mb-1">Monthly Total</span>
+                <div id="dash_sub_total_jobs" class="text-2xl font-bold text-zinc-100 tracking-tight">0 Floorplans</div>
               </div>
               <div id="dash_mom_badge"
-                class="mt-2 text-[10px] bg-white text-slate-800 border border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1 w-fit shadow-sm">
-                <i data-lucide="trending-up" class="w-3 h-3 text-slate-700 dark:text-zinc-400"></i>
+                class="mt-2 text-[10px] bg-zinc-800 text-zinc-300 border border-zinc-700 px-2 py-0.5 rounded-md font-medium inline-flex items-center gap-1 w-fit">
+                <i data-lucide="trending-up" class="w-3 h-3 text-zinc-400"></i>
                 <span>+0% vs Prev Month</span>
               </div>
             </div>
 
             <!-- SUB-CARD 2: Day Shift Breakdown -->
-            <div class="p-3.5 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl flex flex-col justify-between">
+            <div class="p-3.5 bg-zinc-900/90 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
               <div>
-                <span class="label-uppercase !text-[10px] !text-slate-600 dark:!text-zinc-500 !mb-1">Day Shift Volume</span>
-                <div id="dash_sub_day_jobs" class="text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">0 Jobs</div>
+                <span class="label-uppercase !text-[10px] !text-zinc-500 !mb-1">Day Shift Volume</span>
+                <div id="dash_sub_day_jobs" class="text-2xl font-bold text-zinc-100 tracking-tight">0 Jobs</div>
               </div>
-              <span class="mt-2 text-[10px] text-slate-600 dark:text-zinc-400 font-bold tracking-wider uppercase block">Standard
+              <span class="mt-2 text-[10px] text-zinc-500 font-medium tracking-wider uppercase block">Standard
                 Shift</span>
             </div>
 
             <!-- SUB-CARD 3: Night / Wknd Breakdown -->
-            <div class="p-3.5 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl flex flex-col justify-between">
+            <div class="p-3.5 bg-zinc-900/90 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
               <div>
-                <span class="label-uppercase !text-[10px] !text-slate-600 dark:!text-zinc-500 !mb-1">Night / Wknd Volume</span>
-                <div id="dash_sub_night_jobs" class="text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight">0 Jobs</div>
+                <span class="label-uppercase !text-[10px] !text-zinc-500 !mb-1">Night / Wknd Volume</span>
+                <div id="dash_sub_night_jobs" class="text-2xl font-bold text-zinc-100 tracking-tight">0 Jobs</div>
               </div>
-              <span class="mt-2 text-[10px] text-slate-600 dark:text-zinc-400 font-bold tracking-wider uppercase block">Overtime /
+              <span class="mt-2 text-[10px] text-zinc-500 font-medium tracking-wider uppercase block">Overtime /
                 Weekend</span>
             </div>
           </div>
@@ -563,41 +556,41 @@
 
         <!-- Right Card (5 Cols): Quality & Error Metrics Grid -->
         <div class="lg:col-span-5 card-bento">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 pb-3 mb-4">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
             <span class="label-uppercase !mb-0 flex items-center gap-2">
-              <i data-lucide="shield-check" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+              <i data-lucide="shield-check" class="w-4 h-4 text-zinc-400"></i>
               Quality &amp; Error Metrics Grid
             </span>
-            <span class="text-xs text-slate-600 dark:text-zinc-400 font-bold">Quality Assurance</span>
+            <span class="text-xs text-zinc-500 font-medium">Quality Assurance</span>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <!-- 1. Accuracy Rate -->
-            <div class="p-3 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl">
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
               <span class="label-uppercase !text-[10px] !mb-1">Accuracy Rate</span>
-              <div id="dash_accuracy_rate" class="text-2xl font-black text-slate-900 dark:text-zinc-100">100%</div>
-              <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold mt-0.5 block">Zero Error Jobs</span>
+              <div id="dash_accuracy_rate" class="text-2xl font-bold text-zinc-100">100%</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Zero Error Jobs</span>
             </div>
 
             <!-- 2. Total Mistakes -->
-            <div class="p-3 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl">
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
               <span class="label-uppercase !text-[10px] !mb-1">Total Mistakes</span>
-              <div id="dash_total_mistakes" class="text-2xl font-black text-slate-900 dark:text-zinc-100">0</div>
-              <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold mt-0.5 block">Deduction Logs</span>
+              <div id="dash_total_mistakes" class="text-2xl font-bold text-zinc-100">0</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Deduction Logs</span>
             </div>
 
             <!-- 3. Total Penalties -->
-            <div class="p-3 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl">
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
               <span class="label-uppercase !text-[10px] !mb-1">Total Penalties</span>
-              <div id="dash_total_penalties" class="text-2xl font-black text-slate-900 dark:text-zinc-100">Rs. 0</div>
-              <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold mt-0.5 block">Amount Deducted</span>
+              <div id="dash_total_penalties" class="text-2xl font-bold text-zinc-100">Rs. 0</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Amount Deducted</span>
             </div>
 
             <!-- 4. Frequency Error Rate -->
-            <div class="p-3 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-xl">
+            <div class="p-3 bg-zinc-900/90 border border-zinc-800/80 rounded-xl">
               <span class="label-uppercase !text-[10px] !mb-1">Error Frequency</span>
-              <div id="dash_error_rate" class="text-2xl font-black text-slate-900 dark:text-zinc-100">0.0%</div>
-              <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold mt-0.5 block">Mistakes / Job</span>
+              <div id="dash_error_rate" class="text-2xl font-bold text-zinc-100">0.0%</div>
+              <span class="text-[10px] text-zinc-500 mt-0.5 block">Mistakes / Job</span>
             </div>
           </div>
         </div>
@@ -609,66 +602,66 @@
 
         <!-- Card 1 (6 Cols): Day vs Night Shift Productivity -->
         <div class="lg:col-span-6 card-bento">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 pb-3 mb-4">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
             <span class="label-uppercase !mb-0 flex items-center gap-2">
-              <i data-lucide="sun-moon" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+              <i data-lucide="sun-moon" class="w-4 h-4 text-zinc-400"></i>
               Day vs Night Shift Productivity
             </span>
-            <span class="text-xs text-slate-600 dark:text-zinc-400 font-bold">Shift Distribution</span>
+            <span class="text-xs text-zinc-500 font-medium">Shift Distribution</span>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="p-4 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 rounded-xl">
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
               <div class="flex items-center justify-between mb-1">
-                <span class="text-[10px] uppercase font-bold text-slate-700 dark:text-zinc-400 flex items-center gap-1">
-                  <i data-lucide="sun" class="w-3 h-3 text-slate-700 dark:text-zinc-400"></i> Day Shift
+                <span class="text-[10px] uppercase font-semibold text-zinc-400 flex items-center gap-1">
+                  <i data-lucide="sun" class="w-3 h-3 text-zinc-400"></i> Day Shift
                 </span>
               </div>
-              <div id="dash_day_shift_cnt" class="text-2xl font-black text-slate-900 dark:text-zinc-100">0 jobs</div>
-              <span id="dash_day_shift_rev" class="text-xs font-bold text-slate-700 dark:text-zinc-300 block mt-1">Rs. 0</span>
+              <div id="dash_day_shift_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_day_shift_rev" class="text-xs font-semibold text-zinc-300 block mt-1">Rs. 0</span>
             </div>
 
-            <div class="p-4 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 rounded-xl">
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
               <div class="flex items-center justify-between mb-1">
-                <span class="text-[10px] uppercase font-bold text-slate-700 dark:text-zinc-400 flex items-center gap-1">
-                  <i data-lucide="moon" class="w-3 h-3 text-slate-700 dark:text-zinc-400"></i> Night / Wknd Shift
+                <span class="text-[10px] uppercase font-semibold text-zinc-400 flex items-center gap-1">
+                  <i data-lucide="moon" class="w-3 h-3 text-zinc-400"></i> Night / Wknd Shift
                 </span>
               </div>
-              <div id="dash_night_shift_cnt" class="text-2xl font-black text-slate-900 dark:text-zinc-100">0 jobs</div>
-              <span id="dash_night_shift_rev" class="text-xs font-bold text-slate-700 dark:text-zinc-300 block mt-1">Rs. 0</span>
+              <div id="dash_night_shift_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_night_shift_rev" class="text-xs font-semibold text-zinc-300 block mt-1">Rs. 0</span>
             </div>
           </div>
         </div>
 
         <!-- Card 2 (6 Cols): Regional Performance Breakdown -->
         <div class="lg:col-span-6 card-bento">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 pb-3 mb-4">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
             <span class="label-uppercase !mb-0 flex items-center gap-2">
-              <i data-lucide="globe" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+              <i data-lucide="globe" class="w-4 h-4 text-zinc-400"></i>
               Regional Performance (UK vs AUS)
             </span>
-            <span class="text-xs text-slate-600 dark:text-zinc-400 font-bold">Market Tiers</span>
+            <span class="text-xs text-zinc-500 font-medium">Market Tiers</span>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
-            <div class="p-4 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 rounded-xl">
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
               <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-bold text-slate-900 dark:text-zinc-200">UK Market Tier</span>
-                <span class="px-1.5 py-0.5 rounded bg-white border border-slate-300 dark:bg-zinc-800 dark:border-zinc-700 text-[10px] text-slate-800 dark:text-zinc-400 font-mono font-bold">UK</span>
+                <span class="text-xs font-semibold text-zinc-200">UK Market Tier</span>
+                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-400 font-mono">UK</span>
               </div>
-              <div id="dash_uk_jobs_cnt" class="text-2xl font-black text-slate-900 dark:text-zinc-100">0 jobs</div>
-              <span id="dash_uk_sqft" class="text-xs text-slate-600 dark:text-zinc-400 font-bold block mt-1">0 <span
-                  class="text-slate-500 dark:text-zinc-400">Sq.Ft</span></span>
+              <div id="dash_uk_jobs_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_uk_sqft" class="text-xs text-zinc-400 font-medium block mt-1">0 <span
+                  class="text-zinc-400">Sq.Ft</span></span>
             </div>
 
-            <div class="p-4 bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 rounded-xl">
+            <div class="p-4 bg-zinc-900/90 border border-zinc-800 rounded-xl">
               <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-bold text-slate-900 dark:text-zinc-200">AUS Market Tier</span>
-                <span class="px-1.5 py-0.5 rounded bg-white border border-slate-300 dark:bg-zinc-800 dark:border-zinc-700 text-[10px] text-slate-800 dark:text-zinc-400 font-mono font-bold">AUS</span>
+                <span class="text-xs font-semibold text-zinc-200">AUS Market Tier</span>
+                <span class="px-1.5 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-400 font-mono">AUS</span>
               </div>
-              <div id="dash_aus_jobs_cnt" class="text-2xl font-black text-slate-900 dark:text-zinc-100">0 jobs</div>
-              <span id="dash_aus_sqft" class="text-xs text-slate-600 dark:text-zinc-400 font-bold block mt-1">0 <span
-                  class="text-slate-500 dark:text-zinc-400">Sq.Ft</span></span>
+              <div id="dash_aus_jobs_cnt" class="text-2xl font-bold text-zinc-100">0 jobs</div>
+              <span id="dash_aus_sqft" class="text-xs text-zinc-400 font-medium block mt-1">0 <span
+                  class="text-zinc-400">Sq.Ft</span></span>
             </div>
           </div>
         </div>
@@ -680,46 +673,46 @@
 
         <!-- Chart Style 1 (4 Cols): VERTICAL COLUMN BAR CHART -->
         <div class="lg:col-span-4 card-bento">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 pb-3 mb-4">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
             <span class="label-uppercase !mb-0 flex items-center gap-2">
-              <i data-lucide="bar-chart-2" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-zinc-400"></i>
               Weekly Peak Days
             </span>
-            <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-bold">Column Chart</span>
+            <span class="text-[10px] text-zinc-500 font-medium">Column Chart</span>
           </div>
 
           <div id="dash_weekly_chart" class="flex items-end justify-between gap-1.5 h-36 pt-4 px-1">
-            <!-- Dynamic Injected Vertical Columns -->
+            <!-- Dynamic Injected Vertical Columns (Mon to Sun) -->
           </div>
         </div>
 
         <!-- Chart Style 2 (4 Cols): SMOOTH CURVED AREA / SPARKLINE LINE CHART -->
         <div class="lg:col-span-4 card-bento flex flex-col justify-between">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 pb-3 mb-3">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-3">
             <span class="label-uppercase !mb-0 flex items-center gap-2">
-              <i data-lucide="trending-up" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+              <i data-lucide="trending-up" class="w-4 h-4 text-zinc-400"></i>
               Monthly Peak Trends
             </span>
-            <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-bold">SVG Sparkline</span>
+            <span class="text-[10px] text-zinc-500 font-medium">SVG Sparkline</span>
           </div>
 
           <div id="dash_monthly_peaks" class="flex-1 flex flex-col justify-between">
-            <!-- Dynamic Injected SVG Curved Line Sparkline -->
+            <!-- Dynamic Injected SVG Curved Line Sparkline & Date Callouts -->
           </div>
         </div>
 
         <!-- Chart Style 3 (4 Cols): HORIZONTAL TIME-WINDOW DISTRIBUTION CHART -->
         <div class="lg:col-span-4 card-bento">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800/60 pb-3 mb-4">
+          <div class="flex items-center justify-between border-b border-zinc-800/60 pb-3 mb-4">
             <span class="label-uppercase !mb-0 flex items-center gap-2">
-              <i data-lucide="clock" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+              <i data-lucide="clock" class="w-4 h-4 text-zinc-400"></i>
               Peak Submission Hours
             </span>
-            <span class="text-[10px] text-slate-600 dark:text-zinc-400 font-bold">Time Distribution</span>
+            <span class="text-[10px] text-zinc-500 font-medium">Time Distribution</span>
           </div>
 
           <div id="dash_hourly_chart" class="space-y-3 text-xs">
-            <!-- Dynamic Injected Opacity Fill Block Rows -->
+            <!-- Dynamic Injected Opacity Fill Block Rows (Morning, Afternoon, Evening, Night) -->
           </div>
         </div>
 
@@ -733,17 +726,18 @@
       <!-- Top Header Row -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
         <div>
-          <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">Floorplan Operations Job Sheet</h2>
-          <p class="text-xs text-slate-600 dark:text-zinc-400 font-semibold">Chronological list of all recorded floorplan jobs with real-time price calculations.</p>
+          <h2 class="text-xl font-bold tracking-tight text-zinc-100">Floorplan Operations Job Sheet</h2>
+          <p class="text-xs text-zinc-400">Chronological list of all recorded floorplan jobs with real-time price
+            calculations.</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap shrink-0">
           <button id="preview-sheet-btn" onclick="openExcelPreviewModal()"
-            class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-900 dark:bg-zinc-900 dark:hover:bg-zinc-800/90 dark:border-zinc-800 dark:text-zinc-200 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm">
-            <i data-lucide="eye" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+            class="bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 text-zinc-200 font-medium px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all">
+            <i data-lucide="eye" class="w-4 h-4 text-zinc-400"></i>
             <span>Preview &amp; Download Sheet</span>
           </button>
           <button onclick="openAddJobModal()"
-            class="bg-slate-900 hover:bg-slate-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm">
+            class="bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Add New Job</span>
           </button>
@@ -752,15 +746,15 @@
 
       <!-- ADVANCED SEARCH & MULTI-FILTER TOOLBAR -->
       <div
-        class="bg-white dark:bg-zinc-900/60 border border-slate-300 dark:border-zinc-800/80 rounded-2xl p-3 backdrop-blur-md shadow-sm flex flex-col md:flex-row items-center gap-3 w-full relative z-30">
+        class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-3 backdrop-blur-md shadow-md flex flex-col md:flex-row items-center gap-3 w-full relative z-30">
 
         <!-- 1. Full-Width Prominent Search Bar -->
         <div class="relative flex-1 w-full">
           <i data-lucide="search"
-            class="w-4 h-4 text-slate-600 dark:text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            class="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
           <input type="text" id="jobsheet_search_input" oninput="handleJobSheetFilterChange()"
             placeholder="Search property address, client name, or job #..."
-            class="w-full bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-100 placeholder:text-slate-500 dark:placeholder:text-zinc-500 h-11 px-4 pl-10 text-sm rounded-xl focus:border-slate-900 dark:focus:border-zinc-600 focus:outline-none hover:border-slate-400 dark:hover:border-zinc-700 font-bold">
+            class="w-full bg-zinc-900/90 border border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-11 px-4 pl-10 text-sm rounded-xl focus:border-zinc-600 focus:outline-none hover:border-zinc-700 font-medium">
         </div>
 
         <!-- Right Group: Area Slider Popover Trigger, Market Chips, Shift Chips -->
@@ -769,33 +763,33 @@
           <!-- 2. Area Range Popover Trigger Button -->
           <div class="relative z-40">
             <button type="button" id="area_popover_trigger_btn" onclick="toggleAreaFilterPopover(event)"
-              class="h-11 px-3.5 bg-white dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-900 dark:text-zinc-200 rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm font-bold">
-              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
-              <span id="area_popover_label" class="font-bold">Area SQFT</span>
-              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-600 dark:text-zinc-500"></i>
+              class="h-11 px-3.5 bg-zinc-900/90 border border-zinc-800 hover:bg-zinc-800 text-zinc-200 rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-sm">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-zinc-400"></i>
+              <span id="area_popover_label" class="font-medium">Area SQFT</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-500"></i>
             </button>
 
             <!-- Floating Area Slider Popover -->
             <div id="area_filter_popover"
-              class="absolute right-0 top-full mt-2 z-50 w-72 bg-white dark:bg-zinc-950/95 border border-slate-300 dark:border-zinc-800 shadow-2xl backdrop-blur-md rounded-2xl p-4 hidden flex-col gap-3 popover-animate-in">
+              class="absolute right-0 top-full mt-2 z-50 w-72 bg-zinc-950/95 border border-zinc-800 shadow-2xl backdrop-blur-md rounded-2xl p-4 hidden flex-col gap-3">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-extrabold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
-                  <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-slate-700 dark:text-zinc-400"></i>
+                <span class="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                  <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-zinc-400"></i>
                   Area SQFT Range
                 </span>
                 <button type="button" onclick="resetAreaFilter()"
-                  class="text-[10px] text-slate-600 hover:text-slate-950 font-bold dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors">Reset</button>
+                  class="text-[10px] text-zinc-400 hover:text-zinc-100 transition-colors">Reset</button>
               </div>
 
-              <!-- Clean Monochrome Range Readout Badge -->
+              <!-- Clean Monochrome White Range Readout Badge -->
               <div
-                class="bg-slate-100 border border-slate-300 dark:bg-zinc-900 dark:border-zinc-800 text-slate-950 dark:text-zinc-100 font-extrabold text-sm py-2 px-4 rounded-xl text-center tracking-wide font-mono">
+                class="bg-zinc-900 border border-zinc-800 text-zinc-100 font-semibold text-sm py-2 px-4 rounded-xl text-center shadow-inner tracking-wide font-mono">
                 <span id="area_range_display">100 SQFT - 20,000 SQFT</span>
               </div>
 
               <!-- Unified Single-Track Dual Range Slider UI -->
               <div class="pt-2 pb-1 space-y-2">
-                <div class="flex justify-between text-[11px] font-mono text-slate-700 dark:text-zinc-400 font-bold px-0.5">
+                <div class="flex justify-between text-[11px] font-mono text-zinc-400 font-medium px-0.5">
                   <span id="min_sqft_label">100 SQFT</span>
                   <span id="max_sqft_label">20,000 SQFT</span>
                 </div>
@@ -803,9 +797,9 @@
                 <!-- Single Track Overlay Container -->
                 <div class="relative w-full h-6 flex items-center">
                   <!-- Outer Track Background -->
-                  <div class="absolute inset-x-0 h-2.5 bg-slate-200 dark:bg-zinc-800 rounded-lg pointer-events-none"></div>
+                  <div class="absolute inset-x-0 h-2 bg-zinc-800 rounded-lg pointer-events-none"></div>
                   <!-- Active Filled Range Bar -->
-                  <div id="area_slider_range_bar" class="absolute h-2.5 bg-slate-900 dark:bg-zinc-300 rounded-lg pointer-events-none"
+                  <div id="area_slider_range_bar" class="absolute h-2 bg-zinc-300 rounded-lg pointer-events-none"
                     style="left: 0%; width: 100%;"></div>
 
                   <!-- Stacked Dual Range Thumb Inputs -->
@@ -819,25 +813,25 @@
           </div>
 
           <!-- 3. Market Chips -->
-          <div class="flex items-center gap-1 bg-slate-200/80 dark:bg-zinc-900/90 p-1 rounded-xl border border-slate-300 dark:border-zinc-800 h-11">
+          <div class="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 h-11">
             <button type="button" onclick="setJobSheetMarketFilter('all')" id="js_market_all"
-              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-300 dark:border-zinc-700 shadow-sm transition-all">All</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm">All</button>
             <button type="button" onclick="setJobSheetMarketFilter('UK')" id="js_market_uk"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all">UK</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">UK</button>
             <button type="button" onclick="setJobSheetMarketFilter('AUS')" id="js_market_aus"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all">AUS</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">AUS</button>
           </div>
 
-          <!-- 4. Shift Chips -->
-          <div class="flex items-center gap-1 bg-slate-200/80 dark:bg-zinc-900/90 p-1 rounded-xl border border-slate-300 dark:border-zinc-800 h-11">
+          <!-- 4. Shift Chips (All | Day | Night | Weekend) -->
+          <div class="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 h-11">
             <button type="button" onclick="setJobSheetShiftFilter('all')" id="js_shift_all"
-              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-300 dark:border-zinc-700 shadow-sm transition-all">All</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm">All</button>
             <button type="button" onclick="setJobSheetShiftFilter('day')" id="js_shift_day"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all">Day</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">Day</button>
             <button type="button" onclick="setJobSheetShiftFilter('night')" id="js_shift_night"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all">Night</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">Night</button>
             <button type="button" onclick="setJobSheetShiftFilter('weekend')" id="js_shift_weekend"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all">Weekend</button>
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200">Weekend</button>
           </div>
 
         </div>
@@ -845,12 +839,12 @@
 
       <!-- Table Card Container -->
       <div
-        class="card-bento !p-0 overflow-hidden border border-slate-300 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 backdrop-blur-md shadow-sm w-full">
+        class="card-bento !p-0 overflow-hidden border border-zinc-800/80 bg-zinc-900/60 backdrop-blur-md shadow-lg w-full">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr
-                class="border-b border-slate-300 dark:border-zinc-800 bg-slate-100 dark:bg-zinc-900/90 text-[11px] font-bold text-slate-700 dark:text-zinc-400 uppercase tracking-wider">
+                class="border-b border-zinc-800 bg-zinc-900/90 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
                 <th class="px-4 py-3.5">#</th>
                 <th class="px-4 py-3.5">Date &amp; Time</th>
                 <th class="px-4 py-3.5">Property Address / Title</th>
@@ -861,10 +855,10 @@
                 <th class="px-4 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody id="jobs_table_body" class="divide-y divide-slate-200 dark:divide-zinc-800/40">
+            <tbody id="jobs_table_body" class="divide-y divide-zinc-800/40">
               <!-- JS Dynamic Injected Rows -->
               <tr>
-                <td colspan="8" class="px-6 py-12 text-center text-xs text-slate-600 dark:text-zinc-500 font-bold">
+                <td colspan="8" class="px-6 py-12 text-center text-xs text-zinc-500 font-medium">
                   Loading floorplan job records...
                 </td>
               </tr>
@@ -879,50 +873,50 @@
 
       <!-- Top Settings & Controls Strip -->
       <div
-        class="max-w-4xl mx-auto w-full bg-white dark:bg-zinc-900/60 border border-slate-300 dark:border-zinc-800/80 rounded-2xl px-5 py-4 backdrop-blur-md shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        class="max-w-4xl mx-auto w-full bg-zinc-900/60 border border-zinc-800/80 rounded-2xl px-5 py-4 backdrop-blur-md shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <!-- Left: Title & Period Badge -->
         <div class="flex items-center gap-3.5 min-w-0">
           <div
-            class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-900 dark:bg-zinc-800/90 dark:border-zinc-700/80 flex items-center justify-center text-white dark:text-zinc-200 shrink-0">
+            class="w-10 h-10 rounded-xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center text-zinc-200 shrink-0">
             <i data-lucide="receipt" class="w-5 h-5"></i>
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-2.5">
-              <h2 class="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight whitespace-nowrap">Monthly Salary Statement</h2>
+              <h2 class="text-sm font-bold text-zinc-100 tracking-tight whitespace-nowrap">Monthly Salary Statement</h2>
               <span id="salary_period_badge"
-                class="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-200 border border-slate-300 text-slate-800 dark:bg-zinc-800/80 dark:border-zinc-700/80 dark:text-zinc-300 font-bold whitespace-nowrap">Period</span>
+                class="text-[10px] px-2.5 py-0.5 rounded-full bg-zinc-800/80 border border-zinc-700/80 text-zinc-300 font-medium whitespace-nowrap">Period</span>
             </div>
-            <p class="text-[11px] text-slate-600 dark:text-zinc-500 font-semibold truncate mt-0.5">Dynamic earnings breakdown &amp; verified statutory payslip</p>
+            <p class="text-[11px] text-zinc-500 font-medium truncate mt-0.5">Dynamic earnings breakdown &amp; verified statutory payslip</p>
           </div>
         </div>
 
         <!-- Right: Input Parameters -->
         <div class="flex items-center gap-3 shrink-0">
           <!-- Public Holidays Input -->
-          <div class="flex items-center gap-2.5 bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-xl px-3.5 py-1.5 shadow-sm">
+          <div class="flex items-center gap-2.5 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-1.5 shadow-sm">
             <label for="salary_holidays_count"
-              class="text-xs font-bold text-slate-700 dark:text-zinc-400 shrink-0 flex items-center gap-1.5 whitespace-nowrap">
-              <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-600"></i>
+              class="text-xs font-semibold text-zinc-400 shrink-0 flex items-center gap-1.5 whitespace-nowrap">
+              <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-400"></i>
               Public Holidays:
             </label>
             <input type="number" id="salary_holidays_count" min="0" max="31" value="0"
               oninput="calculateMonthlySalaryStatement()"
-              class="bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-100 font-extrabold text-xs rounded-lg px-2.5 py-1 w-16 text-center focus:outline-none focus:border-slate-900 dark:focus:border-zinc-600">
+              class="bg-zinc-950 border border-zinc-800 text-zinc-100 font-bold text-xs rounded-lg px-2.5 py-1 w-16 text-center focus:outline-none focus:border-zinc-600">
           </div>
 
           <!-- Base Salary Input with PIN Lock -->
-          <div class="flex items-center gap-2 bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-xl px-3.5 py-1.5 shadow-sm">
+          <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-1.5 shadow-sm">
             <label for="salary_base_amount"
-              class="text-xs font-bold text-slate-700 dark:text-zinc-400 shrink-0 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              class="text-xs font-semibold text-zinc-400 shrink-0 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               onclick="handleUnlockBasicSalaryClick()">
-              <i id="salary_lock_icon" data-lucide="lock" class="w-3.5 h-3.5 text-slate-700 dark:text-zinc-400"></i>
+              <i id="salary_lock_icon" data-lucide="lock" class="w-3.5 h-3.5 text-zinc-400"></i>
               Basic (LKR):
             </label>
             <input type="number" id="salary_base_amount" step="0.01" min="0" value="35453.00" readonly
               oninput="calculateMonthlySalaryStatement()"
-              class="bg-white dark:bg-zinc-950/80 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-100 font-extrabold text-xs rounded-lg px-2.5 py-1 w-24 text-right focus:outline-none focus:border-slate-900 dark:focus:border-zinc-600 cursor-not-allowed opacity-90 transition-all">
+              class="bg-zinc-950/80 border border-zinc-800 text-zinc-100 font-bold text-xs rounded-lg px-2.5 py-1 w-24 text-right focus:outline-none focus:border-zinc-600 cursor-not-allowed opacity-90 transition-all">
             <button type="button" id="salary_edit_btn" onclick="handleUnlockBasicSalaryClick()"
-              class="p-1 rounded-md text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors"
+              class="p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
               title="Unlock Basic Salary">
               <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
             </button>
@@ -934,21 +928,21 @@
       <div class="max-w-4xl mx-auto w-full space-y-5">
 
         <!-- Main Bento Payslip Card -->
-        <div class="bg-white dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-sm dark:shadow-2xl space-y-6 w-full">
+        <div class="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 w-full">
 
           <!-- Payslip Header -->
-          <div class="flex items-start justify-between border-b border-slate-200 dark:border-zinc-800/80 pb-5">
+          <div class="flex items-start justify-between border-b border-zinc-800/80 pb-5">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-emerald-600"></div>
-                <span class="text-[10px] uppercase tracking-widest text-slate-600 dark:text-zinc-400 font-bold">Official Payslip Statement</span>
+                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <span class="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">Official Payslip Statement</span>
               </div>
-              <h1 class="text-lg sm:text-xl font-black text-slate-900 dark:text-zinc-100 tracking-tight font-sans">SALARY STATEMENT</h1>
-              <p id="salary_statement_subtitle" class="text-xs text-slate-600 dark:text-zinc-400 font-semibold">Period: Current Period</p>
+              <h1 class="text-lg sm:text-xl font-black text-zinc-100 tracking-tight font-sans">SALARY STATEMENT</h1>
+              <p id="salary_statement_subtitle" class="text-xs text-zinc-400 font-medium">Period: Current Period</p>
             </div>
             <div class="text-right">
               <span
-                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
                 Verified
               </span>
@@ -959,150 +953,162 @@
           <div class="space-y-3 font-sans text-xs sm:text-sm">
 
             <!-- 1. Basic Salary -->
-            <div class="flex items-center justify-between py-2 border-b border-slate-200 dark:border-zinc-800/40">
+            <div class="flex items-center justify-between py-2 border-b border-zinc-800/40">
               <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-slate-700 dark:bg-zinc-500"></span>
-                <span class="text-slate-800 dark:text-zinc-300 font-bold">Basic Salary</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+                <span class="text-zinc-300 font-medium">Basic Salary</span>
               </div>
-              <span id="payslip_basic_salary" class="font-black text-slate-950 dark:text-zinc-100">LKR 35,453.00</span>
+              <span id="payslip_basic_salary" class="font-bold text-zinc-100">LKR 35,453.00</span>
             </div>
 
             <!-- 2. Special Allowance -->
-            <div class="py-2 border-b border-slate-200 dark:border-zinc-800/40 space-y-2">
+            <div class="py-2 border-b border-zinc-800/40 space-y-2">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></span>
-                  <span class="text-slate-800 dark:text-zinc-300 font-bold">Special Allowance (Job Earnings)</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                  <span class="text-zinc-300 font-medium">Special Allowance (Job Earnings)</span>
                 </div>
-                <span id="payslip_special_allowance" class="font-black text-indigo-700 dark:text-indigo-300">LKR 0.00</span>
+                <span id="payslip_special_allowance" class="font-bold text-indigo-300">LKR 0.00</span>
               </div>
-              <!-- Sub-breakdown chips -->
-              <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-700 dark:text-zinc-400 pl-3.5 font-sans font-semibold">
-                <div class="flex justify-between bg-slate-100 dark:bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-zinc-800/60">
+              <!-- Sub-breakdown chips / details -->
+              <div class="grid grid-cols-2 gap-2 text-[11px] text-zinc-400 pl-3.5 font-sans">
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
                   <span>Clean Bonuses:</span>
-                  <span id="salary_sub_clean_bonus" class="text-slate-950 dark:text-zinc-300 font-bold">+LKR 0.00</span>
+                  <span id="salary_sub_clean_bonus" class="text-zinc-300 font-semibold">+LKR 0.00</span>
                 </div>
-                <div class="flex justify-between bg-slate-100 dark:bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-zinc-800/60">
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
                   <span>Night / Shifts:</span>
-                  <span id="salary_sub_shifts" class="text-slate-950 dark:text-zinc-300 font-bold">+LKR 0.00</span>
+                  <span id="salary_sub_shifts" class="text-zinc-300 font-semibold">+LKR 0.00</span>
                 </div>
-                <div class="flex justify-between bg-slate-100 dark:bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-zinc-800/60">
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
                   <span>Color & Extra Area:</span>
-                  <span id="salary_sub_color_area" class="text-slate-950 dark:text-zinc-300 font-bold">+LKR 0.00</span>
+                  <span id="salary_sub_color_area" class="text-zinc-300 font-semibold">+LKR 0.00</span>
                 </div>
-                <div class="flex justify-between bg-slate-100 dark:bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-zinc-800/60">
+                <div class="flex justify-between bg-zinc-950/60 px-2.5 py-1 rounded-lg border border-zinc-800/60">
                   <span>Mistake Deductions:</span>
-                  <span id="salary_sub_penalties" class="text-rose-700 dark:text-rose-400 font-bold">-LKR 0.00</span>
+                  <span id="salary_sub_penalties" class="text-rose-400 font-semibold">-LKR 0.00</span>
                 </div>
               </div>
             </div>
 
             <!-- 3. Holiday Allowance -->
-            <div class="flex items-center justify-between py-2 border-b border-slate-200 dark:border-zinc-800/40">
+            <div class="flex items-center justify-between py-2 border-b border-zinc-800/40">
               <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-amber-600 dark:bg-amber-400"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                 <div>
-                  <span class="text-slate-800 dark:text-zinc-300 font-bold">Holiday Allowance</span>
-                  <span id="payslip_holiday_calc_label" class="text-[11px] text-slate-600 dark:text-zinc-500 font-sans font-semibold block sm:inline sm:ml-1.5">(0 days × LKR 1,772.65)</span>
+                  <span class="text-zinc-300 font-medium">Holiday Allowance</span>
+                  <span id="payslip_holiday_calc_label" class="text-[11px] text-zinc-500 font-sans block sm:inline sm:ml-1.5">(0 days × LKR 1,772.65)</span>
                 </div>
               </div>
-              <span id="payslip_holiday_allowance" class="font-black text-amber-700 dark:text-amber-300">LKR 0.00</span>
+              <span id="payslip_holiday_allowance" class="font-bold text-amber-300">LKR 0.00</span>
             </div>
 
           </div>
 
           <!-- Highlighted Primary Net Salary Box -->
-          <div class="bg-slate-950 dark:bg-zinc-950 border border-slate-900 dark:border-zinc-800 rounded-xl p-5 shadow-lg space-y-1 text-white">
-            <div class="flex items-center justify-between text-xs text-slate-300 dark:text-zinc-400 font-sans uppercase tracking-wider font-bold">
+          <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-5 shadow-inner space-y-1">
+            <div class="flex items-center justify-between text-xs text-zinc-400 font-sans uppercase tracking-wider font-semibold">
               <span>Net Take-Home Salary</span>
-              <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 dark:bg-zinc-800 text-slate-100 dark:text-zinc-300 font-sans font-bold">Total Payable</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-sans font-semibold">Total Payable</span>
             </div>
             <div class="flex items-baseline justify-between pt-1">
               <span id="payslip_net_salary" class="text-2xl sm:text-3xl font-black text-white font-sans tracking-tight">
                 LKR 35,453.00
               </span>
-              <span class="text-xs text-slate-300 dark:text-zinc-400 font-semibold">Direct Bank Credit</span>
+              <span class="text-xs text-zinc-500 font-medium">Direct Bank Credit</span>
             </div>
           </div>
 
         </div>
 
-        <!-- Secondary Statutory Reference Strip -->
+        <!-- Secondary Statutory Reference Strip (4 Equal Columns Bento Grid) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
 
           <!-- 1. Job Count -->
           <div
-            class="bg-white dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-sm hover:border-slate-400 dark:hover:border-zinc-700/80 transition-all">
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
             <div class="flex items-center gap-2 min-h-[36px] items-start">
-              <div class="text-xs font-bold tracking-wide text-slate-700 dark:text-zinc-400 flex items-center gap-1.5">
-                <i data-lucide="check-square" class="w-4 h-4 text-slate-700 dark:text-zinc-400 shrink-0"></i>
+              <div class="text-xs font-semibold tracking-wide text-zinc-400 flex items-center gap-1.5">
+                <i data-lucide="check-square" class="w-4 h-4 text-zinc-400 shrink-0"></i>
                 <span>Completed Jobs</span>
               </div>
             </div>
+            <!-- Tier 2: Middle Hero Number -->
             <div class="my-auto py-1">
-              <div id="statutory_job_count" class="text-2xl lg:text-3xl font-black text-slate-900 dark:text-zinc-100 tracking-tight font-sans">
+              <div id="statutory_job_count" class="text-2xl lg:text-3xl font-bold text-zinc-100 tracking-tight font-sans">
                 0
               </div>
             </div>
-            <div class="mt-auto border-t border-slate-200 dark:border-zinc-800/50 pt-2">
-              <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-bold leading-tight truncate">Monthly completed total</p>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Monthly completed total</p>
             </div>
           </div>
 
           <!-- 2. ETF (8%) Record -->
           <div
-            class="bg-white dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-sm hover:border-slate-400 dark:hover:border-zinc-700/80 transition-all">
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
             <div class="flex items-center gap-2 min-h-[36px] items-start">
-              <div class="text-xs font-bold tracking-wide text-slate-700 dark:text-zinc-400 flex items-center gap-1.5">
-                <i data-lucide="shield-check" class="w-4 h-4 text-slate-700 dark:text-zinc-400 shrink-0"></i>
+              <div class="text-xs font-semibold tracking-wide text-zinc-400 flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4 text-zinc-400 shrink-0"></i>
                 <span>ETF (8% Employer)</span>
               </div>
             </div>
+            <!-- Tier 2: Middle Hero Number -->
             <div class="my-auto py-1">
-              <div id="statutory_etf_amount" class="text-2xl lg:text-3xl font-black text-slate-900 dark:text-zinc-100 tracking-tight font-sans">
+              <div id="statutory_etf_amount" class="text-2xl lg:text-3xl font-bold text-zinc-100 tracking-tight font-sans">
                 LKR 2,836.24
               </div>
             </div>
-            <div class="mt-auto border-t border-slate-200 dark:border-zinc-800/50 pt-2">
-              <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-bold leading-tight truncate">Not deducted (Statutory)</p>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Not deducted (Statutory)</p>
             </div>
           </div>
 
           <!-- 3. Daily Holiday Rate -->
           <div
-            class="bg-white dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-sm hover:border-slate-400 dark:hover:border-zinc-700/80 transition-all">
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
             <div class="flex items-center gap-2 min-h-[36px] items-start">
-              <div class="text-xs font-bold tracking-wide text-amber-800 dark:text-amber-400/90 flex items-center gap-1.5">
-                <i data-lucide="calendar" class="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0"></i>
+              <div class="text-xs font-semibold tracking-wide text-amber-400/90 flex items-center gap-1.5">
+                <i data-lucide="calendar" class="w-4 h-4 text-amber-400 shrink-0"></i>
                 <span>Holiday Rate</span>
               </div>
             </div>
+            <!-- Tier 2: Middle Hero Number -->
             <div class="my-auto py-1">
-              <div id="statutory_holiday_rate" class="text-2xl lg:text-3xl font-black text-slate-900 dark:text-zinc-100 tracking-tight font-sans">
+              <div id="statutory_holiday_rate" class="text-2xl lg:text-3xl font-bold text-zinc-100 tracking-tight font-sans">
                 LKR 1,772.65
               </div>
             </div>
-            <div class="mt-auto border-t border-slate-200 dark:border-zinc-800/50 pt-2">
-              <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-bold leading-tight truncate">Per holiday day (1/20th)</p>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Per holiday day (1/20th)</p>
             </div>
           </div>
 
           <!-- 4. Total Penalty Logged -->
           <div
-            class="bg-white dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-sm hover:border-slate-400 dark:hover:border-zinc-700/80 transition-all">
+            class="bg-zinc-900/90 border border-zinc-800/80 rounded-2xl p-5 flex flex-col justify-between h-44 shadow-md hover:border-zinc-700/80 transition-all">
+            <!-- Tier 1: Top Title Header -->
             <div class="flex items-center gap-2 min-h-[36px] items-start">
-              <div class="text-xs font-bold tracking-wide text-rose-800 dark:text-rose-400/90 flex items-center gap-1.5">
-                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-700 dark:text-rose-400 shrink-0"></i>
+              <div class="text-xs font-semibold tracking-wide text-rose-400/90 flex items-center gap-1.5">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0"></i>
                 <span>Penalty Logged</span>
               </div>
             </div>
+            <!-- Tier 2: Middle Hero Number -->
             <div class="my-auto py-1">
-              <div id="statutory_penalty_amount" class="text-2xl lg:text-3xl font-black text-rose-700 dark:text-rose-400 tracking-tight font-sans">
+              <div id="statutory_penalty_amount" class="text-2xl lg:text-3xl font-bold text-rose-400 tracking-tight font-sans">
                 LKR 0.00
               </div>
             </div>
-            <div class="mt-auto border-t border-slate-200 dark:border-zinc-800/50 pt-2">
-              <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-bold leading-tight truncate">Deducted from allowance</p>
+            <!-- Tier 3: Bottom Subtitle -->
+            <div class="mt-auto border-t border-zinc-800/50 pt-2">
+              <p class="text-[11px] text-zinc-500 font-medium leading-tight truncate">Deducted from allowance</p>
             </div>
           </div>
 
@@ -1115,46 +1121,46 @@
 
   <!-- TOAST NOTIFICATION -->
   <div id="toast"
-    class="fixed bottom-6 right-6 px-4 py-3 rounded-xl flex items-center gap-3 z-50 text-xs font-bold">
-    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    class="fixed bottom-6 right-6 bg-zinc-900 border border-zinc-800 text-zinc-100 px-4 py-3 rounded-md flex items-center gap-3 z-50 text-xs font-medium shadow-xl">
+    <i data-lucide="check" class="w-4 h-4 text-zinc-300"></i>
     <span id="toast_msg">Action completed</span>
   </div>
 
   <!-- SALARY PIN AUTHORIZATION MODAL -->
   <div id="salaryPinModalBackdrop"
-    class="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
     <div
-      class="bg-white dark:bg-[#121215] border border-slate-300 dark:border-zinc-800 w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 space-y-4">
+      class="bg-[#121215] border border-zinc-800 w-full max-w-xs rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 space-y-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <div
-            class="w-8 h-8 rounded-lg bg-amber-100 border border-amber-300 dark:bg-zinc-800 dark:border-zinc-700/80 flex items-center justify-center text-amber-800 dark:text-zinc-300">
-            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-700"></i>
+            class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-zinc-300">
+            <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
           </div>
           <div>
-            <h3 class="text-sm font-black text-slate-900 dark:text-zinc-100">Security PIN</h3>
-            <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-semibold">Auto-unlocks on 4 digits</p>
+            <h3 class="text-sm font-bold text-zinc-100">Security PIN</h3>
+            <p class="text-[11px] text-zinc-500">Auto-unlocks on 4 digits</p>
           </div>
         </div>
-        <button type="button" onclick="closeSalaryPinModal()" class="text-slate-600 hover:text-slate-950 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors">
+        <button type="button" onclick="closeSalaryPinModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
       <form id="salaryPinForm" onsubmit="handleSalaryPinSubmit(event)" class="space-y-4">
         <div>
-          <label class="block text-[11px] font-bold text-slate-700 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Enter 4-Digit PIN</label>
+          <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Enter 4-Digit PIN</label>
           <input type="password" id="salary_pin_input" maxlength="4" placeholder="••••" required autofocus
             oninput="handleSalaryPinInput(event)"
-            class="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-100 text-center tracking-[0.5em] text-lg font-extrabold h-11 rounded-xl focus:border-slate-900 dark:focus:border-zinc-500 focus:outline-none transition-all">
+            class="w-full bg-zinc-950 border border-zinc-800 text-zinc-100 text-center tracking-[0.5em] text-lg font-bold h-11 rounded-xl focus:border-zinc-500 focus:outline-none transition-all">
         </div>
         <div class="flex gap-2">
           <button type="button" onclick="closeSalaryPinModal()"
-            class="flex-1 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-slate-300 dark:border-zinc-800 transition-colors">
+            class="flex-1 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition-colors">
             Cancel
           </button>
           <button type="submit"
-            class="flex-1 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-950 transition-colors shadow-sm">
+            class="flex-1 py-2 text-xs font-semibold rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 font-bold transition-colors">
             Authorize
           </button>
         </div>
@@ -1162,18 +1168,18 @@
     </div>
   </div>
 
-  <!-- ADD JOB MODAL -->
+  <!-- ADD JOB MODAL / OVERLAY CONTAINER -->
   <div id="addJobModalBackdrop"
-    class="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
     <div
-      class="bg-white dark:bg-[#121215] border border-slate-300 dark:border-zinc-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      class="bg-[#121215] border border-zinc-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
       <!-- Header -->
-      <div class="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-          <i data-lucide="layout-template" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i data-lucide="layout-template" class="w-4 h-4 text-zinc-400"></i>
           Log New Floorplan Record
         </h2>
-        <button type="button" onclick="closeAddJobModal()" class="text-slate-600 hover:text-slate-950 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors">
+        <button type="button" onclick="closeAddJobModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
           <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
         </button>
       </div>
@@ -1202,7 +1208,7 @@
             </div>
             <div class="col-span-4">
               <label class="label-uppercase">Area <span
-                  class="text-slate-600 dark:text-zinc-400 font-semibold lowercase tracking-normal">(Sq.Ft)</span></label>
+                  class="text-zinc-400 font-normal lowercase tracking-normal">(Sq.Ft)</span></label>
               <input type="number" id="modal_area_sqft" min="1" required placeholder="e.g. 1250" class="input-shadcn">
             </div>
           </div>
@@ -1213,12 +1219,12 @@
               <div class="flex items-center gap-2">
                 <span>Select Client</span>
                 <button type="button" onclick="openClientModal()"
-                  class="text-slate-600 hover:text-slate-950 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors" title="Manage Clients">
-                  <i data-lucide="settings-2" stroke-width="2" class="w-3.5 h-3.5"></i>
+                  class="text-zinc-500 hover:text-zinc-300 transition-colors" title="Manage Clients">
+                  <i data-lucide="settings-2" stroke-width="1.5" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
               <span id="modal_selected_client_badge"
-                class="hidden text-slate-900 dark:text-zinc-300 font-bold normal-case tracking-normal text-[11px]"></span>
+                class="hidden text-zinc-300 font-medium normal-case tracking-normal text-[11px]"></span>
             </label>
             <input type="hidden" id="modal_client_name" required>
             <div id="modal_quick_client_pills" class="flex flex-wrap gap-2">
@@ -1260,8 +1266,8 @@
             <input type="checkbox" id="modal_is_color" class="hidden">
             <button type="button" id="modal_toggle_color_plan" onclick="toggleModalOption('modal_is_color')"
               class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
-              <i data-lucide="palette" stroke-width="2"
-                class="w-4 h-4 text-slate-700 group-[.active]:text-white dark:text-zinc-500 dark:group-[.active]:text-zinc-100 transition-colors"></i>
+              <i data-lucide="palette" stroke-width="1.5"
+                class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
               <span>Color Plan</span>
             </button>
 
@@ -1269,30 +1275,30 @@
             <button type="button" id="modal_toggle_night_weekend"
               onclick="toggleModalOption('modal_is_night_or_weekend')"
               class="toggle-pill-inactive w-full flex items-center justify-center gap-2 group">
-              <i data-lucide="moon" stroke-width="2"
-                class="w-4 h-4 text-slate-700 group-[.active]:text-white dark:text-zinc-500 dark:group-[.active]:text-zinc-100 transition-colors"></i>
+              <i data-lucide="moon" stroke-width="1.5"
+                class="w-4 h-4 text-zinc-500 group-[.active]:text-zinc-100 transition-colors"></i>
               <span>Night / Wknd</span>
             </button>
           </div>
 
           <!-- REAL-TIME LIVE PAYOUT STRIP -->
           <div id="modal_payout_strip_container"
-            class="bg-slate-100/80 border border-dashed border-slate-300 dark:bg-zinc-900/40 dark:border-zinc-800/80 rounded-xl p-3.5 mt-4 mb-2 flex items-center justify-between gap-2 shadow-sm transition-all">
+            class="bg-zinc-900/40 border border-dashed border-zinc-800/80 opacity-60 rounded-lg p-3.5 mt-4 mb-2 flex items-center justify-between gap-2 shadow-sm transition-all">
             <div id="modal_payout_breakdown_badges" class="flex items-center gap-1.5 flex-wrap text-[11px]">
-              <span class="text-slate-700 dark:text-zinc-400 text-[11px] font-semibold flex items-center gap-1.5">
-                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-600 dark:text-zinc-500"></i> Enter job details to calculate payout
+              <span class="text-zinc-500 text-[11px] font-medium flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-zinc-600"></i> Enter job details to calculate payout
               </span>
             </div>
             <div class="text-right">
-              <span class="text-[10px] uppercase tracking-wider text-slate-600 dark:text-zinc-400 font-bold block">Estimated Payout</span>
-              <div id="modal_payout_total_val" class="text-base font-extrabold text-slate-800 dark:text-zinc-300 tracking-tight">--</div>
+              <span class="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold block">Estimated Payout</span>
+              <div id="modal_payout_total_val" class="text-base font-bold text-zinc-400 tracking-tight">--</div>
             </div>
           </div>
 
           <!-- Submit Button -->
-          <div class="pt-3 border-t border-slate-200 dark:border-zinc-800/60">
+          <div class="pt-3 border-t border-zinc-800/60">
             <button type="submit" id="modalSubmitBtn" class="w-full btn-primary-white group">
-              <i data-lucide="check" stroke-width="2.5" class="w-4 h-4 shrink-0"></i>
+              <i data-lucide="check" stroke-width="2" class="w-4 h-4 shrink-0"></i>
               <span>Save Floorplan Record</span>
             </button>
           </div>
@@ -1303,23 +1309,24 @@
 
   <!-- VIEW JOB DETAILS MODAL -->
   <div id="viewJobModalBackdrop"
-    class="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
     <div
-      class="bg-white dark:bg-[#121215] border border-slate-300 dark:border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-          <i data-lucide="file-text" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+      class="bg-[#121215] border border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i data-lucide="file-text" class="w-4 h-4 text-zinc-400"></i>
           <span id="view_modal_title">Floorplan Details</span>
         </h2>
-        <button type="button" onclick="closeViewJobModal()" class="text-slate-600 hover:text-slate-950 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors">
+        <button type="button" onclick="closeViewJobModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
           <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
         </button>
       </div>
       <div class="p-6 space-y-4 text-xs overflow-y-auto" id="view_modal_body">
+        <!-- Injected via JS -->
       </div>
-      <div class="p-4 border-t border-slate-200 dark:border-zinc-800/60 bg-slate-50 dark:bg-zinc-900/40 flex justify-end">
+      <div class="p-4 border-t border-zinc-800/60 bg-zinc-900/40 flex justify-end">
         <button type="button" onclick="closeViewJobModal()"
-          class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-100 text-xs font-bold rounded-lg transition-colors">
+          class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold rounded-lg transition-colors">
           Close
         </button>
       </div>
@@ -1328,35 +1335,35 @@
 
   <!-- CLIENT MANAGEMENT MODAL -->
   <div id="clientModalBackdrop"
-    class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
-    <div class="bg-white dark:bg-[#121215] border border-slate-300 dark:border-zinc-800 w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-opacity">
+    <div class="bg-[#121215] border border-zinc-800 w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[85vh]">
       <!-- Header -->
-      <div class="p-5 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
-        <h2 class="text-sm font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-          <i data-lucide="users" class="w-4 h-4 text-slate-700 dark:text-zinc-400"></i>
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-zinc-400"></i>
           Manage Clients
         </h2>
-        <button type="button" onclick="closeClientModal()" class="text-slate-600 hover:text-slate-950 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors">
+        <button type="button" onclick="closeClientModal()" class="text-zinc-500 hover:text-zinc-300 transition-colors">
           <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
         </button>
       </div>
       <!-- Add New Client Form -->
-      <div class="p-5 border-b border-slate-200 dark:border-zinc-800/50 bg-slate-50/80 dark:bg-zinc-900/50">
+      <div class="p-5 border-b border-zinc-800/50 bg-zinc-900/50">
         <form id="addClientForm" onsubmit="handleAddClient(event)" class="flex gap-2 items-end">
           <div class="flex-1">
-            <label class="label-uppercase !text-[10px] !text-slate-700 dark:!text-zinc-500">Client Name</label>
+            <label class="label-uppercase !text-[10px] !text-zinc-500">Client Name</label>
             <input type="text" id="new_client_name" required placeholder="e.g. John Doe"
-              class="input-shadcn h-9 text-xs font-bold">
+              class="input-shadcn h-9 text-xs">
           </div>
           <div class="w-28">
-            <label class="label-uppercase !text-[10px] !text-slate-700 dark:!text-zinc-500">Region</label>
-            <select id="new_client_region" class="input-shadcn h-9 text-xs font-bold">
+            <label class="label-uppercase !text-[10px] !text-zinc-500">Region</label>
+            <select id="new_client_region" class="input-shadcn h-9 text-xs">
               <option value="UK">UK</option>
               <option value="AUS">AUS</option>
             </select>
           </div>
           <button type="submit"
-            class="h-9 px-3 bg-slate-900 hover:bg-slate-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-950 font-bold text-xs rounded-md transition-colors shrink-0 shadow-sm">
+            class="h-9 px-3 bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-xs rounded-md transition-colors shrink-0">
             Add
           </button>
         </form>
@@ -1364,6 +1371,7 @@
       <!-- List -->
       <div class="p-5 overflow-y-auto flex-1">
         <div id="modal_client_list" class="flex flex-col gap-2">
+          <!-- JS Injected List -->
         </div>
       </div>
     </div>
@@ -1371,90 +1379,94 @@
 
   <!-- EXCEL PREVIEW & DOWNLOAD SHEET MODAL OVERLAY -->
   <div id="excelPreviewModalBackdrop"
-    class="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4 sm:p-6 transition-opacity">
+    class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4 sm:p-6 transition-opacity">
     <div
-      class="bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+      class="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
 
       <!-- Modal Header & Excel Sheet Tabs -->
-      <div class="p-5 border-b border-slate-200 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/40 flex items-center justify-between gap-4">
+      <div class="p-5 border-b border-zinc-800/80 bg-zinc-900/40 flex items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-          <div class="p-2 bg-emerald-100 border border-emerald-300 dark:bg-zinc-900 dark:border-zinc-800 rounded-lg text-emerald-800 dark:text-zinc-300">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-700 dark:text-emerald-400"></i>
+          <div class="p-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
           </div>
           <div>
-            <h2 class="text-sm font-black text-slate-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
+            <h2 class="text-sm font-bold text-zinc-100 tracking-tight flex items-center gap-2">
               Excel Export Preview &amp; Download Engine
             </h2>
-            <p class="text-[11px] text-slate-600 dark:text-zinc-400 font-semibold">Exact 11-column mapping (Col A to K) formatted for direct Excel Ctrl+V pasting.</p>
+            <p class="text-[11px] text-zinc-400">Exact 11-column mapping (Col A to K) formatted for direct Excel Ctrl+V
+              pasting.</p>
           </div>
         </div>
 
         <!-- Right Header Close Icon -->
         <button type="button" onclick="closeExcelPreviewModal()"
-          class="p-2 text-slate-600 hover:text-slate-950 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800/80 rounded-xl transition-colors"
+          class="p-2 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 rounded-xl transition-colors"
           title="Close Preview">
           <i data-lucide="x" stroke-width="2" class="w-4 h-4"></i>
         </button>
       </div>
 
       <!-- Sub-Bar: Excel Sheet Tabs -->
-      <div class="px-5 py-2.5 border-b border-slate-200 dark:border-zinc-800/60 bg-slate-100/60 dark:bg-zinc-900/20 flex items-center justify-between">
-        <div class="flex items-center gap-1 bg-slate-200/80 dark:bg-zinc-900/80 p-1 rounded-xl border border-slate-300 dark:border-zinc-800">
+      <div class="px-5 py-2.5 border-b border-zinc-800/60 bg-zinc-900/20 flex items-center justify-between">
+        <div class="flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-zinc-800">
           <button type="button" id="excel_tab_all" onclick="switchExcelPreviewTab('all')"
-            class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-300 dark:border-zinc-700 shadow-sm flex items-center gap-1.5">
+            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm flex items-center gap-1.5">
             <i data-lucide="table" class="w-3.5 h-3.5"></i>
             <span>All Jobs Sheet</span>
           </button>
           <button type="button" id="excel_tab_night" onclick="switchExcelPreviewTab('night')"
-            class="px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-700 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 flex items-center gap-1.5">
+            class="px-3 py-1 rounded-lg text-xs font-medium transition-all text-zinc-400 hover:text-zinc-200 flex items-center gap-1.5">
             <i data-lucide="moon" class="w-3.5 h-3.5"></i>
             <span>Night Jobs Block (#101+)</span>
           </button>
         </div>
-        <div class="flex items-center gap-2 text-[11px] text-slate-700 dark:text-zinc-400">
+        <div class="flex items-center gap-2 text-[11px] text-zinc-400">
           <span id="excel_preview_count_badge"
-            class="px-2 py-0.5 rounded bg-slate-200 border border-slate-300 dark:bg-zinc-800 dark:border-transparent text-slate-900 dark:text-zinc-200 font-bold text-[10px]">0 Rows</span>
+            class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 font-semibold text-[10px]">0 Rows</span>
         </div>
       </div>
 
       <!-- Data Grid View (Excel Style Scrollable Table) -->
-      <div class="overflow-y-auto max-h-[55vh] border-t border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 flex-1 relative">
-        <table class="w-full text-left border-collapse font-mono text-xs text-slate-800 dark:text-zinc-300 font-semibold">
+      <div class="overflow-y-auto max-h-[55vh] border-t border-zinc-800/80 bg-zinc-950 flex-1 relative">
+        <table class="w-full text-left border-collapse font-mono text-xs text-zinc-300">
           <thead class="sticky top-0 z-20">
-            <tr class="bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400 font-mono text-[11px] font-bold border-b border-slate-300 dark:border-zinc-800 shadow-sm">
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 w-12 text-center bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">A (#)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">B (Date)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 min-w-[200px] bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">C (Property Address)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 text-right bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">D (Area)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 text-center bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">E (Market)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 text-center bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">F (Color)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 text-right bg-slate-100 dark:bg-zinc-950 text-slate-500 dark:text-zinc-500">G (Price)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">H (Mistake)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 text-right bg-slate-100 dark:bg-zinc-950 text-slate-500 dark:text-zinc-500">I (NoMistake)</th>
-              <th class="py-2.5 px-3 border-r border-slate-300 dark:border-zinc-800/60 text-right bg-slate-100 dark:bg-zinc-950 text-slate-700 dark:text-zinc-400">J (Ddt)</th>
-              <th class="py-2.5 px-3 text-right bg-slate-100 dark:bg-zinc-950 text-slate-500 dark:text-zinc-500">K (Total)</th>
+            <tr class="bg-zinc-950 text-zinc-400 font-mono text-[11px] border-b border-zinc-800 shadow-sm">
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 w-12 text-center bg-zinc-950 text-zinc-400">A (#)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 bg-zinc-950 text-zinc-400">B (Date)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 min-w-[200px] bg-zinc-950 text-zinc-400">C (Property
+                Address)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-400">D (Area)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-center bg-zinc-950 text-zinc-400">E (Market)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-center bg-zinc-950 text-zinc-400">F (Color)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-500">G (Price)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 bg-zinc-950 text-zinc-400">H (Mistake)</th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-500">I (NoMistake)
+              </th>
+              <th class="py-2.5 px-3 border-r border-zinc-800/60 text-right bg-zinc-950 text-zinc-400">J (Ddt)</th>
+              <th class="py-2.5 px-3 text-right bg-zinc-950 text-zinc-500">K (Total)</th>
             </tr>
           </thead>
-          <tbody id="excel_preview_table_body" class="divide-y divide-slate-200 dark:divide-zinc-800/40">
+          <tbody id="excel_preview_table_body" class="divide-y divide-zinc-800/40">
+            <!-- JS Dynamic Excel Preview Rows -->
           </tbody>
         </table>
       </div>
 
-      <!-- Bottom Control Bar -->
+      <!-- Bottom Floating Glassmorphic Control Bar -->
       <div
-        class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-white/95 dark:bg-zinc-900/95 border border-slate-300 dark:border-zinc-700/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-2xl pointer-events-auto">
+        class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-zinc-900/95 border border-zinc-700/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-2xl pointer-events-auto">
         <button type="button" onclick="downloadCSVData()"
-          class="bg-slate-900 hover:bg-slate-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-950 font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-md">
-          <i data-lucide="download" class="w-4 h-4"></i>
+          class="bg-zinc-100 hover:bg-white text-zinc-950 font-semibold text-xs px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-md">
+          <i data-lucide="download" class="w-4 h-4 text-zinc-950"></i>
           <span>Download CSV</span>
         </button>
         <button type="button" onclick="copyExcelFormattedData()"
-          class="bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 dark:text-zinc-200 font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
-          <i data-lucide="clipboard-copy" class="w-4 h-4 text-slate-700 dark:text-zinc-300"></i>
+          class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-medium text-xs px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+          <i data-lucide="clipboard-copy" class="w-4 h-4 text-zinc-300"></i>
           <span>Copy TSV for Excel</span>
         </button>
         <button type="button" onclick="closeExcelPreviewModal()"
-          class="text-slate-700 hover:text-slate-950 font-bold dark:text-zinc-400 dark:hover:text-zinc-100 text-xs px-3 py-2 rounded-xl transition-all">
+          class="text-zinc-400 hover:text-zinc-100 text-xs px-3 py-2 rounded-xl transition-all">
           Close
         </button>
       </div>
