@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LAVIENTRA STUDIO | v2.0 Operations & Analytics Script
+   LAVIENTRA STUDIO | v2.0 Operations & Analytics Script (Light Mode Ready)
    ========================================================================== */
 
 // 1. SUPABASE CREDENTIALS & INITIALIZATION
@@ -19,6 +19,37 @@ let userOverrodeTime = false;
 let userOverrodeDate = false;
 let isShiftManuallyOverridden = false;
 let toastTimer = null;
+
+// THEME SYSTEM (Light Mode Default + Dark Mode Support)
+function initTheme() {
+  const savedTheme = localStorage.getItem('lavientra_theme') || 'light';
+  if (savedTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  updateThemeIcon();
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('lavientra_theme', isDark ? 'dark' : 'light');
+  updateThemeIcon();
+  if (allJobs.length > 0) {
+    updateKPICards();
+    renderJobSheetTable();
+  }
+  showToast(isDark ? "Dark theme enabled" : "Light theme enabled");
+}
+
+function updateThemeIcon() {
+  const icon = document.getElementById('theme_icon');
+  if (icon) {
+    const isDark = document.documentElement.classList.contains('dark');
+    icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+    if (window.lucide) lucide.createIcons();
+  }
+}
 
 // Client Management Constants
 const DEFAULT_CLIENTS = [
@@ -168,11 +199,11 @@ function updateLiveClockWidget() {
     const slHour = parseInt(sl.timeStr.split(':')[0], 10);
     const isDayShift = (slHour >= 7 && slHour < 17);
     if (isDayShift) {
-      statusBadgeEl.className = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 text-[10px] rounded-full font-medium flex items-center gap-1.5 shrink-0";
-      statusBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span>DAY SHIFT ACTIVE</span>`;
+      statusBadgeEl.className = "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 px-2.5 py-1 text-[10px] rounded-full font-semibold flex items-center gap-1.5 shrink-0";
+      statusBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>DAY SHIFT ACTIVE</span>`;
     } else {
-      statusBadgeEl.className = "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 text-[10px] rounded-full font-medium flex items-center gap-1.5 shrink-0";
-      statusBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span><span>NIGHT SHIFT ACTIVE</span>`;
+      statusBadgeEl.className = "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20 px-2.5 py-1 text-[10px] rounded-full font-semibold flex items-center gap-1.5 shrink-0";
+      statusBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span><span>NIGHT SHIFT ACTIVE</span>`;
     }
   }
 }
@@ -202,88 +233,76 @@ function startSriLankaClock() {
   slClockInterval = setInterval(tick, 1000);
 }
 
-// 4. TOGGLE BUTTONS & UI INTERACTION
-function toggleOption(fieldId) {
-  const checkbox = document.getElementById(fieldId);
-  if (!checkbox) return;
-
-  if (fieldId === 'is_night_or_weekend') {
-    isShiftManuallyOverridden = true;
-  }
-
-  checkbox.checked = !checkbox.checked;
-  updateOptionToggleUI(fieldId);
-}
-
-function updateOpContextStrip() {
-  const cb = document.getElementById('is_night_or_weekend');
-  const isNight = cb?.checked;
-
-  const shiftTextEl = document.getElementById('op_shift_text');
+// 4. STANDALONE OPERATIONAL CONTEXT STRIP UPDATER
+function updateOperationalContextStrip() {
   const rateTextEl = document.getElementById('op_rate_text');
+  const shiftTextEl = document.getElementById('op_shift_text');
   const shiftDotEl = document.getElementById('op_shift_dot');
-
-  if (shiftTextEl && rateTextEl) {
-    if (isNight) {
-      shiftTextEl.textContent = 'NIGHT / WKND SHIFT ACTIVE';
-      rateTextEl.textContent = '(Base Rate Applies)';
-      if (shiftDotEl) shiftDotEl.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse';
-    } else {
-      shiftTextEl.textContent = 'DAY SHIFT ACTIVE';
-      rateTextEl.textContent = '(Standard Office Hours)';
-      if (shiftDotEl) shiftDotEl.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
-    }
-  }
-
   const lastJobEl = document.getElementById('op_last_job');
-  if (lastJobEl && allJobs.length > 0) {
-    const latest = allJobs[0];
-    lastJobEl.textContent = `#${latest.monthlySeqNo} (${latest.address_title || 'Untitled'})`;
+
+  const sl = getSriLankaTimeObj();
+  const dateObj = new Date(sl.dateStr + 'T00:00:00');
+  const dayOfWeek = dateObj.getDay();
+  const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+  const hour = parseInt(sl.timeStr.split(':')[0], 10) || 0;
+  const isDayHours = (hour >= 7 && hour < 17);
+
+  if (isWeekend) {
+    if (rateTextEl) rateTextEl.textContent = "Weekend Shift (Base Price + Clean Rs.25)";
+    if (shiftTextEl) shiftTextEl.textContent = "WEEKEND SHIFT ACTIVE";
+    if (shiftDotEl) shiftDotEl.className = 'w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse';
+  } else if (!isDayHours) {
+    if (rateTextEl) rateTextEl.textContent = "Night Shift (Base Price + Clean Rs.25)";
+    if (shiftTextEl) shiftTextEl.textContent = "NIGHT SHIFT ACTIVE";
+    if (shiftDotEl) shiftDotEl.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+  } else {
+    if (rateTextEl) rateTextEl.textContent = "(Standard Office Hours)";
+    if (shiftTextEl) shiftTextEl.textContent = "DAY SHIFT ACTIVE";
+    if (shiftDotEl) shiftDotEl.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500';
   }
-}
 
-function updateOptionToggleUI(fieldId) {
-  const checkbox = document.getElementById(fieldId);
-  if (!checkbox) return;
-
-  let btnId = fieldId === 'is_color' ? 'toggle_color_plan' : 'toggle_night_weekend';
-  const btn = document.getElementById(btnId);
-
-  if (btn) {
-    if (checkbox.checked) {
-      btn.classList.add('active');
+  // Update Last Job Number and Address
+  if (lastJobEl) {
+    if (allJobs && allJobs.length > 0) {
+      const latestJob = allJobs[0];
+      const seq = latestJob.monthlySeqNo || allJobs.length;
+      const addr = latestJob.address_title || 'Recent Job';
+      lastJobEl.textContent = `#${seq} (${addr})`;
+      lastJobEl.title = `#${seq} (${addr})`;
     } else {
-      btn.classList.remove('active');
+      lastJobEl.textContent = "#0 (None)";
     }
   }
-
-  updateLivePayoutStrip(false);
-  updateOpContextStrip();
 }
 
-// 5. CLIENT MANAGEMENT
+// 5. CLIENT PILLS AND MODAL LOGIC
 function loadClients() {
-  const saved = localStorage.getItem('lavientra_clients_v2');
+  const saved = localStorage.getItem('lavientra_clients');
   if (saved) {
     try {
       clientList = JSON.parse(saved);
     } catch (e) {
-      clientList = DEFAULT_CLIENTS;
+      clientList = [...DEFAULT_CLIENTS];
     }
   } else {
-    clientList = DEFAULT_CLIENTS;
-    saveClients();
+    clientList = [...DEFAULT_CLIENTS];
   }
   renderQuickClientPills();
 }
 
 function saveClients() {
-  localStorage.setItem('lavientra_clients_v2', JSON.stringify(clientList));
+  localStorage.setItem('lavientra_clients', JSON.stringify(clientList));
 }
 
 function renderQuickClientPills() {
   const container = document.getElementById('quick_client_pills');
   if (!container) return;
+
+  if (clientList.length === 0) {
+    container.innerHTML = `<span class="text-xs text-slate-700 dark:text-zinc-400 font-medium">No clients configured. Click settings icon to add.</span>`;
+    return;
+  }
 
   const ukClients = clientList.filter(c => c.region === 'UK');
   const ausClients = clientList.filter(c => c.region === 'AUS');
@@ -292,7 +311,7 @@ function renderQuickClientPills() {
 
   if (ukClients.length > 0) {
     html += `
-      <div class="space-y-1.5 mb-2">
+      <div class="space-y-1.5">
         <div class="flex flex-wrap items-center gap-1.5">
           ${ukClients.map(c => `
             <button type="button" onclick="selectQuickClient('${c.name.replace(/'/g, "\\'")}', '${c.region}', this)" class="client-pill">
@@ -306,8 +325,8 @@ function renderQuickClientPills() {
 
   if (ausClients.length > 0) {
     html += `
-      <div class="space-y-1.5 mb-2 border-t border-zinc-800/60 pt-2">
-        <div class="flex items-center gap-1.5 text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mb-1">
+      <div class="space-y-1.5 mb-2 border-t border-slate-200 dark:border-zinc-800/60 pt-2">
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-700 dark:text-zinc-400 font-bold uppercase tracking-wider mb-1">
           <span>AUS Market</span>
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
@@ -324,27 +343,29 @@ function renderQuickClientPills() {
   container.innerHTML = html;
 }
 
-function selectQuickClient(name, region, btnEl) {
-  const clientInput = document.getElementById('client_name');
+function selectQuickClient(clientName, region, btnElement) {
+  const hiddenInput = document.getElementById('client_name');
   const regionSelect = document.getElementById('region');
-  const badgeEl = document.getElementById('selected_client_badge');
+  const selectedBadge = document.getElementById('selected_client_badge');
 
-  if (clientInput) clientInput.value = name;
-  if (regionSelect && region) regionSelect.value = region;
-
-  if (badgeEl) {
-    badgeEl.textContent = `${name} (${region})`;
-    badgeEl.classList.remove('hidden');
+  if (hiddenInput) hiddenInput.value = clientName;
+  if (regionSelect && region) {
+    regionSelect.value = region;
   }
 
-  document.querySelectorAll('.client-pill').forEach(b => b.classList.remove('active'));
+  const allPills = document.querySelectorAll('#quick_client_pills .client-pill');
+  allPills.forEach(p => p.classList.remove('active'));
 
-  if (btnEl) {
-    btnEl.classList.add('active');
+  if (btnElement) {
+    btnElement.classList.add('active');
   }
 
-  autoCheckNightWeekend();
-  updateLivePayoutStrip(false);
+  if (selectedBadge) {
+    selectedBadge.textContent = `${clientName} (${region})`;
+    selectedBadge.classList.remove('hidden');
+  }
+
+  updateLivePayoutStrip();
 }
 
 function openClientModal() {
@@ -369,18 +390,18 @@ function renderModalClientList() {
   if (!listEl) return;
 
   if (clientList.length === 0) {
-    listEl.innerHTML = `<div class="p-3 text-center text-zinc-500 text-sm">No clients added.</div>`;
+    listEl.innerHTML = `<div class="p-3 text-center text-slate-600 dark:text-zinc-400 text-sm font-semibold">No clients added.</div>`;
     return;
   }
 
-  listEl.innerHTML = clientList.map((c, idx) => `
-    <div class="flex items-center justify-between p-2.5 rounded-lg bg-zinc-900 border border-zinc-800/60">
-      <div class="flex items-center gap-2.5">
-        <span class="text-zinc-100 font-medium text-sm">${c.name}</span>
-        <span class="px-1.5 py-0.5 rounded text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-300">${c.region}</span>
+  listEl.innerHTML = clientList.map((client, idx) => `
+    <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-xl">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-900 dark:text-zinc-100 text-xs">${client.name}</span>
+        <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 border border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 text-[10px] font-bold">${client.region}</span>
       </div>
-      <button type="button" onclick="deleteClient(${idx})" class="text-red-400 hover:text-red-300 p-1.5 transition-colors bg-red-400/10 hover:bg-red-400/20 rounded-md" title="Delete Client">
-        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+      <button type="button" onclick="handleRemoveClient(${idx})" class="p-1 text-slate-600 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 transition-colors" title="Delete client">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
       </button>
     </div>
   `).join('');
@@ -442,55 +463,53 @@ function calculatePricing(data, totalJobCount) {
   }
 
   // 3. Region Base Rates (Applies to Post-100 jobs OR Night/Weekend jobs)
-  // For 1-100 Daytime jobs in office time: basePrice remains 0 LKR!
   let basePrice = 0;
   const isBasePriceEligible = (totalJobCount >= 100) || is_night_or_weekend;
 
   if (isBasePriceEligible) {
     if (region === 'AUS') {
-      if (area_sqft <= 1000) basePrice = 350;
+      if (area_sqft < 1000) basePrice = 300;
       else if (area_sqft <= 2000) basePrice = 400;
-      else basePrice = 475; // Base price caps at 475 LKR for > 2000 sqft
+      else if (area_sqft <= 3000) basePrice = 500;
+      else basePrice = 600;
     } else {
-      // Default UK Region
-      if (area_sqft <= 1000) basePrice = 300;
-      else if (area_sqft <= 2000) basePrice = 350;
-      else basePrice = 400; // Base price caps at 400 LKR for > 2000 sqft
+      // Default UK Tier
+      if (area_sqft < 1000) basePrice = 200;
+      else if (area_sqft <= 2000) basePrice = 300;
+      else if (area_sqft <= 3000) basePrice = 400;
+      else basePrice = 500;
     }
   }
 
-  // 4. No-Mistake Bonus (+25 LKR) & Deduction Penalty
+  // Combined Gross Price (Base + Color + Area)
+  const price = basePrice + colorPrice + extraAreaBonus;
+
+  // 4. Mistake / Deduction Calculation
   const isClean = (!mistake_type || mistake_type === 'None' || mistake_type === 'none');
   const no_mistake_amount = isClean ? 25 : 0;
   const ddt_amount = isClean ? 0 : (MISTAKE_DEDUCTIONS_MAP[mistake_type] || 0);
 
-  // 5. Monthly Target Bonus (+50 LKR if total jobs >= 170)
-  const targetBonus = totalJobCount >= 170 ? 50 : 0;
-
-  // 6. Net Total Calculation
-  const total = basePrice + colorPrice + extraAreaBonus + no_mistake_amount + targetBonus - ddt_amount;
+  // 5. Total Net Floorplan Amount
+  const total = price + no_mistake_amount - ddt_amount;
 
   return {
-    price: basePrice + colorPrice + extraAreaBonus,
-    basePrice,
     colorPrice,
     extraAreaBonus,
+    basePrice,
+    price,
     no_mistake_amount,
     ddt_amount,
-    targetBonus,
     total
   };
 }
 
-// PRO GOOGLE-STYLE DATE PICKER POPOVER STATE & LOGIC
-let currentGlobalDateFilter = 'current_month';
-let customFilteredYear = 2026;
-let customFilteredMonthIdx = 7; // 0-indexed (7 = August)
-let drilldownMode = 'month'; // 'month' or 'year'
-
+// 7. FILTER & POPOVER ENGINE
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_NAMES_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+let currentGlobalDateFilter = 'current_month';
+let customFilteredYear = 2026;
+let customFilteredMonthIdx = 7; // August
 let activeAdvDateFilterTab = null;
 
 function toggleDatePickerPopover(e) {
@@ -518,7 +537,6 @@ function closeDatePickerPopover() {
 
 function setAdvancedDateFilterTab(tabKey) {
   if (activeAdvDateFilterTab === tabKey && tabKey !== null) {
-    // Toggling off the active tab if clicked again
     activeAdvDateFilterTab = null;
   } else {
     activeAdvDateFilterTab = tabKey;
@@ -530,14 +548,14 @@ function setAdvancedDateFilterTab(tabKey) {
     if (!btn || !panel) return;
 
     if (k === activeAdvDateFilterTab) {
-      btn.className = "flex-1 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm flex items-center justify-center gap-1 active:scale-95";
+      btn.className = "flex-1 py-1.5 rounded-lg text-xs font-semibold bg-white text-slate-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-200 dark:border-zinc-700 shadow-sm flex items-center justify-center gap-1 active:scale-95 transition-all";
       if (k === 'date') {
         panel.className = "block p-1 mt-1";
       } else {
         panel.className = `grid ${k === 'year' ? 'grid-cols-2' : 'grid-cols-4'} gap-1.5 p-1 mt-1`;
       }
     } else {
-      btn.className = "flex-1 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center justify-center gap-1 active:scale-95";
+      btn.className = "flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 flex items-center justify-center gap-1 active:scale-95 transition-all";
       panel.className = "hidden";
     }
   });
@@ -553,8 +571,8 @@ function renderAdvancedYearGrid() {
   const years = [2024, 2025, 2026, 2027];
   container.innerHTML = years.map(y => {
     const isActive = (currentGlobalDateFilter === 'custom_year' && customFilteredYear === y);
-    const activeClass = "py-1.5 bg-zinc-100 text-zinc-950 font-bold border border-zinc-100 text-xs rounded-lg text-center shadow-sm cursor-pointer active:scale-95";
-    const normalClass = "py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 text-xs rounded-lg font-medium text-center cursor-pointer active:scale-95";
+    const activeClass = "py-1.5 bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold border border-slate-900 dark:border-zinc-100 text-xs rounded-lg text-center shadow-sm cursor-pointer active:scale-95";
+    const normalClass = "py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800/80 text-slate-700 dark:text-zinc-300 text-xs rounded-lg font-medium text-center cursor-pointer active:scale-95";
 
     return `
       <button type="button" onclick="selectAdvancedYear(${y})"
@@ -585,9 +603,9 @@ function renderPopover12MonthGrid() {
   container.innerHTML = MONTH_NAMES_SHORT.map((mShort, idx) => {
     const isActive = (currentGlobalDateFilter === 'custom_month' && customFilteredMonthIdx === idx);
     const isCurrent = (currentSlMonth === idx);
-    const activeClass = "bg-zinc-100 text-zinc-950 font-bold border-zinc-100 shadow-sm";
-    const currentClass = "bg-zinc-900 hover:bg-zinc-800 text-zinc-100 border border-zinc-700 font-semibold";
-    const normalClass = "bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300 font-medium";
+    const activeClass = "bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold border border-slate-900 dark:border-zinc-100 shadow-sm";
+    const currentClass = "bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-100 border border-slate-200 dark:border-zinc-700 font-semibold";
+    const normalClass = "bg-slate-50 hover:bg-slate-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800/80 text-slate-700 dark:text-zinc-300 font-medium";
 
     const itemClass = isActive ? activeClass : (isCurrent ? currentClass : normalClass);
 
@@ -642,10 +660,10 @@ function updatePresetPillsUI() {
     if (!btn) return;
     const checkIcon = btn.querySelector('.preset-check-icon');
     if (currentGlobalDateFilter === p) {
-      btn.className = "w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-zinc-100 bg-zinc-900 border border-zinc-800/80 transition-all flex items-center justify-between";
+      btn.className = "w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800/80 transition-all flex items-center justify-between";
       if (checkIcon) checkIcon.classList.remove('hidden');
     } else {
-      btn.className = "w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 transition-all flex items-center justify-between";
+      btn.className = "w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-50 dark:hover:bg-zinc-900 transition-all flex items-center justify-between";
       if (checkIcon) checkIcon.classList.add('hidden');
     }
   });
@@ -653,33 +671,49 @@ function updatePresetPillsUI() {
 
 function updateTriggerButtonLabel() {
   const triggerLabel = document.getElementById('date_picker_trigger_label');
+  const mobileTriggerLabel = document.getElementById('date_picker_trigger_label_mobile');
   if (!triggerLabel) return;
 
   const sl = getSriLankaTimeObj();
   const currentYearStr = sl.dateStr.substring(0, 4);
+  let fullText = '';
+  let shortText = '';
 
   if (currentGlobalDateFilter === 'current_month') {
     const mName = MONTH_NAMES_FULL[parseInt(sl.dateStr.substring(5, 7), 10) - 1];
-    triggerLabel.textContent = `This Month (${mName} ${currentYearStr})`;
+    const mShort = MONTH_NAMES_SHORT[parseInt(sl.dateStr.substring(5, 7), 10) - 1];
+    fullText = `This Month (${mName} ${currentYearStr})`;
+    shortText = `${mShort} ${currentYearStr}`;
   } else if (currentGlobalDateFilter === 'last_month') {
     let year = parseInt(currentYearStr, 10);
     let monthIdx = parseInt(sl.dateStr.substring(5, 7), 10) - 2;
     if (monthIdx < 0) { monthIdx = 11; year -= 1; }
-    triggerLabel.textContent = `Last Month (${MONTH_NAMES_FULL[monthIdx]} ${year})`;
+    fullText = `Last Month (${MONTH_NAMES_FULL[monthIdx]} ${year})`;
+    shortText = `${MONTH_NAMES_SHORT[monthIdx]} ${year}`;
   } else if (currentGlobalDateFilter === 'last_3_months') {
-    triggerLabel.textContent = `Last 3 Months`;
+    fullText = `Last 3 Months`;
+    shortText = `3 Months`;
   } else if (currentGlobalDateFilter === 'this_year') {
-    triggerLabel.textContent = `This Year (${currentYearStr})`;
+    fullText = `This Year (${currentYearStr})`;
+    shortText = `${currentYearStr}`;
   } else if (currentGlobalDateFilter === 'all_time') {
-    triggerLabel.textContent = `All Time`;
+    fullText = `All Time`;
+    shortText = `All`;
   } else if (currentGlobalDateFilter === 'custom_year') {
-    triggerLabel.textContent = `Year ${customFilteredYear}`;
+    fullText = `Year ${customFilteredYear}`;
+    shortText = `${customFilteredYear}`;
   } else if (currentGlobalDateFilter === 'custom_month') {
-    triggerLabel.textContent = `${MONTH_NAMES_FULL[customFilteredMonthIdx]} ${customFilteredYear}`;
+    fullText = `${MONTH_NAMES_FULL[customFilteredMonthIdx]} ${customFilteredYear}`;
+    shortText = `${MONTH_NAMES_SHORT[customFilteredMonthIdx]} ${customFilteredYear}`;
   } else if (currentGlobalDateFilter === 'custom_single_date' && selectedSpecificSingleDateVal) {
     const d = new Date(selectedSpecificSingleDateVal + 'T00:00:00');
-    const formattedDate = `${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
-    triggerLabel.textContent = `${formattedDate}`;
+    fullText = `${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+    shortText = `${d.getDate()} ${MONTH_NAMES_SHORT[d.getMonth()]}`;
+  }
+
+  triggerLabel.textContent = fullText;
+  if (mobileTriggerLabel) {
+    mobileTriggerLabel.textContent = shortText;
   }
 }
 
@@ -698,205 +732,248 @@ function getFilteredJobsForCurrentRange() {
   if (!allJobs || allJobs.length === 0) return [];
   const slTodayStr = getSriLankaTimeObj().dateStr;
   const currentYearStr = slTodayStr.substring(0, 4);
-  const currentMonthStr = slTodayStr.substring(0, 7);
-
-  if (currentGlobalDateFilter === 'all_time') {
-    return allJobs;
-  }
 
   if (currentGlobalDateFilter === 'current_month') {
-    return allJobs.filter(j => j.date && j.date.startsWith(currentMonthStr));
+    const currentYearMonth = slTodayStr.substring(0, 7);
+    return allJobs.filter(j => j.date && j.date.startsWith(currentYearMonth));
   }
 
   if (currentGlobalDateFilter === 'last_month') {
     let year = parseInt(currentYearStr, 10);
-    let month = parseInt(slTodayStr.substring(5, 7), 10) - 1;
-    if (month === 0) {
-      month = 12;
-      year -= 1;
-    }
-    const lmStr = `${year}-${String(month).padStart(2, '0')}`;
-    return allJobs.filter(j => j.date && j.date.startsWith(lmStr));
+    let monthNum = parseInt(slTodayStr.substring(5, 7), 10) - 1;
+    if (monthNum === 0) { monthNum = 12; year -= 1; }
+    const prevMonthPrefix = `${year}-${String(monthNum).padStart(2, '0')}`;
+    return allJobs.filter(j => j.date && j.date.startsWith(prevMonthPrefix));
   }
 
   if (currentGlobalDateFilter === 'last_3_months') {
-    const nowD = new Date(slTodayStr + 'T00:00:00');
-    nowD.setMonth(nowD.getMonth() - 3);
-    const cutoffStr = nowD.toISOString().substring(0, 10);
-    return allJobs.filter(j => j.date && j.date >= cutoffStr);
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const minDateStr = threeMonthsAgo.toISOString().substring(0, 10);
+    return allJobs.filter(j => j.date && j.date >= minDateStr);
   }
 
   if (currentGlobalDateFilter === 'this_year') {
     return allJobs.filter(j => j.date && j.date.startsWith(currentYearStr));
   }
 
+  if (currentGlobalDateFilter === 'all_time') {
+    return [...allJobs];
+  }
+
   if (currentGlobalDateFilter === 'custom_year') {
-    const yStr = String(customFilteredYear);
-    return allJobs.filter(j => j.date && j.date.startsWith(yStr));
+    const yrStr = String(customFilteredYear);
+    return allJobs.filter(j => j.date && j.date.startsWith(yrStr));
   }
 
   if (currentGlobalDateFilter === 'custom_month') {
-    const padMonth = String(customFilteredMonthIdx + 1).padStart(2, '0');
-    const targetMonthStr = `${customFilteredYear}-${padMonth}`;
-    return allJobs.filter(j => j.date && j.date.startsWith(targetMonthStr));
+    const prefix = `${customFilteredYear}-${String(customFilteredMonthIdx + 1).padStart(2, '0')}`;
+    return allJobs.filter(j => j.date && j.date.startsWith(prefix));
   }
 
-  if (currentGlobalDateFilter === 'custom_single_date' && selectedSpecificSingleDateVal) {
+  if (currentGlobalDateFilter === 'custom_single_date') {
     return allJobs.filter(j => j.date === selectedSpecificSingleDateVal);
   }
 
-  return allJobs;
+  return [...allJobs];
 }
 
-// 7. SUPABASE FETCH & KPI RENDER
-async function fetchAllData() {
-  if (!_supabase) return;
-
-  try {
-    const { data, error } = await _supabase
-      .from(TABLE_NAME)
-      .select('*')
-      .order('id', { ascending: false });
-
-    if (error) throw error;
-
-    const rawData = data || [];
-
-    // Sort chronological (oldest to newest) to assign 1..N per month
-    const chronologicalJobs = [...rawData].reverse();
-    const monthJobCounts = {};
-    const seqMap = new Map();
-
-    chronologicalJobs.forEach(job => {
-      const monthKey = (job.date || '').substring(0, 7) || 'general';
-      monthJobCounts[monthKey] = (monthJobCounts[monthKey] || 0) + 1;
-      seqMap.set(job.id, monthJobCounts[monthKey]);
-    });
-
-    allJobs = rawData.map((j) => ({
-      ...j,
-      monthlySeqNo: seqMap.get(j.id) || 1,
-      area_sqft: Number(j.area_sqft ?? j.area ?? 0),
-      is_color: Boolean(j.is_color ?? j.isColor ?? false),
-      is_night_or_weekend: Boolean(j.is_night_or_weekend ?? j.is_night_weekend ?? false),
-    }));
-
-    updateKPICards();
-    updateOpContextStrip();
-
-  } catch (err) {
-    console.error("Fetch Error:", err);
-    showToast("Failed to connect to database");
-  }
-}
-
+// 7. KPI & DASHBOARD METRICS CARDS
 function updateKPICards() {
   const slTodayStr = getSriLankaTimeObj().dateStr;
-  const currentMonthStr = slTodayStr.substring(0, 7);
+  const currentMonthPrefix = slTodayStr.substring(0, 7);
 
-  // 1. HOME TAB OPERATIONAL METRICS (Always fixed to Today & Current Month)
-  const todayJobs = allJobs.filter(j => j.date === slTodayStr);
-  const monthJobs = allJobs.filter(j => j.date && j.date.startsWith(currentMonthStr));
-
-  const totalCount = allJobs.length;
+  // 1. Target & Monthly Counts
+  const monthJobs = allJobs.filter(j => j.date && j.date.startsWith(currentMonthPrefix));
   const monthCount = monthJobs.length;
 
-  document.getElementById('stat_today_jobs').textContent = todayJobs.length;
-  document.getElementById('stat_month_jobs').textContent = monthJobs.length;
-
-  // Target 170 (Home Tab Hero Card)
-  const targetGoal = 170;
-  const targetPct = Math.min(100, Math.round((monthCount / targetGoal) * 100));
-  document.getElementById('target_hero_count').textContent = monthCount;
-  document.getElementById('target_percentage_label').textContent = `${targetPct}%`;
-  document.getElementById('target_progress_fill').style.width = `${targetPct}%`;
-
+  const targetCountEl = document.getElementById('target_hero_count');
+  const targetPctEl = document.getElementById('target_percentage_label');
+  const targetFillEl = document.getElementById('target_progress_fill');
   const targetBadge = document.getElementById('target_status_badge');
+
+  const targetPct = Math.min(100, Math.round((monthCount / 170) * 100));
+
+  if (targetCountEl) targetCountEl.textContent = monthCount;
+  if (targetPctEl) targetPctEl.textContent = `${targetPct}%`;
+  if (targetFillEl) targetFillEl.style.width = `${targetPct}%`;
   if (targetBadge) {
-    if (monthCount >= targetGoal) {
-      targetBadge.textContent = "Unlocked";
-      targetBadge.className = "px-2 py-0.5 rounded bg-zinc-100 text-zinc-950 font-bold text-[10px]";
+    targetBadge.textContent = `${monthCount} / 170`;
+    if (monthCount >= 170) {
+      targetBadge.className = "px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-zinc-100 dark:text-zinc-950 font-bold text-[10px]";
     } else {
-      targetBadge.textContent = `${monthCount} / 170`;
+      targetBadge.className = "px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300 text-[10px] font-medium";
     }
   }
 
-  // Shift Breakdown (Home Tab)
-  let tDayCount = 0, tNightCount = 0;
-  todayJobs.forEach(j => j.is_night_or_weekend ? tNightCount++ : tDayCount++);
-  document.getElementById('today_day_count').textContent = tDayCount;
-  document.getElementById('today_night_count').textContent = tNightCount;
-  const tTotal = todayJobs.length || 1;
-  document.getElementById('today_day_bar').style.width = `${(tDayCount / tTotal) * 100}%`;
-  document.getElementById('today_night_bar').style.width = `${(tNightCount / tTotal) * 100}%`;
+  // 2. Today's Jobs Split
+  const todayJobs = allJobs.filter(j => j.date === slTodayStr);
+  const todayJobsCount = todayJobs.length;
+  const todayDayCount = todayJobs.filter(j => !j.is_night_or_weekend).length;
+  const todayNightCount = todayJobs.filter(j => j.is_night_or_weekend).length;
 
-  let mDayCount = 0, mNightCount = 0;
-  monthJobs.forEach(j => j.is_night_or_weekend ? mNightCount++ : mDayCount++);
-  document.getElementById('month_day_count').textContent = mDayCount;
-  document.getElementById('month_night_count').textContent = mNightCount;
-  const mTotal = monthJobs.length || 1;
-  document.getElementById('month_day_bar').style.width = `${(mDayCount / mTotal) * 100}%`;
-  document.getElementById('month_night_bar').style.width = `${(mNightCount / mTotal) * 100}%`;
+  const statTodayJobs = document.getElementById('stat_today_jobs');
+  const todayDayCountEl = document.getElementById('today_day_count');
+  const todayNightCountEl = document.getElementById('today_night_count');
+  const todayDayBar = document.getElementById('today_day_bar');
+  const todayNightBar = document.getElementById('today_night_bar');
 
-  // Top Client Today
-  const clientCountsToday = {};
-  todayJobs.forEach(j => {
-    const c = j.client_name || 'Unknown';
-    clientCountsToday[c] = (clientCountsToday[c] || 0) + 1;
-  });
-  let topClientName = 'None';
-  let topClientCount = 0;
-  Object.entries(clientCountsToday).forEach(([cName, cnt]) => {
-    if (cnt > topClientCount) {
-      topClientName = cName;
-      topClientCount = cnt;
+  if (statTodayJobs) statTodayJobs.textContent = todayJobsCount;
+  if (todayDayCountEl) todayDayCountEl.textContent = todayDayCount;
+  if (todayNightCountEl) todayNightCountEl.textContent = todayNightCount;
+
+  if (todayDayBar && todayNightBar) {
+    if (todayJobsCount > 0) {
+      const dayPct = (todayDayCount / todayJobsCount) * 100;
+      const nightPct = (todayNightCount / todayJobsCount) * 100;
+      todayDayBar.style.width = `${dayPct}%`;
+      todayNightBar.style.width = `${nightPct}%`;
+    } else {
+      todayDayBar.style.width = '50%';
+      todayNightBar.style.width = '50%';
     }
+  }
+
+  // 3. Monthly Jobs Split
+  const monthDayCount = monthJobs.filter(j => !j.is_night_or_weekend).length;
+  const monthNightCount = monthJobs.filter(j => j.is_night_or_weekend).length;
+
+  const statMonthJobs = document.getElementById('stat_month_jobs');
+  const monthDayCountEl = document.getElementById('month_day_count');
+  const monthNightCountEl = document.getElementById('month_night_count');
+  const monthDayBar = document.getElementById('month_day_bar');
+  const monthNightBar = document.getElementById('month_night_bar');
+
+  if (statMonthJobs) statMonthJobs.textContent = monthCount;
+  if (monthDayCountEl) monthDayCountEl.textContent = monthDayCount;
+  if (monthNightCountEl) monthNightCountEl.textContent = monthNightCount;
+
+  if (monthDayBar && monthNightBar) {
+    if (monthCount > 0) {
+      const dayPct = (monthDayCount / monthCount) * 100;
+      const nightPct = (monthNightCount / monthCount) * 100;
+      monthDayBar.style.width = `${dayPct}%`;
+      monthNightBar.style.width = `${nightPct}%`;
+    } else {
+      monthDayBar.style.width = '50%';
+      monthNightBar.style.width = '50%';
+    }
+  }
+
+  // 4. Top Client & Clean Rate Today
+  const clientCounts = {};
+  todayJobs.forEach(j => {
+    const cName = j.client_name || 'Studio Client';
+    clientCounts[cName] = (clientCounts[cName] || 0) + 1;
   });
-  document.getElementById('bento_total_area').textContent = topClientCount > 0 ? `${topClientName} (${topClientCount})` : 'None';
 
-  // Clean Rate
-  const cleanJobsCount = allJobs.filter(j => !j.mistake_type || j.mistake_type === 'None' || j.mistake_type === 'none').length;
-  const cleanRate = totalCount > 0 ? Math.round((cleanJobsCount / totalCount) * 100) : 100;
-  document.getElementById('bento_clean_rate').textContent = `${cleanRate}%`;
+  let topClient = 'None';
+  let maxC = 0;
+  for (const [c, cnt] of Object.entries(clientCounts)) {
+    if (cnt > maxC) {
+      maxC = cnt;
+      topClient = `${c} (${cnt})`;
+    }
+  }
 
-  // 2. DASHBOARD TAB & CHARTS METRICS (Dynamically updated by Global Date Filter)
+  const bentoTopClient = document.getElementById('bento_total_area');
+  if (bentoTopClient) bentoTopClient.textContent = topClient;
+
+  const todayCleanCount = todayJobs.filter(j => !j.mistake_type || j.mistake_type === 'None' || j.mistake_type === 'none').length;
+  const cleanRate = todayJobsCount > 0 ? Math.round((todayCleanCount / todayJobsCount) * 100) : 100;
+  const bentoCleanRate = document.getElementById('bento_clean_rate');
+  if (bentoCleanRate) bentoCleanRate.textContent = `${cleanRate}%`;
+
+  // Update Standalone Operational Context Strip
+  updateOperationalContextStrip();
+
+  // DASHBOARD TAB 2 BENTO METRICS
   const rangeJobs = getFilteredJobsForCurrentRange();
   const rangeCount = rangeJobs.length;
-  const rangeTargetPct = Math.min(100, Math.round((rangeCount / targetGoal) * 100));
 
-  let rDayCount = 0, rNightCount = 0;
-  rangeJobs.forEach(j => j.is_night_or_weekend ? rNightCount++ : rDayCount++);
-
+  // Row 1: Target Card (7 Cols)
   const dashTargetBadge = document.getElementById('dash_target_badge');
-  if (dashTargetBadge) dashTargetBadge.textContent = `${rangeCount} / 170`;
+  if (dashTargetBadge) dashTargetBadge.textContent = `${monthCount} / 170`;
 
-  const dashTargetLabel = document.getElementById('dash_target_count_label');
-  if (dashTargetLabel) dashTargetLabel.textContent = `${rangeCount} Jobs Completed`;
+  const dashTargetCount = document.getElementById('dash_target_count_label');
+  if (dashTargetCount) dashTargetCount.textContent = `${monthCount} Jobs Completed`;
 
   const dashTargetPct = document.getElementById('dash_target_pct');
-  if (dashTargetPct) dashTargetPct.textContent = `${rangeTargetPct}% Completed`;
+  if (dashTargetPct) dashTargetPct.textContent = `${targetPct}% Completed`;
+
+  const dashTargetRemaining = document.getElementById('dash_target_remaining');
+  if (dashTargetRemaining) dashTargetRemaining.textContent = `${Math.max(0, 170 - monthCount)} Remaining to Goal`;
 
   const dashTargetBar = document.getElementById('dash_target_bar');
-  if (dashTargetBar) dashTargetBar.style.width = `${rangeTargetPct}%`;
-
-  const dashTargetRem = document.getElementById('dash_target_remaining');
-  if (dashTargetRem) dashTargetRem.textContent = `${Math.max(0, 170 - rangeCount)} Remaining to Goal`;
+  if (dashTargetBar) dashTargetBar.style.width = `${targetPct}%`;
 
   const dashSubTotal = document.getElementById('dash_sub_total_jobs');
-  if (dashSubTotal) dashSubTotal.textContent = `${rangeCount} Jobs`;
+  if (dashSubTotal) dashSubTotal.textContent = `${rangeCount} Floorplans`;
 
   const dashSubDay = document.getElementById('dash_sub_day_jobs');
-  if (dashSubDay) dashSubDay.textContent = `${rDayCount} Jobs`;
+  const rangeDayCount = rangeJobs.filter(j => !j.is_night_or_weekend).length;
+  if (dashSubDay) dashSubDay.textContent = `${rangeDayCount} Jobs`;
 
   const dashSubNight = document.getElementById('dash_sub_night_jobs');
-  if (dashSubNight) dashSubNight.textContent = `${rNightCount} Jobs`;
+  const rangeNightCount = rangeJobs.filter(j => j.is_night_or_weekend).length;
+  if (dashSubNight) dashSubNight.textContent = `${rangeNightCount} Jobs`;
 
-  // UK & AUS Market Breakdown for Dashboard
-  let ukSqftTotal = 0, ausSqftTotal = 0;
-  let ukJobsCount = 0, ausJobsCount = 0;
+  // Row 1: Quality Metrics (5 Cols)
+  const rangeCleanCount = rangeJobs.filter(j => !j.mistake_type || j.mistake_type === 'None' || j.mistake_type === 'none').length;
+  const accuracyRate = rangeCount > 0 ? ((rangeCleanCount / rangeCount) * 100).toFixed(1) : '100.0';
+  const totalMistakes = rangeCount - rangeCleanCount;
+
+  let totalPenalties = 0;
+  rangeJobs.forEach(j => {
+    if (j.mistake_type && j.mistake_type !== 'None' && j.mistake_type !== 'none') {
+      totalPenalties += (MISTAKE_DEDUCTIONS_MAP[j.mistake_type] || 0);
+    }
+  });
+
+  const errorFrequency = rangeCount > 0 ? ((totalMistakes / rangeCount) * 100).toFixed(1) : '0.0';
+
+  const dashAccuracy = document.getElementById('dash_accuracy_rate');
+  if (dashAccuracy) dashAccuracy.textContent = `${accuracyRate}%`;
+
+  const dashMistakes = document.getElementById('dash_total_mistakes');
+  if (dashMistakes) dashMistakes.textContent = totalMistakes;
+
+  const dashPenalties = document.getElementById('dash_total_penalties');
+  if (dashPenalties) dashPenalties.textContent = `Rs. ${totalPenalties.toLocaleString()}`;
+
+  const dashErrorRate = document.getElementById('dash_error_rate');
+  if (dashErrorRate) dashErrorRate.textContent = `${errorFrequency}%`;
+
+  // Row 2: Shift Productivity
+  let dayRevenue = 0, nightRevenue = 0;
+  rangeJobs.forEach((j, idx) => {
+    const calc = calculatePricing(j, rangeJobs.length - idx);
+    if (j.is_night_or_weekend) {
+      nightRevenue += calc.total;
+    } else {
+      dayRevenue += calc.total;
+    }
+  });
+
+  const dashDayShiftCnt = document.getElementById('dash_day_shift_cnt');
+  if (dashDayShiftCnt) dashDayShiftCnt.textContent = `${rangeDayCount} jobs`;
+
+  const dashDayShiftRev = document.getElementById('dash_day_shift_rev');
+  if (dashDayShiftRev) dashDayShiftRev.textContent = `Rs. ${dayRevenue.toLocaleString()}`;
+
+  const dashNightShiftCnt = document.getElementById('dash_night_shift_cnt');
+  if (dashNightShiftCnt) dashNightShiftCnt.textContent = `${rangeNightCount} jobs`;
+
+  const dashNightShiftRev = document.getElementById('dash_night_shift_rev');
+  if (dashNightShiftRev) dashNightShiftRev.textContent = `Rs. ${nightRevenue.toLocaleString()}`;
+
+  // Row 2: Regional Performance (UK vs AUS)
+  let ukJobsCount = 0, ukSqftTotal = 0;
+  let ausJobsCount = 0, ausSqftTotal = 0;
 
   rangeJobs.forEach(j => {
-    if ((j.region || 'UK').toUpperCase() === 'AUS') {
+    const reg = (j.region || 'UK').toUpperCase();
+    if (reg === 'AUS') {
       ausJobsCount++;
       ausSqftTotal += Number(j.area_sqft || 0);
     } else {
@@ -909,13 +986,13 @@ function updateKPICards() {
   if (dashUkCnt) dashUkCnt.textContent = `${ukJobsCount} jobs`;
 
   const dashUkSqft = document.getElementById('dash_uk_sqft');
-  if (dashUkSqft) dashUkSqft.innerHTML = `${ukSqftTotal.toLocaleString()} <span class="text-zinc-400">Sq.Ft</span>`;
+  if (dashUkSqft) dashUkSqft.innerHTML = `${ukSqftTotal.toLocaleString()} <span class="text-slate-600 dark:text-zinc-400 font-semibold">Sq.Ft</span>`;
 
   const dashAusCnt = document.getElementById('dash_aus_jobs_cnt');
   if (dashAusCnt) dashAusCnt.textContent = `${ausJobsCount} jobs`;
 
   const dashAusSqft = document.getElementById('dash_aus_sqft');
-  if (dashAusSqft) dashAusSqft.innerHTML = `${ausSqftTotal.toLocaleString()} <span class="text-zinc-400">Sq.Ft</span>`;
+  if (dashAusSqft) dashAusSqft.innerHTML = `${ausSqftTotal.toLocaleString()} <span class="text-slate-600 dark:text-zinc-400 font-semibold">Sq.Ft</span>`;
 
   // MoM Growth Calculation
   const now = new Date();
@@ -934,7 +1011,7 @@ function updateKPICards() {
   if (dashMomBadge) {
     const icon = momPct >= 0 ? 'trending-up' : 'trending-down';
     const sign = momPct >= 0 ? '+' : '';
-    dashMomBadge.innerHTML = `<i data-lucide="${icon}" class="w-3 h-3 text-zinc-400"></i> <span>${sign}${momPct}% vs Prev Month</span>`;
+    dashMomBadge.innerHTML = `<i data-lucide="${icon}" class="w-3 h-3 text-slate-700 dark:text-zinc-400"></i> <span>${sign}${momPct}% vs Prev Month</span>`;
   }
 
   // Row 3: Card 1 (Weekly Peak Days Chart - Vertical Columns)
@@ -956,11 +1033,11 @@ function updateKPICards() {
       const barHeightPct = Math.max(12, Math.round((cnt / maxWeekVal) * 100));
       return `
         <div class="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group" title="${name}: ${cnt} jobs">
-          <span class="text-[9px] font-bold text-zinc-400 group-hover:text-zinc-100 transition-colors">${cnt}</span>
-          <div class="w-full bg-zinc-800 rounded-t-md overflow-hidden flex flex-col justify-end" style="height: ${barHeightPct}%;">
-            <div class="w-full bg-zinc-200 group-hover:bg-white transition-all h-full"></div>
+          <span class="text-[9px] font-black text-slate-800 group-hover:text-slate-950 dark:text-zinc-300 dark:group-hover:text-zinc-100 transition-colors">${cnt}</span>
+          <div class="w-full bg-slate-200 dark:bg-zinc-800 rounded-t-md overflow-hidden flex flex-col justify-end" style="height: ${barHeightPct}%;">
+            <div class="w-full bg-slate-900 group-hover:bg-slate-700 dark:bg-zinc-200 dark:group-hover:bg-white transition-all h-full"></div>
           </div>
-          <span class="text-[10px] font-medium text-zinc-500 uppercase mt-1">${name}</span>
+          <span class="text-[10px] font-bold text-slate-700 dark:text-zinc-400 uppercase mt-1">${name}</span>
         </div>
       `;
     }).join('');
@@ -980,8 +1057,8 @@ function updateKPICards() {
     if (sortedDates.length < 2) {
       monthlyPeaksEl.innerHTML = `
         <div class="py-6 flex flex-col items-center justify-center text-center">
-          <span class="text-xs text-zinc-400 font-semibold mb-1">Volume Baseline Active</span>
-          <span class="text-[11px] text-zinc-500">${monthCount} jobs recorded in ${slTodayStr.substring(0, 7)}</span>
+          <span class="text-xs text-slate-800 dark:text-zinc-300 font-bold mb-1">Volume Baseline Active</span>
+          <span class="text-[11px] text-slate-600 dark:text-zinc-400 font-semibold">${monthCount} jobs recorded in ${slTodayStr.substring(0, 7)}</span>
         </div>
       `;
     } else {
@@ -1014,18 +1091,18 @@ function updateKPICards() {
           <svg viewBox="0 0 300 75" class="w-full h-full overflow-visible">
             <defs>
               <linearGradient id="sparkline_grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25" />
-                <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+                <stop offset="0%" stop-color="#0f172a" stop-opacity="0.18" />
+                <stop offset="100%" stop-color="#0f172a" stop-opacity="0.0" />
               </linearGradient>
             </defs>
             <path d="${areaPath}" fill="url(#sparkline_grad)" />
-            <path d="${dPath}" fill="none" stroke="#e4e4e7" stroke-width="2" stroke-linecap="round" />
-            ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" class="fill-zinc-950 stroke-zinc-100 stroke-2" />`).join('')}
+            <path d="${dPath}" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" class="dark:stroke-zinc-100" />
+            ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3.5" class="fill-white stroke-slate-900 dark:fill-zinc-950 dark:stroke-zinc-100 stroke-2" />`).join('')}
           </svg>
         </div>
-        <div class="pt-2 border-t border-zinc-800/60 flex items-center justify-between text-[11px]">
-          <span class="text-zinc-500 font-medium">Peak Dates:</span>
-          <span class="text-zinc-300 font-bold">${topLabels}</span>
+        <div class="pt-2 border-t border-slate-200 dark:border-zinc-800/60 flex items-center justify-between text-[11px]">
+          <span class="text-slate-700 dark:text-zinc-400 font-bold">Peak Dates:</span>
+          <span class="text-slate-950 dark:text-zinc-100 font-extrabold">${topLabels}</span>
         </div>
       `;
     }
@@ -1043,10 +1120,10 @@ function updateKPICards() {
   });
 
   const timeWindows = [
-    { label: 'Morning (06:00 - 12:00)', cnt: morningCnt, fillClass: 'bg-zinc-100' },
-    { label: 'Afternoon (12:00 - 18:00)', cnt: afternoonCnt, fillClass: 'bg-zinc-300' },
-    { label: 'Evening (18:00 - 00:00)', cnt: eveningCnt, fillClass: 'bg-zinc-400' },
-    { label: 'Night (00:00 - 06:00)', cnt: nightCnt, fillClass: 'bg-zinc-600' },
+    { label: 'Morning (06:00 - 12:00)', cnt: morningCnt, fillClass: 'bg-slate-900 dark:bg-zinc-100' },
+    { label: 'Afternoon (12:00 - 18:00)', cnt: afternoonCnt, fillClass: 'bg-slate-700 dark:bg-zinc-300' },
+    { label: 'Evening (18:00 - 00:00)', cnt: eveningCnt, fillClass: 'bg-slate-600 dark:bg-zinc-400' },
+    { label: 'Night (00:00 - 06:00)', cnt: nightCnt, fillClass: 'bg-slate-500 dark:bg-zinc-500' },
   ];
 
   const maxHourCnt = Math.max(...timeWindows.map(w => w.cnt), 1);
@@ -1057,10 +1134,10 @@ function updateKPICards() {
       return `
         <div class="space-y-1">
           <div class="flex items-center justify-between text-[11px]">
-            <span class="text-zinc-400 font-medium">${w.label}</span>
-            <span class="font-bold text-zinc-100">${w.cnt} Jobs</span>
+            <span class="text-slate-700 dark:text-zinc-400 font-bold">${w.label}</span>
+            <span class="font-extrabold text-slate-950 dark:text-zinc-100">${w.cnt} Jobs</span>
           </div>
-          <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+          <div class="w-full bg-slate-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
             <div class="${w.fillClass} h-full rounded-full transition-all duration-500" style="width: ${pct}%;"></div>
           </div>
         </div>
@@ -1179,9 +1256,9 @@ function setJobSheetMarketFilter(marketKey) {
     const btn = document.getElementById(`js_market_${k}`);
     if (!btn) return;
     if (marketKey.toLowerCase() === k) {
-      btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm";
+      btn.classList.add('active');
     } else {
-      btn.className = "px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200";
+      btn.classList.remove('active');
     }
   });
   renderJobSheetTable();
@@ -1193,9 +1270,9 @@ function setJobSheetShiftFilter(shiftKey) {
     const btn = document.getElementById(`js_shift_${k}`);
     if (!btn) return;
     if (shiftKey === k) {
-      btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm";
+      btn.classList.add('active');
     } else {
-      btn.className = "px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200";
+      btn.classList.remove('active');
     }
   });
   renderJobSheetTable();
@@ -1248,7 +1325,7 @@ function renderJobSheetTable() {
   if (!displayJobs || displayJobs.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="px-6 py-12 text-center text-xs text-zinc-500 font-medium">
+        <td colspan="8" class="px-6 py-12 text-center text-xs text-slate-400 dark:text-zinc-500 font-medium">
           No matching floorplans found.
         </td>
       </tr>
@@ -1271,42 +1348,41 @@ function renderJobSheetTable() {
     // Status Badges with Split Shift Type (Day, Night, Weekend)
     let statusBadges = '';
     if (isClean) {
-      statusBadges += `<span class="bg-zinc-800/70 text-zinc-200 border border-zinc-700/80 text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3 text-zinc-400"></i> Clean (+Rs.25)</span> `;
+      statusBadges += `<span class="bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-zinc-800/70 dark:text-zinc-200 dark:border-zinc-700/80 text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1 font-bold"><i data-lucide="sparkles" class="w-3 h-3 text-emerald-700 dark:text-zinc-400"></i> Clean (+Rs.25)</span> `;
     } else {
-      statusBadges += `<span class="bg-zinc-900 text-zinc-400 border border-zinc-800 text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3 text-zinc-500"></i> ${job.mistake_type}</span> `;
+      statusBadges += `<span class="bg-rose-100 text-rose-900 border border-rose-300 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800 text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1 font-bold"><i data-lucide="alert-triangle" class="w-3 h-3 text-rose-700 dark:text-zinc-500"></i> ${job.mistake_type}</span> `;
     }
 
     if (shiftType === 'WEEKEND') {
-      statusBadges += `<span class="bg-zinc-800/80 text-zinc-100 border border-zinc-700/80 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm inline-flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3 text-zinc-300"></i> Weekend Shift</span> `;
+      statusBadges += `<span class="bg-purple-100 text-purple-900 border border-purple-300 dark:bg-zinc-800/80 dark:text-zinc-100 dark:border-zinc-700/80 text-xs px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3 text-purple-700 dark:text-zinc-300"></i> Weekend Shift</span> `;
     } else if (shiftType === 'NIGHT') {
-      statusBadges += `<span class="bg-zinc-800/80 text-zinc-100 border border-zinc-700/80 text-xs px-2.5 py-1 rounded-full font-medium shadow-sm inline-flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-zinc-300"></i> Night Shift</span> `;
+      statusBadges += `<span class="bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-zinc-800/80 dark:text-zinc-100 dark:border-zinc-700/80 text-xs px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-indigo-700 dark:text-zinc-300"></i> Night Shift</span> `;
     } else {
-      statusBadges += `<span class="bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1"><i data-lucide="sun" class="w-3 h-3 text-zinc-400"></i> Day Shift</span> `;
+      statusBadges += `<span class="bg-slate-200 text-slate-900 border border-slate-300 dark:bg-zinc-800/50 dark:text-zinc-400 dark:border-zinc-700/50 text-xs px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1"><i data-lucide="sun" class="w-3 h-3 text-slate-700 dark:text-zinc-400"></i> Day Shift</span> `;
     }
 
     if (isColor) {
-      statusBadges += `<span class="bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1"><i data-lucide="palette" class="w-3 h-3 text-zinc-400"></i> Color</span>`;
+      statusBadges += `<span class="bg-amber-100 text-amber-900 border border-amber-300 dark:bg-zinc-800/50 dark:text-zinc-400 dark:border-zinc-700/50 text-xs px-2.5 py-1 rounded-full inline-flex items-center gap-1 font-bold"><i data-lucide="palette" class="w-3 h-3 text-amber-700 dark:text-zinc-400"></i> Color</span>`;
     }
 
-    // Sequential monthly job number (first job of month = 1, latest job of month = N)
     const jobNum = job.monthlySeqNo;
 
     return `
-      <tr class="border-b border-zinc-800/40 hover:bg-zinc-900/50 transition-colors text-xs">
-        <td class="px-4 py-3.5 font-bold text-zinc-300">#${jobNum}</td>
-        <td class="px-4 py-3.5 text-zinc-300">
-          <div class="font-medium">${dateStr}</div>
-          <div class="text-[10px] text-zinc-500">${timeStr}</div>
+      <tr class="border-b border-slate-200 hover:bg-slate-100/70 dark:border-zinc-800/40 dark:hover:bg-zinc-900/50 transition-colors text-xs">
+        <td class="px-4 py-3.5 font-black text-slate-900 dark:text-zinc-200">#${jobNum}</td>
+        <td class="px-4 py-3.5 text-slate-700 dark:text-zinc-300">
+          <div class="font-bold text-slate-900 dark:text-zinc-100">${dateStr}</div>
+          <div class="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold">${timeStr}</div>
         </td>
-        <td class="px-4 py-3.5 font-medium text-zinc-100 max-w-[220px] truncate" title="${address}">${address}</td>
+        <td class="px-4 py-3.5 font-bold text-slate-900 dark:text-zinc-100 max-w-[220px] truncate" title="${address}">${address}</td>
         <td class="px-4 py-3.5">
-          <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-100 border border-zinc-700 text-[11px] font-semibold inline-block mb-0.5">${region}</span>
-          <div class="text-zinc-400 text-xs font-medium">${client}</div>
+          <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-900 border border-slate-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 text-[11px] font-bold inline-block mb-0.5">${region}</span>
+          <div class="text-slate-700 dark:text-zinc-300 text-xs font-semibold">${client}</div>
         </td>
-        <td class="px-4 py-3.5 text-zinc-300">
-          <div class="text-zinc-100 font-medium text-xs">${area.toLocaleString()} <span class="text-zinc-400 text-[11px] font-normal">Sq.Ft</span></div>
+        <td class="px-4 py-3.5 text-slate-700 dark:text-zinc-300">
+          <div class="text-slate-900 dark:text-zinc-100 font-bold text-xs">${area.toLocaleString()} <span class="text-slate-600 dark:text-zinc-400 text-[11px] font-semibold">Sq.Ft</span></div>
         </td>
-        <td class="px-4 py-3.5 font-bold text-zinc-100">
+        <td class="px-4 py-3.5 font-extrabold text-slate-950 dark:text-zinc-100">
           Rs. ${calc.total.toLocaleString()}
         </td>
         <td class="px-4 py-3.5 flex items-center gap-1.5 flex-wrap">
@@ -1314,13 +1390,13 @@ function renderJobSheetTable() {
         </td>
         <td class="px-4 py-3.5 text-right">
           <div class="inline-flex items-center justify-end gap-1.5">
-            <button onclick="viewJobDetails('${job.id}')" class="p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all" title="View Details">
+            <button onclick="viewJobDetails('${job.id}')" class="p-1.5 rounded-lg border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 dark:border-zinc-800 dark:hover:border-zinc-700 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-all shadow-sm" title="View Details">
               <i data-lucide="eye" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="editJobRecord('${job.id}')" class="p-1.5 rounded-lg border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all" title="Edit Record">
+            <button onclick="editJobRecord('${job.id}')" class="p-1.5 rounded-lg border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-950 dark:border-zinc-800 dark:hover:border-zinc-700 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 transition-all shadow-sm" title="Edit Record">
               <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
             </button>
-            <button onclick="deleteJobRecord('${job.id}')" class="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-all" title="Delete Record">
+            <button onclick="deleteJobRecord('${job.id}')" class="p-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 dark:text-rose-400 dark:hover:text-rose-300 transition-all shadow-sm" title="Delete Record">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -1344,41 +1420,41 @@ function viewJobDetails(jobId) {
   if (body) {
     body.innerHTML = `
       <div class="space-y-3">
-        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl space-y-2">
+        <div class="p-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl space-y-2">
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Property Address</span>
-            <span class="font-bold text-zinc-100 text-sm">${job.address_title}</span>
+            <span class="text-slate-500 dark:text-zinc-500">Property Address</span>
+            <span class="font-bold text-slate-900 dark:text-zinc-100 text-sm">${job.address_title}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Date & Time</span>
-            <span class="text-zinc-300 font-mono">${job.date} ${job.job_time}</span>
+            <span class="text-slate-500 dark:text-zinc-500">Date & Time</span>
+            <span class="text-slate-700 dark:text-zinc-300 font-mono">${job.date} ${job.job_time}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Client & Market</span>
-            <span class="text-zinc-200 font-semibold">${job.client_name} (${job.region})</span>
+            <span class="text-slate-500 dark:text-zinc-500">Client & Market</span>
+            <span class="text-slate-800 dark:text-zinc-200 font-semibold">${job.client_name} (${job.region})</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Total Area</span>
-            <span class="text-zinc-200 font-semibold">${job.area_sqft.toLocaleString()} <span class="text-zinc-400 font-normal text-xs">Sq.Ft</span></span>
+            <span class="text-slate-500 dark:text-zinc-500">Total Area</span>
+            <span class="text-slate-800 dark:text-zinc-200 font-semibold">${job.area_sqft.toLocaleString()} <span class="text-slate-400 dark:text-zinc-400 font-normal text-xs">Sq.Ft</span></span>
           </div>
         </div>
 
-        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl space-y-2">
+        <div class="p-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl space-y-2">
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Base Price</span>
-            <span class="text-zinc-300">Rs. ${calc.price.toLocaleString()}</span>
+            <span class="text-slate-500 dark:text-zinc-500">Base Price</span>
+            <span class="text-slate-700 dark:text-zinc-300 font-medium">Rs. ${calc.price.toLocaleString()}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Clean Allowance</span>
-            <span class="text-zinc-300">+Rs. ${calc.no_mistake_amount}</span>
+            <span class="text-slate-500 dark:text-zinc-500">Clean Allowance</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-semibold">+Rs. ${calc.no_mistake_amount}</span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-zinc-500">Deduction Penalty</span>
-            <span class="text-zinc-400">-Rs. ${calc.ddt_amount}</span>
+            <span class="text-slate-500 dark:text-zinc-500">Deduction Penalty</span>
+            <span class="text-rose-600 dark:text-rose-400 font-semibold">-Rs. ${calc.ddt_amount}</span>
           </div>
-          <div class="flex justify-between items-center pt-2 border-t border-zinc-800">
-            <span class="font-semibold text-zinc-200">Total Net Revenue</span>
-            <span class="font-bold text-zinc-100 text-sm">Rs. ${calc.total.toLocaleString()}</span>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-zinc-800">
+            <span class="font-semibold text-slate-800 dark:text-zinc-200">Total Net Revenue</span>
+            <span class="font-bold text-slate-900 dark:text-zinc-100 text-sm">Rs. ${calc.total.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -1473,6 +1549,7 @@ function performTabSwitch(tabName) {
   tabs.forEach(t => {
     const content = document.getElementById(`tab_content_${t}`);
     const btn = document.getElementById(`tab_btn_${t}`);
+    const mobileBtn = document.getElementById(`mobile_tab_btn_${t}`);
 
     if (content) {
       if (t === tabName) {
@@ -1486,9 +1563,17 @@ function performTabSwitch(tabName) {
 
     if (btn) {
       if (t === tabName) {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-100 border border-zinc-700 shadow-sm flex items-center gap-2";
+        btn.classList.add('active');
       } else {
-        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 flex items-center gap-2";
+        btn.classList.remove('active');
+      }
+    }
+
+    if (mobileBtn) {
+      if (t === tabName) {
+        mobileBtn.classList.add('active');
+      } else {
+        mobileBtn.classList.remove('active');
       }
     }
   });
@@ -1630,7 +1715,7 @@ async function verifySalaryPin(pinVal) {
       if (icon) icon.setAttribute('data-lucide', 'unlock');
       const editBtn = document.getElementById('salary_edit_btn');
       if (editBtn) {
-        editBtn.innerHTML = '<i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-400"></i>';
+        editBtn.innerHTML = '<i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-500"></i>';
         editBtn.title = "Lock Basic Salary";
       }
       if (window.lucide) lucide.createIcons();
@@ -1648,112 +1733,185 @@ async function verifySalaryPin(pinVal) {
 }
 
 function handleSalaryPinInput(e) {
-  const pinInput = e?.target || document.getElementById('salary_pin_input');
-  const pinVal = pinInput?.value?.trim() || '';
-
-  // Auto-verify and log in immediately when 4th digit is typed
-  if (pinVal.length === 4) {
-    verifySalaryPin(pinVal);
+  const val = e.target.value.trim();
+  if (val.length === 4) {
+    verifySalaryPin(val);
   }
 }
 
-async function handleSalaryPinSubmit(e) {
-  if (e) e.preventDefault();
-  const pinInput = document.getElementById('salary_pin_input');
-  const pinVal = pinInput?.value?.trim() || '';
-  if (pinVal.length >= 4) {
-    verifySalaryPin(pinVal);
+function handleSalaryPinSubmit(e) {
+  e.preventDefault();
+  const val = document.getElementById('salary_pin_input')?.value?.trim();
+  if (val && val.length === 4) {
+    verifySalaryPin(val);
   }
 }
 
 function calculateMonthlySalaryStatement() {
-  const rangeJobs = getFilteredJobsForCurrentRange();
-  const totalCount = rangeJobs.length;
+  const sl = getSriLankaTimeObj();
+  const currentMonthPrefix = sl.dateStr.substring(0, 7);
 
-  let totalSpecialAllowance = 0;
-  let totalCleanBonus = 0;
-  let totalShiftBase = 0;
-  let totalColorAndArea = 0;
-  let totalPenalties = 0;
+  const monthJobs = allJobs.filter(j => j.date && j.date.startsWith(currentMonthPrefix));
+  const monthTotalCount = monthJobs.length;
 
-  rangeJobs.forEach(job => {
-    const calc = calculatePricing(job, totalCount);
-    totalSpecialAllowance += calc.total;
-    totalCleanBonus += calc.no_mistake_amount;
-    totalShiftBase += calc.basePrice;
-    totalColorAndArea += (calc.colorPrice + calc.extraAreaBonus);
-    totalPenalties += calc.ddt_amount;
-  });
-
-  // Inputs
-  const baseSalaryInput = document.getElementById('salary_base_amount');
-  const baseSalary = parseFloat(baseSalaryInput?.value) || 35453.00;
+  const basicSalaryInput = document.getElementById('salary_base_amount');
+  const baseSalaryVal = parseFloat(basicSalaryInput?.value) || 35453.00;
 
   const holidaysInput = document.getElementById('salary_holidays_count');
-  const holidaysCount = Math.max(0, parseInt(holidaysInput?.value, 10) || 0);
+  const holidaysCount = parseInt(holidaysInput?.value, 10) || 0;
 
-  // Dynamic Formulas based on Basic Salary
-  const dailyHolidayRate = (baseSalary / 20); // 1/20th or 5% of Basic Salary
-  const totalHolidayAllowance = holidaysCount * dailyHolidayRate;
-  const etfVal = (baseSalary * 0.08); // ETF Rate 8%
+  // 1. Dynamic Earnings Breakdown (Clean Bonuses, Night/Shifts, Color/Area, Mistakes)
+  let cleanBonusSum = 0;
+  let shiftsSum = 0;
+  let colorAreaSum = 0;
+  let penaltiesSum = 0;
+  let specialAllowanceTotal = 0;
 
-  // Net Salary Automated Total
-  const netSalary = baseSalary + totalSpecialAllowance + totalHolidayAllowance;
+  monthJobs.forEach((j, idx) => {
+    const calc = calculatePricing(j, monthJobs.length - idx);
 
-  // Period label from date picker trigger
-  const triggerLabel = document.getElementById('date_picker_label')?.textContent || 'Current Period';
+    cleanBonusSum += calc.no_mistake_amount;
+    shiftsSum += calc.basePrice;
+    colorAreaSum += (calc.colorPrice + calc.extraAreaBonus);
+    penaltiesSum += calc.ddt_amount;
+    specialAllowanceTotal += calc.total;
+  });
+
+  // 2. Statutory References (ETF 8%, Daily Holiday Rate 1/20th)
+  const etfAmount = (baseSalaryVal * 0.08);
+  const dailyHolidayRate = (baseSalaryVal / 20);
+  const holidayAllowance = (holidaysCount * dailyHolidayRate);
+
+  // 3. Final Net Salary
+  const netSalary = baseSalaryVal + specialAllowanceTotal + holidayAllowance;
+
+  // Render to UI
+  const formatLKR = (num) => `LKR ${Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const periodBadge = document.getElementById('salary_period_badge');
-  if (periodBadge) periodBadge.textContent = triggerLabel;
-
   const subtitle = document.getElementById('salary_statement_subtitle');
-  if (subtitle) subtitle.textContent = `Period: ${triggerLabel}`;
+  const mName = MONTH_NAMES_FULL[parseInt(sl.dateStr.substring(5, 7), 10) - 1];
+  const yearStr = sl.dateStr.substring(0, 4);
 
-  // Currency helper
-  const fmtLKR = (num) => `LKR ${Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (periodBadge) periodBadge.textContent = `${mName} ${yearStr}`;
+  if (subtitle) subtitle.textContent = `Period: 01 ${mName} ${yearStr} – ${sl.dateStr}`;
 
-  // Update Payslip UI
-  const basicEl = document.getElementById('payslip_basic_salary');
-  if (basicEl) basicEl.textContent = fmtLKR(baseSalary);
+  const basicSalaryEl = document.getElementById('payslip_basic_salary');
+  if (basicSalaryEl) basicSalaryEl.textContent = formatLKR(baseSalaryVal);
 
-  const specialEl = document.getElementById('payslip_special_allowance');
-  if (specialEl) specialEl.textContent = fmtLKR(totalSpecialAllowance);
+  const specialAllowanceEl = document.getElementById('payslip_special_allowance');
+  if (specialAllowanceEl) specialAllowanceEl.textContent = formatLKR(specialAllowanceTotal);
 
   const subCleanEl = document.getElementById('salary_sub_clean_bonus');
-  if (subCleanEl) subCleanEl.textContent = `+${fmtLKR(totalCleanBonus)}`;
+  if (subCleanEl) subCleanEl.textContent = `+${formatLKR(cleanBonusSum)}`;
 
   const subShiftsEl = document.getElementById('salary_sub_shifts');
-  if (subShiftsEl) subShiftsEl.textContent = `+${fmtLKR(totalShiftBase)}`;
+  if (subShiftsEl) subShiftsEl.textContent = `+${formatLKR(shiftsSum)}`;
 
   const subColorAreaEl = document.getElementById('salary_sub_color_area');
-  if (subColorAreaEl) subColorAreaEl.textContent = `+${fmtLKR(totalColorAndArea)}`;
+  if (subColorAreaEl) subColorAreaEl.textContent = `+${formatLKR(colorAreaSum)}`;
 
   const subPenaltiesEl = document.getElementById('salary_sub_penalties');
-  if (subPenaltiesEl) subPenaltiesEl.textContent = `-${fmtLKR(totalPenalties)}`;
-
-  const holidayCalcLabel = document.getElementById('payslip_holiday_calc_label');
-  if (holidayCalcLabel) holidayCalcLabel.textContent = `(${holidaysCount} day${holidaysCount === 1 ? '' : 's'} × ${fmtLKR(dailyHolidayRate)})`;
+  if (subPenaltiesEl) subPenaltiesEl.textContent = `-${formatLKR(penaltiesSum)}`;
 
   const holidayAllowanceEl = document.getElementById('payslip_holiday_allowance');
-  if (holidayAllowanceEl) holidayAllowanceEl.textContent = fmtLKR(totalHolidayAllowance);
+  if (holidayAllowanceEl) holidayAllowanceEl.textContent = formatLKR(holidayAllowance);
+
+  const holidayCalcLabel = document.getElementById('payslip_holiday_calc_label');
+  if (holidayCalcLabel) holidayCalcLabel.textContent = `(${holidaysCount} days × ${formatLKR(dailyHolidayRate)})`;
 
   const netSalaryEl = document.getElementById('payslip_net_salary');
-  if (netSalaryEl) netSalaryEl.textContent = fmtLKR(netSalary);
+  if (netSalaryEl) netSalaryEl.textContent = formatLKR(netSalary);
 
-  // Statutory Reference Cards
-  const jobCountEl = document.getElementById('statutory_job_count');
-  if (jobCountEl) jobCountEl.textContent = totalCount;
+  // Secondary Statutory Reference Strip
+  const statJobCountEl = document.getElementById('statutory_job_count');
+  if (statJobCountEl) statJobCountEl.textContent = monthTotalCount;
 
-  const etfEl = document.getElementById('statutory_etf_amount');
-  if (etfEl) etfEl.textContent = fmtLKR(etfVal);
+  const statEtfEl = document.getElementById('statutory_etf_amount');
+  if (statEtfEl) statEtfEl.textContent = formatLKR(etfAmount);
 
-  const holidayRateEl = document.getElementById('statutory_holiday_rate');
-  if (holidayRateEl) holidayRateEl.textContent = fmtLKR(dailyHolidayRate);
+  const statHolidayRateEl = document.getElementById('statutory_holiday_rate');
+  if (statHolidayRateEl) statHolidayRateEl.textContent = formatLKR(dailyHolidayRate);
 
-  const penaltyEl = document.getElementById('statutory_penalty_amount');
-  if (penaltyEl) penaltyEl.textContent = fmtLKR(totalPenalties);
+  const statPenaltyEl = document.getElementById('statutory_penalty_amount');
+  if (statPenaltyEl) statPenaltyEl.textContent = formatLKR(penaltiesSum);
 }
 
-// 8. FORM SUBMISSION
+// 8. DATA RETRIEVAL & SUPABASE SYNC ENGINE
+async function fetchAllData() {
+  if (!_supabase) return;
+
+  try {
+    const { data, error } = await _supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .order('date', { ascending: false })
+      .order('job_time', { ascending: false });
+
+    if (error) throw error;
+
+    const rawList = data || [];
+
+    // Calculate sequential monthly sequence numbers
+    const monthGroups = {};
+    rawList.forEach(job => {
+      const ym = (job.date || '').substring(0, 7) || 'unknown';
+      if (!monthGroups[ym]) monthGroups[ym] = [];
+      monthGroups[ym].push(job);
+    });
+
+    Object.values(monthGroups).forEach(group => {
+      group.sort((a, b) => {
+        const dDiff = (a.date || '').localeCompare(b.date || '');
+        if (dDiff !== 0) return dDiff;
+        return (a.job_time || '').localeCompare(b.job_time || '');
+      });
+      group.forEach((job, index) => {
+        job.monthlySeqNo = index + 1;
+      });
+    });
+
+    allJobs = rawList;
+
+    updateKPICards();
+    renderJobSheetTable();
+  } catch (err) {
+    console.error("Fetch Error:", err);
+    showToast("Error loading floorplan data");
+  }
+}
+
+// Form Option Toggles (Color Plan & Night/Weekend)
+function toggleOption(checkboxId) {
+  const cb = document.getElementById(checkboxId);
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  if (checkboxId === 'is_night_or_weekend') {
+    isShiftManuallyOverridden = true;
+  }
+  updateOptionToggleUI(checkboxId);
+  updateLivePayoutStrip(false);
+}
+
+function updateOptionToggleUI(checkboxId) {
+  const cb = document.getElementById(checkboxId);
+  if (!cb) return;
+
+  let btnId = '';
+  if (checkboxId === 'is_color') btnId = 'toggle_color_plan';
+  if (checkboxId === 'is_night_or_weekend') btnId = 'toggle_night_weekend';
+
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    if (cb.checked) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  }
+}
+
+// Main Form Submit Handler
 document.getElementById('addJobForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!_supabase) return;
@@ -1794,9 +1952,9 @@ document.getElementById('addJobForm')?.addEventListener('submit', async (e) => {
     const { error } = await _supabase.from(TABLE_NAME).insert([finalData]);
     if (error) throw error;
 
-    showToast("Floorplan saved successfully!");
+    showToast("Floorplan record saved successfully!");
 
-    // Reset partial form
+    // Reset input fields
     document.getElementById('address_title').value = '';
     document.getElementById('area_sqft').value = '';
     updateLivePayoutStrip(false);
@@ -1873,7 +2031,7 @@ function renderModalClientPills() {
   if (!container) return;
 
   if (clientList.length === 0) {
-    container.innerHTML = `<span class="text-xs text-zinc-500">No clients configured. Click settings to add.</span>`;
+    container.innerHTML = `<span class="text-xs text-slate-400 dark:text-zinc-500">No clients configured. Click settings to add.</span>`;
     return;
   }
 
@@ -1898,8 +2056,8 @@ function renderModalClientPills() {
 
   if (ausClients.length > 0) {
     html += `
-      <div class="space-y-1.5 mb-2 border-t border-zinc-800/60 pt-2 w-full">
-        <div class="flex items-center gap-1.5 text-[10px] text-zinc-500 font-semibold uppercase tracking-wider mb-1">
+      <div class="space-y-1.5 mb-2 border-t border-slate-100 dark:border-zinc-800/60 pt-2 w-full">
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-zinc-500 font-semibold uppercase tracking-wider mb-1">
           <span>AUS Market</span>
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
@@ -2040,38 +2198,34 @@ function updateLivePayoutStrip(isModal = false) {
   const badgesContainer = document.getElementById(`${prefix}payout_breakdown_badges`);
   const stripContainer = document.getElementById(`${prefix}payout_strip_container`);
 
-  // Activate calculation ONLY after user starts entering job details (e.g. area, address, or client)
   const hasJobDetails = (areaVal > 0 || addressVal.length > 0 || clientVal.length > 0);
 
   if (!hasJobDetails) {
     if (totalEl) {
       totalEl.textContent = '--';
-      totalEl.classList.add('text-zinc-400');
-      totalEl.classList.remove('text-zinc-100');
+      totalEl.className = "text-base font-semibold text-slate-500 dark:text-zinc-400 tracking-tight";
     }
     if (badgesContainer) {
       badgesContainer.innerHTML = `
-        <span class="text-zinc-500 text-[11px] font-medium flex items-center gap-1.5">
-          <i data-lucide="info" class="w-3.5 h-3.5 text-zinc-600"></i> Enter job details to calculate payout
+        <span class="text-slate-500 dark:text-zinc-400 text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="info" class="w-4 h-4 text-slate-400 dark:text-zinc-500"></i> Enter job details to calculate payout
         </span>
       `;
     }
     if (stripContainer) {
-      stripContainer.classList.add('opacity-60', 'border-dashed');
-      stripContainer.classList.remove('opacity-100', 'border-solid');
+      stripContainer.classList.remove('border-solid');
+      stripContainer.classList.add('border-dashed');
     }
     if (window.lucide) lucide.createIcons();
     return;
   }
 
-  // Active state styling
   if (totalEl) {
-    totalEl.classList.remove('text-zinc-400');
-    totalEl.classList.add('text-zinc-100');
+    totalEl.className = "text-base font-extrabold text-slate-950 dark:text-zinc-100 tracking-tight";
   }
   if (stripContainer) {
-    stripContainer.classList.remove('opacity-60', 'border-dashed');
-    stripContainer.classList.add('opacity-100', 'border-solid');
+    stripContainer.classList.remove('border-dashed');
+    stripContainer.classList.add('border-solid');
   }
 
   const formData = {
@@ -2082,7 +2236,6 @@ function updateLivePayoutStrip(isModal = false) {
     is_night_or_weekend: nightCb?.checked || false,
   };
 
-  // STRICTLY REUSE existing calculatePricing function!
   const calc = calculatePricing(formData, allJobs.length);
 
   if (totalEl) {
@@ -2092,39 +2245,34 @@ function updateLivePayoutStrip(isModal = false) {
   if (badgesContainer) {
     let badgesHtml = '';
 
-    // 1. Base Price Badge / Night Shift Base Badge
     if (formData.is_night_or_weekend) {
       if (calc.basePrice > 0) {
-        badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-zinc-400"></i> Night/Wknd Base (Rs. ${calc.basePrice})</span> `;
+        badgesHtml += `<span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-indigo-500 dark:text-zinc-400"></i> Night/Wknd Base (Rs. ${calc.basePrice})</span> `;
       } else {
-        badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-zinc-400"></i> Night/Wknd Shift</span> `;
+        badgesHtml += `<span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-indigo-500 dark:text-zinc-400"></i> Night/Wknd Shift</span> `;
       }
     } else if (calc.basePrice > 0) {
-      badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="layers" class="w-3 h-3 text-zinc-400"></i> Base Rate: Rs. ${calc.basePrice}</span> `;
+      badgesHtml += `<span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="layers" class="w-3 h-3 text-slate-500 dark:text-zinc-400"></i> Base Rate: Rs. ${calc.basePrice}</span> `;
     }
 
-    // 2. Clean Job Badge
     if (calc.no_mistake_amount > 0) {
-      badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3 text-zinc-400"></i> Clean (+Rs. 25)</span> `;
+      badgesHtml += `<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3 text-emerald-600 dark:text-zinc-400"></i> Clean (+Rs. 25)</span> `;
     }
 
-    // 3. Color Plan Badge
     if (calc.colorPrice > 0) {
-      badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="palette" class="w-3 h-3 text-zinc-400"></i> Color Tier (+Rs. ${calc.colorPrice})</span> `;
+      badgesHtml += `<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="palette" class="w-3 h-3 text-amber-600 dark:text-zinc-400"></i> Color Tier (+Rs. ${calc.colorPrice})</span> `;
     }
 
-    // 4. Extra Area (> 2500 sqft) Calculation Badge
     if (calc.extraAreaBonus > 0) {
-      badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="maximize" class="w-3 h-3 text-zinc-400"></i> Area >2500 (+Rs. ${calc.extraAreaBonus})</span> `;
+      badgesHtml += `<span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="maximize" class="w-3 h-3 text-slate-500 dark:text-zinc-400"></i> Area >2500 (+Rs. ${calc.extraAreaBonus})</span> `;
     }
 
-    // 5. Deduction Penalty Badge (if applicable)
     if (calc.ddt_amount > 0) {
-      badgesHtml += `<span class="px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 font-medium inline-flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3 text-zinc-500"></i> Penalty (-Rs. ${calc.ddt_amount})</span> `;
+      badgesHtml += `<span class="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800 font-medium inline-flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3 text-rose-500 dark:text-zinc-500"></i> Penalty (-Rs. ${calc.ddt_amount})</span> `;
     }
 
     if (!badgesHtml) {
-      badgesHtml = `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3 text-zinc-400"></i> Clean (+Rs. 25)</span>`;
+      badgesHtml = `<span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-medium inline-flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3 text-emerald-600 dark:text-zinc-400"></i> Clean (+Rs. 25)</span>`;
     }
 
     badgesContainer.innerHTML = badgesHtml;
@@ -2151,15 +2299,12 @@ function formatJobToExcelTSVRow(job, jobNo) {
   const market = (job.region || 'uk').toLowerCase() === 'aus' ? 'aus' : 'uk';
   const colorPlan = job.is_color ? 'Color' : '';
 
-  // Col H: Mistake Title (empty string if clean job)
   const hasMistake = job.mistake_type && job.mistake_type !== 'None' && job.mistake_type !== 'none';
   const mistakeTitle = hasMistake ? job.mistake_type : '';
 
-  // Col J: Deduction penalty amount (empty string if 0 or no penalty)
   const penaltyVal = hasMistake ? (MISTAKE_DEDUCTIONS_MAP[job.mistake_type] || 0) : 0;
   const ddtAmountStr = penaltyVal > 0 ? penaltyVal : '';
 
-  // 11 Columns: A:JobNo, B:Date, C:Address, D:Area, E:Market, F:Color, G:Price, H:Mistake, I:NoMistakeAmt, J:DdtAmt, K:Total
   return `${jobNo}\t${formattedDate}\t${address}\t${area}\t${market}\t${colorPlan}\t\t${mistakeTitle}\t\t${ddtAmountStr}\t`;
 }
 
@@ -2167,7 +2312,6 @@ function generateExcelTSVData() {
   const jobsToExport = getFilteredJobsForCurrentRange();
   if (!jobsToExport || jobsToExport.length === 0) return '';
 
-  // Sort chronological (oldest to newest)
   const sortedAll = [...jobsToExport].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   const dayJobs = sortedAll.filter(j => !j.is_night_or_weekend);
@@ -2183,7 +2327,7 @@ function generateExcelTSVData() {
     tsvRows.push(formatJobToExcelTSVRow(job, idx + 1));
   });
 
-  // TIER 2: Night / Weekend Jobs #101 onwards (#101 to #175)
+  // TIER 2: Night / Weekend Jobs #101 onwards
   nightJobs.forEach((job, idx) => {
     tsvRows.push(formatJobToExcelTSVRow(job, 101 + idx));
   });
@@ -2269,17 +2413,11 @@ function switchExcelPreviewTab(mode) {
   const tabNight = document.getElementById('excel_tab_night');
 
   if (mode === 'night') {
-    tabNight?.classList.add('bg-zinc-800', 'text-zinc-100', 'border', 'border-zinc-700', 'shadow-sm', 'font-semibold');
-    tabNight?.classList.remove('text-zinc-400', 'font-medium');
-
-    tabAll?.classList.remove('bg-zinc-800', 'text-zinc-100', 'border', 'border-zinc-700', 'shadow-sm', 'font-semibold');
-    tabAll?.classList.add('text-zinc-400', 'font-medium');
+    tabNight?.classList.add('active');
+    tabAll?.classList.remove('active');
   } else {
-    tabAll?.classList.add('bg-zinc-800', 'text-zinc-100', 'border', 'border-zinc-700', 'shadow-sm', 'font-semibold');
-    tabAll?.classList.remove('text-zinc-400', 'font-medium');
-
-    tabNight?.classList.remove('bg-zinc-800', 'text-zinc-100', 'border', 'border-zinc-700', 'shadow-sm', 'font-semibold');
-    tabNight?.classList.add('text-zinc-400', 'font-medium');
+    tabAll?.classList.add('active');
+    tabNight?.classList.remove('active');
   }
 
   renderExcelPreviewTable(mode);
@@ -2294,7 +2432,7 @@ function renderExcelPreviewTable(mode = 'all') {
   if (!tsvText) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="11" class="px-6 py-12 text-center text-xs text-zinc-500 font-sans font-medium">
+        <td colspan="11" class="px-6 py-12 text-center text-xs text-slate-400 dark:text-zinc-500 font-sans font-medium">
           No records available to display in Excel sheet preview.
         </td>
       </tr>
@@ -2305,7 +2443,6 @@ function renderExcelPreviewTable(mode = 'all') {
 
   const lines = tsvText.split('\n').filter(l => l.trim().length > 0);
 
-  // Filter by mode if 'night' selected (#101+)
   const filteredLines = lines.filter(line => {
     const cols = line.split('\t');
     const jobNo = parseInt(cols[0], 10) || 0;
@@ -2334,18 +2471,18 @@ function renderExcelPreviewTable(mode = 'all') {
     const isNightRow = (parseInt(jobNo, 10) >= 101 && parseInt(jobNo, 10) <= 175);
 
     return `
-      <tr class="hover:bg-zinc-900/60 transition-colors ${isNightRow ? 'bg-indigo-950/20' : ''}">
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-center font-bold ${isNightRow ? 'text-indigo-400' : 'text-zinc-200'}">${jobNo}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-zinc-300">${date}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-zinc-200 font-sans font-medium">${address}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-right text-zinc-300">${area}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-center text-zinc-300 font-bold">${market}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-center ${color ? 'text-emerald-400 font-semibold' : 'text-zinc-500'}">${color || '-'}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-right text-zinc-600 font-mono">[Auto]</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 ${mistake ? 'text-amber-400 font-semibold' : 'text-zinc-500'}">${mistake || '-'}</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-right text-zinc-600 font-mono">[Auto]</td>
-        <td class="py-2 px-3 border-r border-zinc-800/50 text-right ${ddt ? 'text-rose-400 font-bold' : 'text-zinc-500'}">${ddt ? `-${ddt}` : '-'}</td>
-        <td class="py-2 px-3 text-right text-zinc-600 font-mono">[Auto]</td>
+      <tr class="hover:bg-slate-50 dark:hover:bg-zinc-900/60 transition-colors ${isNightRow ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : ''}">
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-center font-bold ${isNightRow ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-800 dark:text-zinc-200'}">${jobNo}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-slate-600 dark:text-zinc-300">${date}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-slate-800 dark:text-zinc-200 font-sans font-medium">${address}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-right text-slate-700 dark:text-zinc-300">${area}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-center text-slate-800 dark:text-zinc-300 font-bold">${market}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-center ${color ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-slate-400 dark:text-zinc-500'}">${color || '-'}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-right text-slate-400 dark:text-zinc-600 font-mono">[Auto]</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 ${mistake ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-400 dark:text-zinc-500'}">${mistake || '-'}</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-right text-slate-400 dark:text-zinc-600 font-mono">[Auto]</td>
+        <td class="py-2 px-3 border-r border-slate-200 dark:border-zinc-800/50 text-right ${ddt ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-400 dark:text-zinc-500'}">${ddt ? `-${ddt}` : '-'}</td>
+        <td class="py-2 px-3 text-right text-slate-400 dark:text-zinc-600 font-mono">[Auto]</td>
       </tr>
     `;
   }).join('');
@@ -2353,6 +2490,7 @@ function renderExcelPreviewTable(mode = 'all') {
 
 // 9. INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   if (window.lucide) lucide.createIcons();
 
   document.getElementById('preview-sheet-btn')?.addEventListener('click', () => openExcelPreviewModal());
