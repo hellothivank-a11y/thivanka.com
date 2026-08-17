@@ -1837,6 +1837,27 @@ function calculateMonthlySalaryStatement() {
   if (statPenaltyEl) statPenaltyEl.textContent = formatLKR(penaltiesSum);
 }
 
+// Calculate sequential monthly sequence numbers
+function recalculateMonthlySeqNumbers(list = allJobs) {
+  const monthGroups = {};
+  list.forEach(job => {
+    const ym = (job.date || '').substring(0, 7) || 'unknown';
+    if (!monthGroups[ym]) monthGroups[ym] = [];
+    monthGroups[ym].push(job);
+  });
+
+  Object.values(monthGroups).forEach(group => {
+    group.sort((a, b) => {
+      const dDiff = (a.date || '').localeCompare(b.date || '');
+      if (dDiff !== 0) return dDiff;
+      return (a.job_time || '').localeCompare(b.job_time || '');
+    });
+    group.forEach((job, index) => {
+      job.monthlySeqNo = index + 1;
+    });
+  });
+}
+
 // 8. DATA RETRIEVAL & SUPABASE SYNC ENGINE
 async function fetchAllData() {
   if (!_supabase) return;
@@ -1851,33 +1872,14 @@ async function fetchAllData() {
     if (error) throw error;
 
     const rawList = data || [];
-
-    // Calculate sequential monthly sequence numbers
-    const monthGroups = {};
-    rawList.forEach(job => {
-      const ym = (job.date || '').substring(0, 7) || 'unknown';
-      if (!monthGroups[ym]) monthGroups[ym] = [];
-      monthGroups[ym].push(job);
-    });
-
-    Object.values(monthGroups).forEach(group => {
-      group.sort((a, b) => {
-        const dDiff = (a.date || '').localeCompare(b.date || '');
-        if (dDiff !== 0) return dDiff;
-        return (a.job_time || '').localeCompare(b.job_time || '');
-      });
-      group.forEach((job, index) => {
-        job.monthlySeqNo = index + 1;
-      });
-    });
-
+    recalculateMonthlySeqNumbers(rawList);
     allJobs = rawList;
 
     updateKPICards();
     renderJobSheetTable();
   } catch (err) {
     console.error("Fetch Error:", err);
-    showToast("Error loading floorplan data");
+    showToast("Error loading floorplan data", true);
   }
 }
 
@@ -1900,6 +1902,8 @@ function updateOptionToggleUI(checkboxId) {
   let btnId = '';
   if (checkboxId === 'is_color') btnId = 'toggle_color_plan';
   if (checkboxId === 'is_night_or_weekend') btnId = 'toggle_night_weekend';
+  if (checkboxId === 'modal_is_color') btnId = 'modal_toggle_color_plan';
+  if (checkboxId === 'modal_is_night_or_weekend') btnId = 'modal_toggle_night_weekend';
 
   const btn = document.getElementById(btnId);
   if (btn) {
@@ -1911,14 +1915,16 @@ function updateOptionToggleUI(checkboxId) {
   }
 }
 
-// Main Form Submit Handler
-document.getElementById('addJobForm')?.addEventListener('submit', async (e) => {
+// Main Form Submit Handler (Instant Optimistic UI)
+document.getElementById('addJobForm')?.addEventListener('submit', (e) => {
   e.preventDefault();
   if (!_supabase) return;
 
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.classList.add('opacity-50', 'cursor-not-allowed');
+  const clientNameVal = document.getElementById('client_name')?.value?.trim();
+  if (!clientNameVal) {
+    showToast("Please select a client before saving", true);
+    return;
+  }
 
   const dateVal = document.getElementById('date').value;
   const isNightVal = document.getElementById('is_night_or_weekend').checked;
@@ -1929,7 +1935,7 @@ document.getElementById('addJobForm')?.addEventListener('submit', async (e) => {
   const data = {
     date: dateVal,
     job_time: document.getElementById('job_time').value,
-    client_name: document.getElementById('client_name').value || 'Studio Client',
+    client_name: clientNameVal,
     address_title: document.getElementById('address_title').value,
     area_sqft: parseFloat(document.getElementById('area_sqft').value) || 0,
     region: document.getElementById('region').value,
@@ -1939,47 +1945,110 @@ document.getElementById('addJobForm')?.addEventListener('submit', async (e) => {
     shift_type: shiftTypeVal
   };
 
-  try {
-    const calc = calculatePricing(data, allJobs.length);
-    const finalData = {
-      ...data,
-      price: calc.price,
-      no_mistake_amount: calc.no_mistake_amount,
-      ddt_amount: calc.ddt_amount,
-      total: calc.total
-    };
+  const calc = calculatePricing(data, allJobs.length);
+  const finalData = {
+    ...data,
+    price: calc.price,
+    no_mistake_amount: calc.no_mistake_amount,
+    ddt_amount: calc.ddt_amount,
+    total: calc.total
+  };
 
-    const { error } = await _supabase.from(TABLE_NAME).insert([finalData]);
-    if (error) throw error;
+  // 1. OPTIMISTIC LOCAL UPDATE (INSTANT ZERO-LAG)
+  const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const optimisticRecord = {
+    id: tempId,
+    ...finalData,
+    created_at: new Date().toISOString()
+  };
 
-    showToast("Floorplan record saved successfully!");
+  allJobs.unshift(optimisticRecord);
+  allJobs.sort((a, b) => {
+    const dDiff = (b.date || '').localeCompare(a.date || '');
+    if (dDiff !== 0) return dDiff;
+    return (b.job_time || '').localeCompare(a.job_time || '');
+  });
 
-    // Reset input fields
-    document.getElementById('address_title').value = '';
-    document.getElementById('area_sqft').value = '';
-    updateLivePayoutStrip(false);
+  recalculateMonthlySeqNumbers(allJobs);
+  updateKPICards();
+  renderJobSheetTable();
 
-    await fetchAllData();
-  } catch (err) {
-    console.error("Save Error:", err);
-    showToast("Error saving floorplan");
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+  // Reset input fields immediately
+  document.getElementById('address_title').value = '';
+  document.getElementById('area_sqft').value = '';
+  const colorCb = document.getElementById('is_color');
+  if (colorCb) {
+    colorCb.checked = false;
+    updateOptionToggleUI('is_color');
   }
+  updateLivePayoutStrip(false);
+
+  showToast("Floorplan record saved successfully!");
+
+  // 2. ASYNC BACKGROUND SYNC TO SUPABASE
+  (async (temporaryId, payload) => {
+    try {
+      let { data: insertedRows, error } = await _supabase
+        .from(TABLE_NAME)
+        .insert([payload])
+        .select();
+
+      if (error && (error.message?.includes('shift_type') || error.details?.includes('shift_type') || error.code === 'PGRST204')) {
+        console.warn("Supabase 'jobs' table missing 'shift_type' column. Retrying insert without 'shift_type'...");
+        const fallbackData = { ...payload };
+        delete fallbackData.shift_type;
+        const retryResult = await _supabase
+          .from(TABLE_NAME)
+          .insert([fallbackData])
+          .select();
+        error = retryResult.error;
+        insertedRows = retryResult.data;
+      }
+
+      if (error) throw error;
+
+      // Silently swap temporary ID with genuine database record ID
+      if (insertedRows && insertedRows[0]) {
+        const realRecord = insertedRows[0];
+        const idx = allJobs.findIndex(j => j.id === temporaryId);
+        if (idx !== -1) {
+          allJobs[idx] = { ...allJobs[idx], ...realRecord };
+        }
+      }
+    } catch (err) {
+      console.error("Background Save Error:", err);
+      // Revert optimistic record on failure
+      allJobs = allJobs.filter(j => j.id !== temporaryId);
+      recalculateMonthlySeqNumbers(allJobs);
+      updateKPICards();
+      renderJobSheetTable();
+      showToast(err.message || "Failed to save floorplan record (Reverted)", true);
+    }
+  })(tempId, finalData);
 });
 
 // Toast System
-function showToast(msg) {
+function showToast(msg, isError = false) {
   const toast = document.getElementById('toast');
   const toastMsg = document.getElementById('toast_msg');
   if (toast && toastMsg) {
     toastMsg.textContent = msg;
+    const icon = toast.querySelector('i');
+    if (icon) {
+      if (isError) {
+        icon.setAttribute('data-lucide', 'alert-circle');
+        icon.className = 'w-4 h-4 text-rose-500';
+      } else {
+        icon.setAttribute('data-lucide', 'check');
+        icon.className = 'w-4 h-4 text-emerald-400';
+      }
+      if (window.lucide) lucide.createIcons();
+    }
     toast.classList.add('show');
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
       toast.classList.remove('show');
-    }, 3000);
+    }, 3500);
   }
 }
 
@@ -2004,6 +2073,12 @@ function openAddJobModal() {
 
   if (timeInput && !timeInput.value) {
     timeInput.value = slObj.timeStr;
+  }
+
+  const modalColorCb = document.getElementById('modal_is_color');
+  if (modalColorCb) {
+    modalColorCb.checked = false;
+    updateOptionToggleUI('modal_is_color');
   }
 
   renderModalClientPills();
@@ -2112,14 +2187,16 @@ function toggleModalOption(checkboxId) {
   updateLivePayoutStrip(true);
 }
 
-// Modal Form Submission Handler (Create or Edit)
-document.getElementById('modalAddJobForm')?.addEventListener('submit', async (e) => {
+// Modal Form Submission Handler (Instant Optimistic UI)
+document.getElementById('modalAddJobForm')?.addEventListener('submit', (e) => {
   e.preventDefault();
   if (!_supabase) return;
 
-  const btn = document.getElementById('modalSubmitBtn');
-  btn.disabled = true;
-  btn.classList.add('opacity-50', 'cursor-not-allowed');
+  const modalClientNameVal = document.getElementById('modal_client_name')?.value?.trim();
+  if (!modalClientNameVal) {
+    showToast("Please select a client before saving", true);
+    return;
+  }
 
   const modalDateVal = document.getElementById('modal_date').value;
   const modalIsNightVal = document.getElementById('modal_is_night_or_weekend').checked;
@@ -2130,7 +2207,7 @@ document.getElementById('modalAddJobForm')?.addEventListener('submit', async (e)
   const data = {
     date: modalDateVal,
     job_time: document.getElementById('modal_job_time').value,
-    client_name: document.getElementById('modal_client_name').value || 'Studio Client',
+    client_name: modalClientNameVal,
     address_title: document.getElementById('modal_address_title').value,
     area_sqft: parseFloat(document.getElementById('modal_area_sqft').value) || 0,
     region: document.getElementById('modal_region').value,
@@ -2140,41 +2217,133 @@ document.getElementById('modalAddJobForm')?.addEventListener('submit', async (e)
     shift_type: modalShiftTypeVal
   };
 
-  try {
-    const calc = calculatePricing(data, allJobs.length);
-    const finalData = {
-      ...data,
-      price: calc.price,
-      no_mistake_amount: calc.no_mistake_amount,
-      ddt_amount: calc.ddt_amount,
-      total: calc.total
+  const calc = calculatePricing(data, allJobs.length);
+  const finalData = {
+    ...data,
+    price: calc.price,
+    no_mistake_amount: calc.no_mistake_amount,
+    ddt_amount: calc.ddt_amount,
+    total: calc.total
+  };
+
+  const targetEditId = editingJobId;
+
+  if (targetEditId) {
+    // Optimistic Update
+    const oldJobIndex = allJobs.findIndex(j => String(j.id) === String(targetEditId));
+    const previousJob = oldJobIndex !== -1 ? { ...allJobs[oldJobIndex] } : null;
+
+    if (oldJobIndex !== -1) {
+      allJobs[oldJobIndex] = { ...allJobs[oldJobIndex], ...finalData };
+      allJobs.sort((a, b) => {
+        const dDiff = (b.date || '').localeCompare(a.date || '');
+        if (dDiff !== 0) return dDiff;
+        return (b.job_time || '').localeCompare(a.job_time || '');
+      });
+      recalculateMonthlySeqNumbers(allJobs);
+      updateKPICards();
+      renderJobSheetTable();
+    }
+
+    closeAddJobModal();
+    showToast("Floorplan record updated!");
+
+    // Background sync update
+    (async (jobId, prevRecord) => {
+      try {
+        let { error } = await _supabase.from(TABLE_NAME).update(finalData).eq('id', jobId);
+        if (error && (error.message?.includes('shift_type') || error.details?.includes('shift_type') || error.code === 'PGRST204')) {
+          console.warn("Supabase 'jobs' table missing 'shift_type' column. Retrying update without 'shift_type'...");
+          const fallbackData = { ...finalData };
+          delete fallbackData.shift_type;
+          const retryResult = await _supabase.from(TABLE_NAME).update(fallbackData).eq('id', jobId);
+          error = retryResult.error;
+        }
+        if (error) throw error;
+      } catch (err) {
+        console.error("Background Update Error:", err);
+        if (prevRecord && oldJobIndex !== -1) {
+          allJobs[oldJobIndex] = prevRecord;
+          recalculateMonthlySeqNumbers(allJobs);
+          updateKPICards();
+          renderJobSheetTable();
+        }
+        showToast(err.message || "Failed to update record (Reverted)", true);
+      }
+    })(targetEditId, previousJob);
+
+  } else {
+    // Optimistic Create
+    const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const optimisticRecord = {
+      id: tempId,
+      ...finalData,
+      created_at: new Date().toISOString()
     };
 
-    if (editingJobId) {
-      const { error } = await _supabase.from(TABLE_NAME).update(finalData).eq('id', editingJobId);
-      if (error) throw error;
-      showToast("Floorplan record updated!");
-      editingJobId = null;
-    } else {
-      const { error } = await _supabase.from(TABLE_NAME).insert([finalData]);
-      if (error) throw error;
-      showToast("Floorplan record saved successfully!");
-    }
+    allJobs.unshift(optimisticRecord);
+    allJobs.sort((a, b) => {
+      const dDiff = (b.date || '').localeCompare(a.date || '');
+      if (dDiff !== 0) return dDiff;
+      return (b.job_time || '').localeCompare(a.job_time || '');
+    });
+
+    recalculateMonthlySeqNumbers(allJobs);
+    updateKPICards();
+    renderJobSheetTable();
 
     closeAddJobModal();
 
     // Reset modal form input fields
     document.getElementById('modal_address_title').value = '';
     document.getElementById('modal_area_sqft').value = '';
+    const modalColorCb = document.getElementById('modal_is_color');
+    if (modalColorCb) {
+      modalColorCb.checked = false;
+      updateOptionToggleUI('modal_is_color');
+    }
     updateLivePayoutStrip(true);
 
-    await fetchAllData();
-  } catch (err) {
-    console.error("Modal Save Error:", err);
-    showToast("Error saving floorplan record");
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    showToast("Floorplan record saved successfully!");
+
+    // Background sync insert
+    (async (temporaryId, payload) => {
+      try {
+        let { data: insertedRows, error } = await _supabase
+          .from(TABLE_NAME)
+          .insert([payload])
+          .select();
+
+        if (error && (error.message?.includes('shift_type') || error.details?.includes('shift_type') || error.code === 'PGRST204')) {
+          console.warn("Supabase 'jobs' table missing 'shift_type' column. Retrying insert without 'shift_type'...");
+          const fallbackData = { ...payload };
+          delete fallbackData.shift_type;
+          const retryResult = await _supabase
+            .from(TABLE_NAME)
+            .insert([fallbackData])
+            .select();
+          error = retryResult.error;
+          insertedRows = retryResult.data;
+        }
+
+        if (error) throw error;
+
+        if (insertedRows && insertedRows[0]) {
+          const realRecord = insertedRows[0];
+          const idx = allJobs.findIndex(j => j.id === temporaryId);
+          if (idx !== -1) {
+            allJobs[idx] = { ...allJobs[idx], ...realRecord };
+          }
+        }
+      } catch (err) {
+        console.error("Background Modal Save Error:", err);
+        allJobs = allJobs.filter(j => j.id !== temporaryId);
+        recalculateMonthlySeqNumbers(allJobs);
+        updateKPICards();
+        renderJobSheetTable();
+        showToast(err.message || "Failed to save floorplan record (Reverted)", true);
+      }
+    })(tempId, finalData);
   }
 });
 
@@ -2506,6 +2675,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(`modal_${id}`)?.addEventListener('change', () => updateLivePayoutStrip(true));
   });
 
+  // Modal Backdrop Outside-Click Handlers (Close when clicking outside modal card)
+  const modalBackdrops = [
+    { id: 'clientModalBackdrop', closeFn: closeClientModal },
+    { id: 'addJobModalBackdrop', closeFn: closeAddJobModal },
+    { id: 'viewJobModalBackdrop', closeFn: closeViewJobModal },
+    { id: 'excelPreviewModalBackdrop', closeFn: closeExcelPreviewModal },
+    { id: 'salaryPinModalBackdrop', closeFn: closeSalaryPinModal }
+  ];
+
+  modalBackdrops.forEach(({ id, closeFn }) => {
+    const backdrop = document.getElementById(id);
+    backdrop?.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        closeFn();
+      }
+    });
+  });
+
   window.addEventListener('click', (e) => {
     const popover = document.getElementById('date_picker_popover');
     const triggerBtn = document.getElementById('date_picker_trigger_btn');
@@ -2526,6 +2713,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeClientModal();
       closeViewJobModal();
       closeExcelPreviewModal();
+      closeSalaryPinModal();
       closeDatePickerPopover();
       closeAreaFilterPopover();
     }
