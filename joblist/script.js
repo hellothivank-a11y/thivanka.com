@@ -1976,6 +1976,14 @@ document.getElementById('addJobForm')?.addEventListener('submit', (e) => {
   // Reset input fields immediately
   document.getElementById('address_title').value = '';
   document.getElementById('area_sqft').value = '';
+  const clientInput = document.getElementById('client_name');
+  if (clientInput) clientInput.value = '';
+  document.querySelectorAll('#quick_client_pills .client-pill').forEach(pill => pill.classList.remove('active'));
+  const clientBadge = document.getElementById('selected_client_badge');
+  if (clientBadge) {
+    clientBadge.textContent = '';
+    clientBadge.classList.add('hidden');
+  }
   const colorCb = document.getElementById('is_color');
   if (colorCb) {
     colorCb.checked = false;
@@ -2297,6 +2305,14 @@ document.getElementById('modalAddJobForm')?.addEventListener('submit', (e) => {
     // Reset modal form input fields
     document.getElementById('modal_address_title').value = '';
     document.getElementById('modal_area_sqft').value = '';
+    const modalClientInput = document.getElementById('modal_client_name');
+    if (modalClientInput) modalClientInput.value = '';
+    document.querySelectorAll('#modal_quick_client_pills .client-pill').forEach(pill => pill.classList.remove('active'));
+    const modalClientBadge = document.getElementById('modal_selected_client_badge');
+    if (modalClientBadge) {
+      modalClientBadge.textContent = '';
+      modalClientBadge.classList.add('hidden');
+    }
     const modalColorCb = document.getElementById('modal_is_color');
     if (modalColorCb) {
       modalColorCb.checked = false;
@@ -2661,6 +2677,24 @@ function renderExcelPreviewTable(mode = 'all') {
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   if (window.lucide) lucide.createIcons();
+
+  // Instant Time & Shift Resync on Laptop Wake-Up / Tab Focus
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      userOverrodeTime = false;
+      userOverrodeDate = false;
+      isShiftManuallyOverridden = false;
+      startSriLankaClock();
+      updateOperationalContextStrip();
+      fetchAllData();
+    }
+  });
+
+  window.addEventListener('focus', () => {
+    updateLiveClockWidget();
+    autoCheckNightWeekend();
+    updateOperationalContextStrip();
+  });
 
   document.getElementById('preview-sheet-btn')?.addEventListener('click', () => openExcelPreviewModal());
   document.getElementById('date')?.addEventListener('input', () => { userOverrodeDate = true; autoCheckNightWeekend(); updateLivePayoutStrip(false); });
